@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Consultorio · Casartelli</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --navy:#1B2A4A;
+  --navy-light:#2E4170;
+  --orange:#E87722;
+  --orange-light:#FEF0E3;
+  --bg:#FFFFFF;
+  --surface:#F7F8FA;
+  --border:#E2E5EA;
+  --text:#1A1A2E;
+  --text-2:#5A6373;
+  --text-3:#9AA0AD;
+  --green:#1B5E3B;
+  --green-light:#EAF5EE;
+  --red:#C0392B;
+  --red-light:#FDECEA;
+  --blue-chip:#1A4E8C;
+  --blue-chip-light:#EBF3FB;
+  --radius:12px;
+  --radius-sm:8px;
+  --shadow:0 2px 12px rgba(0,0,0,.08);
+  --shadow-lg:0 8px 32px rgba(0,0,0,.12);
+}
+html,body{height:100%;font-family:'Inter',sans-serif;background:var(--surface);color:var(--text);-webkit-tap-highlight-color:transparent;}
+input,textarea,select{font-family:'Inter',sans-serif;}
+
+/* ── LAYOUT ── */
+.app{display:flex;height:100vh;overflow:hidden;}
+
+/* Sidebar */
+.sidebar{width:280px;min-width:280px;background:var(--navy);display:flex;flex-direction:column;transition:transform .25s ease;z-index:100;}
+.sidebar-header{padding:20px 16px 14px;border-bottom:1px solid rgba(255,255,255,.1);}
+.sidebar-header h1{font-size:13px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.08em;text-transform:uppercase;}
+.sidebar-header p{font-size:11px;color:rgba(255,255,255,.35);margin-top:2px;}
+.btn-new-patient{display:flex;align-items:center;gap:8px;width:100%;margin:12px 16px 0;width:calc(100% - 32px);padding:11px 14px;background:var(--orange);color:#fff;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s;}
+.btn-new-patient:active{opacity:.8;}
+.btn-new-patient svg{flex-shrink:0;}
+.patient-list{flex:1;overflow-y:auto;padding:8px 0;}
+.patient-list::-webkit-scrollbar{width:0;}
+.patient-item{display:flex;align-items:center;padding:11px 16px;cursor:pointer;transition:background .12s;border-left:3px solid transparent;}
+.patient-item:hover,.patient-item.active{background:rgba(255,255,255,.08);border-left-color:var(--orange);}
+.patient-item.active .pi-name{color:#fff;}
+.pi-avatar{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:rgba(255,255,255,.8);flex-shrink:0;margin-right:10px;}
+.pi-info{flex:1;min-width:0;}
+.pi-name{font-size:13px;font-weight:600;color:rgba(255,255,255,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pi-sub{font-size:11px;color:rgba(255,255,255,.4);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pi-days{font-size:10px;font-weight:700;color:var(--orange);background:rgba(232,119,34,.15);padding:2px 6px;border-radius:20px;flex-shrink:0;margin-left:6px;}
+.empty-list{padding:32px 16px;text-align:center;color:rgba(255,255,255,.3);font-size:13px;}
+
+/* Main */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--bg);}
+
+/* Top bar */
+.topbar{display:flex;align-items:center;padding:0 20px;height:56px;border-bottom:1px solid var(--border);background:var(--bg);gap:12px;flex-shrink:0;}
+.btn-menu{display:none;background:none;border:none;padding:6px;cursor:pointer;color:var(--navy);}
+.topbar-patient{flex:1;}
+.topbar-patient h2{font-size:17px;font-weight:700;color:var(--text);}
+.topbar-patient p{font-size:12px;color:var(--text-2);margin-top:1px;}
+.days-chip{display:flex;align-items:center;gap:6px;background:var(--blue-chip-light);border:1px solid rgba(26,78,140,.15);padding:8px 14px;border-radius:30px;flex-shrink:0;}
+.days-chip .num{font-size:22px;font-weight:700;color:var(--blue-chip);line-height:1;}
+.days-chip .lbl{font-size:10px;color:var(--blue-chip);opacity:.7;font-weight:500;line-height:1.3;}
+.alerta-chip{background:var(--red-light);border:1px solid rgba(192,57,43,.2);padding:7px 12px;border-radius:var(--radius-sm);font-size:12px;color:var(--red);font-weight:500;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+/* Tabs */
+.tabs{display:flex;border-bottom:1px solid var(--border);background:var(--bg);flex-shrink:0;padding:0 20px;}
+.tab{padding:12px 16px;font-size:13px;font-weight:500;color:var(--text-2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .15s,border-color .15s;white-space:nowrap;}
+.tab.active{color:var(--orange);border-bottom-color:var(--orange);font-weight:600;}
+.tab:hover:not(.active){color:var(--text);}
+
+/* Panel content */
+.panel{flex:1;overflow-y:auto;padding:20px;}
+.panel::-webkit-scrollbar{width:6px;}
+.panel::-webkit-scrollbar-track{background:transparent;}
+.panel::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+.panel-section{display:none;}
+.panel-section.active{display:block;}
+
+/* Empty state */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px;color:var(--text-3);}
+.empty-state svg{opacity:.3;}
+.empty-state h3{font-size:17px;font-weight:600;color:var(--text-2);}
+.empty-state p{font-size:14px;text-align:center;max-width:280px;line-height:1.6;}
+
+/* ── RESUMEN ── */
+.resumen-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px;}
+.resumen-grid .field{display:flex;flex-direction:column;padding:12px 14px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);}
+.resumen-grid .field:nth-child(even){border-right:none;}
+.resumen-grid .field.full{grid-column:1/-1;border-right:none;}
+.resumen-grid .field:last-child,.resumen-grid .field.full:last-of-type{border-bottom:none;}
+.field-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);margin-bottom:5px;}
+.field input,.field textarea,.field select{border:none;background:transparent;font-size:14px;color:var(--text);font-family:'Inter',sans-serif;width:100%;resize:none;outline:none;padding:0;}
+.field textarea{min-height:60px;line-height:1.5;}
+.field input::placeholder,.field textarea::placeholder{color:var(--text-3);}
+
+/* Notas libres al costado del resumen */
+.resumen-layout{display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start;}
+.notas-libres{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.notas-header{padding:10px 14px;background:var(--navy);font-size:11px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.06em;}
+.notas-libres textarea{width:100%;min-height:320px;border:none;padding:14px;font-size:13px;line-height:1.6;color:var(--text);background:#FFFDF5;resize:none;outline:none;font-family:'Inter',sans-serif;}
+
+/* Alerta */
+.alerta-field{display:flex;align-items:flex-start;gap:10px;background:var(--red-light);border:1px solid rgba(192,57,43,.2);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:16px;}
+.alerta-field .alerta-icon{font-size:16px;flex-shrink:0;margin-top:1px;}
+.alerta-field input{flex:1;border:none;background:transparent;font-size:13px;font-weight:500;color:var(--red);outline:none;font-family:'Inter',sans-serif;}
+.alerta-field input::placeholder{color:rgba(192,57,43,.5);}
+
+/* ── SESIONES ── */
+.ses-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.ses-toolbar h3{font-size:15px;font-weight:700;color:var(--text);}
+.btn-add-ses{display:flex;align-items:center;gap:6px;padding:9px 16px;background:var(--orange);color:#fff;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s;}
+.btn-add-ses:active{opacity:.8;}
+.ses-list{display:flex;flex-direction:column;gap:10px;}
+.ses-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:box-shadow .2s;}
+.ses-card:hover{box-shadow:var(--shadow);}
+.ses-card-header{display:flex;align-items:center;padding:12px 14px;background:var(--surface);border-bottom:1px solid var(--border);gap:10px;cursor:pointer;}
+.ses-num{width:26px;height:26px;border-radius:50%;background:var(--navy);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.ses-fecha{font-size:13px;font-weight:600;color:var(--text);flex:1;}
+.ses-dias{font-size:11px;font-weight:700;color:var(--blue-chip);background:var(--blue-chip-light);padding:3px 8px;border-radius:20px;}
+.ses-eva{font-size:11px;color:var(--text-2);}
+.ses-preview{font-size:12px;color:var(--text-2);padding:10px 14px;border-bottom:1px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;}
+.ses-body{padding:14px;display:none;}
+.ses-body.open{display:block;}
+.ses-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.ses-field{display:flex;flex-direction:column;gap:4px;}
+.ses-field.full{grid-column:1/-1;}
+.ses-field label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);}
+.ses-field input,.ses-field textarea{border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 10px;font-size:13px;color:var(--text);font-family:'Inter',sans-serif;background:var(--bg);outline:none;resize:none;transition:border-color .15s;}
+.ses-field input:focus,.ses-field textarea:focus{border-color:var(--navy);}
+.ses-field textarea{min-height:70px;line-height:1.5;}
+.ses-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px;}
+.btn-save-ses{padding:8px 18px;background:var(--navy);color:#fff;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;}
+.btn-del-ses{padding:8px 14px;background:transparent;color:var(--text-3);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;cursor:pointer;}
+.ses-empty{text-align:center;padding:40px 20px;color:var(--text-3);font-size:14px;}
+
+/* ── EVALUACIONES ── */
+.eval-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.btn-add-eval{display:flex;align-items:center;gap:6px;padding:9px 16px;background:var(--green);color:#fff;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;}
+.eval-table{width:100%;border-collapse:collapse;font-size:13px;}
+.eval-table th{padding:9px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);border-bottom:2px solid var(--border);white-space:nowrap;}
+.eval-table td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.eval-table tr:last-child td{border-bottom:none;}
+.eval-table tr:hover td{background:var(--surface);}
+.eval-table input{border:none;background:transparent;font-size:13px;font-family:'Inter',sans-serif;color:var(--text);width:100%;outline:none;}
+.eval-table input:focus{background:var(--blue-chip-light);border-radius:4px;padding:2px 4px;}
+.lsi-badge{display:inline-block;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:700;}
+.lsi-ok{background:var(--green-light);color:var(--green);}
+.lsi-warn{background:#FFF8E1;color:#856B00;}
+.lsi-bad{background:var(--red-light);color:var(--red);}
+.btn-del-eval{background:none;border:none;color:var(--text-3);cursor:pointer;padding:4px;font-size:16px;}
+
+/* ── MODAL nuevo paciente ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:999;display:none;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.open{display:flex;}
+.modal{background:#fff;border-radius:var(--radius);width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg);}
+.modal-header{padding:20px 20px 0;display:flex;justify-content:space-between;align-items:center;}
+.modal-header h2{font-size:18px;font-weight:700;}
+.btn-close{background:none;border:none;font-size:22px;color:var(--text-2);cursor:pointer;padding:4px;}
+.modal-body{padding:16px 20px;}
+.modal-field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;}
+.modal-field label{font-size:12px;font-weight:600;color:var(--text-2);}
+.modal-field input,.modal-field textarea,.modal-field select{border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-size:14px;font-family:'Inter',sans-serif;color:var(--text);outline:none;transition:border-color .15s;}
+.modal-field input:focus,.modal-field textarea:focus{border-color:var(--navy);}
+.modal-field textarea{min-height:70px;resize:none;}
+.modal-footer{padding:0 20px 20px;display:flex;gap:10px;justify-content:flex-end;}
+.btn-primary{padding:11px 24px;background:var(--navy);color:#fff;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;}
+.btn-secondary{padding:11px 20px;background:transparent;color:var(--text-2);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;cursor:pointer;}
+.modal-2col{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+
+/* ── Responsive iPad ── */
+@media(max-width:900px){
+  .resumen-layout{grid-template-columns:1fr;}
+  .sidebar{position:fixed;left:0;top:0;bottom:0;transform:translateX(-100%);}
+  .sidebar.open{transform:translateX(0);}
+  .btn-menu{display:flex;}
+  .main{width:100%;}
+}
+@media(max-width:600px){
+  .resumen-grid{grid-template-columns:1fr;}
+  .resumen-grid .field{border-right:none;}
+  .ses-fields{grid-template-columns:1fr;}
+  .modal-2col{grid-template-columns:1fr;}
+  .days-chip .num{font-size:18px;}
+}
+
+/* Category filter pills */
+.cat-filters{padding:10px 12px 4px;display:flex;flex-wrap:wrap;gap:6px;}
+.cat-pill{padding:5px 10px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid transparent;transition:all .15s;white-space:nowrap;}
+.cat-pill.all{background:rgba(255,255,255,.15);color:rgba(255,255,255,.7);border-color:rgba(255,255,255,.2);}
+.cat-pill.all.active{background:var(--orange);color:#fff;border-color:var(--orange);}
+.cat-pill.c0{background:rgba(26,78,140,.3);color:#7EB3F5;border-color:rgba(126,179,245,.3);}
+.cat-pill.c0.active{background:#1A4E8C;color:#fff;border-color:#1A4E8C;}
+.cat-pill.c1{background:rgba(27,94,59,.3);color:#6FCF97;border-color:rgba(111,207,151,.3);}
+.cat-pill.c1.active{background:#1B5E3B;color:#fff;border-color:#1B5E3B;}
+.cat-pill.c2{background:rgba(94,53,177,.3);color:#BB86FC;border-color:rgba(187,134,252,.3);}
+.cat-pill.c2.active{background:#5E35B1;color:#fff;border-color:#5E35B1;}
+.cat-pill.c3{background:rgba(184,150,46,.3);color:#F0C040;border-color:rgba(240,192,64,.3);}
+.cat-pill.c3.active{background:#B8962E;color:#fff;border-color:#B8962E;}
+.cat-pill.c4{background:rgba(192,57,43,.3);color:#FF8A80;border-color:rgba(255,138,128,.3);}
+.cat-pill.c4.active{background:#C0392B;color:#fff;border-color:#C0392B;}
+/* patient item category dot */
+.pi-cat-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-left:4px;}
+/* Sidebar footer: backup */
+.sidebar-footer{padding:10px 12px;border-top:1px solid rgba(255,255,255,.1);display:flex;gap:6px;}
+.btn-backup{flex:1;padding:8px 6px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:var(--radius-sm);color:rgba(255,255,255,.6);font-size:11px;font-weight:600;cursor:pointer;text-align:center;transition:background .15s;}
+.btn-backup:hover{background:rgba(255,255,255,.14);}
+
+.save-indicator{position:fixed;bottom:20px;right:20px;background:var(--navy);color:#fff;padding:8px 16px;border-radius:20px;font-size:12px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:500;}
+.save-indicator.show{opacity:1;}
+
+/* Overlay para cerrar sidebar en móvil */
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:99;}
+.sidebar-overlay.open{display:block;}
+</style>
+</head>
+<body>
+
+<!-- CATEGORÍAS (config interna) -->
+<script>
+const CATS = [
+  { id:'quilmes',    label:'Quilmes AC',   cls:'c0' },
+  { id:'agremiados', label:'Agremiados',   cls:'c1' },
+  { id:'privado',    label:'Privado',      cls:'c2' },
+  { id:'favaloro',   label:'Favaloro',     cls:'c3' },
+  { id:'otro',       label:'Otro',         cls:'c4' },
+];
+const CAT_COLORS = { c0:'#1A4E8C', c1:'#1B5E3B', c2:'#5E35B1', c3:'#B8962E', c4:'#C0392B' };
+let currentCatFilter = 'all';
+</script>
+
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <h1>Casartelli · MP 10722</h1>
+      <p>Consultorio kinesiológico</p>
+    </div>
+    <button class="btn-new-patient" onclick="openNewPatient()">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+      Nuevo paciente
+    </button>
+    <div class="cat-filters" id="catFilters"></div>
+    <div class="patient-list" id="patientList">
+      <div class="empty-list">Todavía no hay pacientes</div>
+    </div>
+    <div class="sidebar-footer">
+      <button class="btn-backup" onclick="exportDB()">⬇ Exportar</button>
+      <button class="btn-backup" onclick="document.getElementById('importFile').click()">⬆ Importar</button>
+      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importDB(this)">
+    </div>
+  </aside>
+
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+  <!-- Main -->
+  <main class="main">
+    <!-- Topbar -->
+    <div class="topbar">
+      <button class="btn-menu" onclick="toggleSidebar()">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+      <div class="topbar-patient" id="topbarPatient" style="display:none">
+        <h2 id="topbarName">—</h2>
+        <p id="topbarSub">—</p>
+      </div>
+      <div id="daysChip" style="display:none" class="days-chip">
+        <div>
+          <div class="num" id="daysNum">—</div>
+        </div>
+        <div class="lbl">días de<br>evolución</div>
+      </div>
+      <div id="alertaChip" style="display:none" class="alerta-chip"></div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs" id="tabs" style="display:none">
+      <div class="tab active" onclick="switchTab('resumen')">Resumen</div>
+      <div class="tab" onclick="switchTab('sesiones')">Sesiones</div>
+      <div class="tab" onclick="switchTab('evaluaciones')">Evaluaciones</div>
+    </div>
+
+    <!-- Panel -->
+    <div class="panel" id="panel">
+      <div class="empty-state">
+        <svg width="56" height="56" viewBox="0 0 56 56" fill="none"><rect x="10" y="8" width="36" height="40" rx="4" stroke="#9AA0AD" stroke-width="2"/><path d="M20 20h16M20 27h16M20 34h10" stroke="#9AA0AD" stroke-width="2" stroke-linecap="round"/></svg>
+        <h3>Seleccioná un paciente</h3>
+        <p>O creá uno nuevo desde la barra lateral.</p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Modal nuevo paciente -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modalTitle">Nuevo paciente</h2>
+      <button class="btn-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-field">
+        <label>Categoría</label>
+        <select id="mCategoria">
+          <option value="">Sin categoría</option>
+          <option value="quilmes">Quilmes AC</option>
+          <option value="agremiados">Agremiados</option>
+          <option value="privado">Privado</option>
+          <option value="favaloro">Favaloro</option>
+          <option value="otro">Otro</option>
+        </select>
+      </div>
+      <div class="modal-2col">
+        <div class="modal-field">
+          <label>Nombre completo *</label>
+          <input type="text" id="mNombre" placeholder="Apellido, Nombre">
+        </div>
+        <div class="modal-field">
+          <label>Edad</label>
+          <input type="text" id="mEdad" placeholder="25">
+        </div>
+      </div>
+      <div class="modal-2col">
+        <div class="modal-field">
+          <label>Contacto / WhatsApp</label>
+          <input type="text" id="mContacto" placeholder="+54 11 ...">
+        </div>
+        <div class="modal-field">
+          <label>Institución / Club</label>
+          <input type="text" id="mInstitucion" placeholder="Quilmes AC / Privado">
+        </div>
+      </div>
+      <div class="modal-2col">
+        <div class="modal-field">
+          <label>Deporte / Posición</label>
+          <input type="text" id="mDeporte" placeholder="Fútbol / Defensor">
+        </div>
+        <div class="modal-field">
+          <label>Cirujano / Médico</label>
+          <input type="text" id="mCirujano" placeholder="Dr. ...">
+        </div>
+      </div>
+      <div class="modal-field">
+        <label>Diagnóstico principal</label>
+        <input type="text" id="mDx" placeholder="Reconstrucción LCA HTH, Lumbalgia mecánica…">
+      </div>
+      <div class="modal-2col">
+        <div class="modal-field">
+          <label>Estructura / Lado</label>
+          <input type="text" id="mEstructura" placeholder="LCA derecho">
+        </div>
+        <div class="modal-field">
+          <label>Fecha inicio / lesión</label>
+          <input type="date" id="mFechaInicio">
+        </div>
+      </div>
+      <div class="modal-field">
+        <label>Cirugía / Injerto / Técnica</label>
+        <input type="text" id="mCirugia" placeholder="Rec. LCA HTH ipsilateral · Nov 2023">
+      </div>
+      <div class="modal-field">
+        <label>Antecedentes relevantes</label>
+        <textarea id="mAntecedentes" placeholder="Lesiones previas, cirugías anteriores, patologías…"></textarea>
+      </div>
+      <div class="modal-field">
+        <label>Objetivos del paciente</label>
+        <textarea id="mObjetivos" placeholder="Volver a competir, manejo del dolor…"></textarea>
+      </div>
+      <div class="modal-2col">
+        <div class="modal-field">
+          <label>Medicación</label>
+          <input type="text" id="mMedicacion" placeholder="AINE, ninguna…">
+        </div>
+        <div class="modal-field">
+          <label>Contraindicaciones</label>
+          <input type="text" id="mContra" placeholder="Alergias, precauciones…">
+        </div>
+      </div>
+      <div class="modal-field">
+        <label>⚡ Alerta clave</label>
+        <input type="text" id="mAlerta" placeholder="Algo que no podés olvidar de este paciente">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal()">Cancelar</button>
+      <button class="btn-primary" onclick="savePatient()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal nueva sesión -->
+<div class="modal-overlay" id="modalSesion">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Nueva sesión</h2>
+      <button class="btn-close" onclick="closeModalSesion()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-2col">
+        <div class="modal-field">
+          <label>Fecha *</label>
+          <input type="date" id="sFecha">
+        </div>
+        <div class="modal-field">
+          <label>Estado / Fase RTP</label>
+          <input type="text" id="sFase" placeholder="Fase 3 – Neuromuscular">
+        </div>
+      </div>
+      <div class="modal-field">
+        <label>S — Subjetivo (qué reporta el paciente)</label>
+        <textarea id="sSubjetivo" placeholder="Dolor 2/10. Durmió bien. Se siente más ágil…"></textarea>
+      </div>
+      <div class="modal-field">
+        <label>Intervención / Ejercicios</label>
+        <textarea id="sIntervencion" placeholder="Hip thrust 3×10 / Nordic 3×6 / TENS isquios 15min / Movilización patela…" style="min-height:90px"></textarea>
+      </div>
+      <div class="modal-2col">
+        <div class="modal-field">
+          <label>Carga / Volumen</label>
+          <input type="text" id="sCarga" placeholder="60kg, 3×10, BW…">
+        </div>
+        <div class="modal-field">
+          <label>EVA fin / RPE</label>
+          <input type="text" id="sEva" placeholder="EVA 1 · RPE 7">
+        </div>
+      </div>
+      <div class="modal-field">
+        <label>O+A — Objetivo + Impresión clínica</label>
+        <textarea id="sObjetivo" placeholder="ROM completo. Fuerza asimétrica. Mejora notable en equilibrio…"></textarea>
+      </div>
+      <div class="modal-field">
+        <label>Plan próxima sesión</label>
+        <input type="text" id="sPlan" placeholder="Agregar pistol squat. Subir carga nordic.">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModalSesion()">Cancelar</button>
+      <button class="btn-primary" onclick="saveSesion()">Guardar sesión</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal nueva evaluación -->
+<div class="modal-overlay" id="modalEval">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Nueva evaluación</h2>
+      <button class="btn-close" onclick="closeModalEval()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-2col">
+        <div class="modal-field">
+          <label>Fecha *</label>
+          <input type="date" id="eFecha">
+        </div>
+        <div class="modal-field">
+          <label>Herramienta / Test</label>
+          <input type="text" id="eTest" placeholder="VALD DynaMo / ForceDecks / Hop Test">
+        </div>
+      </div>
+      <div class="modal-2col">
+        <div class="modal-field">
+          <label>Resultado lado afectado</label>
+          <input type="text" id="eAfectado" placeholder="380 N">
+        </div>
+        <div class="modal-field">
+          <label>Resultado lado sano / ref.</label>
+          <input type="text" id="eSano" placeholder="452 N">
+        </div>
+      </div>
+      <div class="modal-2col">
+        <div class="modal-field">
+          <label>LSI %</label>
+          <input type="number" id="eLsi" placeholder="84" min="0" max="100">
+        </div>
+        <div class="modal-field">
+          <label>Umbral RTP</label>
+          <input type="text" id="eUmbral" placeholder="≥ 90%">
+        </div>
+      </div>
+      <div class="modal-field">
+        <label>Observaciones</label>
+        <textarea id="eObs" placeholder="Asimetría en RFD 100ms. Seguir progresando…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModalEval()">Cancelar</button>
+      <button class="btn-primary" onclick="saveEval()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="save-indicator" id="saveIndicator">Guardado ✓</div>
+
+<script>
+// ── Estado global ─────────────────────────────────────────────────────────────
+let DB = { patients: [] };
+let currentPatientId = null;
+let currentTab = 'resumen';
+let editingPatientId = null;
+let autoSaveTimer = null;
+
+// ── Persistencia ──────────────────────────────────────────────────────────────
+function loadDB() {
+  try {
+    const raw = localStorage.getItem('casartelli_db');
+    if (raw) DB = JSON.parse(raw);
+  } catch(e) { DB = { patients: [] }; }
+}
+
+function saveDB() {
+  localStorage.setItem('casartelli_db', JSON.stringify(DB));
+  showSaveIndicator();
+}
+
+function showSaveIndicator() {
+  const el = document.getElementById('saveIndicator');
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 1500);
+}
+
+// ── Utilidades ────────────────────────────────────────────────────────────────
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+
+function diasDesde(fechaStr) {
+  if (!fechaStr) return null;
+  const hoy = new Date();
+  const inicio = new Date(fechaStr);
+  const diff = Math.floor((hoy - inicio) / 86400000);
+  return diff >= 0 ? diff : null;
+}
+
+function formatFecha(isoStr) {
+  if (!isoStr) return '—';
+  const [y, m, d] = isoStr.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+function initials(nombre) {
+  if (!nombre) return '?';
+  const parts = nombre.trim().split(/\s+/);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return parts[0].slice(0, 2).toUpperCase();
+}
+
+function lsiClass(val) {
+  const n = parseFloat(val);
+  if (isNaN(n)) return '';
+  if (n >= 90) return 'lsi-ok';
+  if (n >= 75) return 'lsi-warn';
+  return 'lsi-bad';
+}
+
+// ── Categorías ────────────────────────────────────────────────────────────────
+function renderCatFilters() {
+  const el = document.getElementById('catFilters');
+  const allActive = currentCatFilter === 'all';
+  let html = `<div class="cat-pill all ${allActive?'active':''}" onclick="setCatFilter('all')">Todos</div>`;
+  CATS.forEach(c => {
+    const active = currentCatFilter === c.id;
+    html += `<div class="cat-pill ${c.cls} ${active?'active':''}" onclick="setCatFilter('${c.id}')">${c.label}</div>`;
+  });
+  el.innerHTML = html;
+}
+
+function setCatFilter(catId) {
+  currentCatFilter = catId;
+  renderCatFilters();
+  renderPatientList();
+}
+
+function catDotColor(catId) {
+  const cat = CATS.find(c => c.id === catId);
+  if (!cat) return null;
+  return CAT_COLORS[cat.cls];
+}
+
+// ── Backup ────────────────────────────────────────────────────────────────────
+function exportDB() {
+  const date = new Date().toISOString().slice(0,10);
+  const blob = new Blob([JSON.stringify(DB, null, 2)], {type:'application/json'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `consultorio_backup_${date}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importDB(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const imported = JSON.parse(e.target.result);
+      if (!imported.patients) throw new Error('Formato inválido');
+      if (!confirm(`¿Importar backup? Esto va a reemplazar todos los datos actuales (${DB.patients.length} pacientes) con los del archivo (${imported.patients.length} pacientes).`)) return;
+      DB = imported;
+      saveDB();
+      currentPatientId = null;
+      renderCatFilters();
+      renderPatientList();
+      // Reset main panel
+      document.getElementById('topbarPatient').style.display = 'none';
+      document.getElementById('daysChip').style.display = 'none';
+      document.getElementById('alertaChip').style.display = 'none';
+      document.getElementById('tabs').style.display = 'none';
+      document.getElementById('panel').innerHTML = `
+        <div class="empty-state">
+          <svg width="56" height="56" viewBox="0 0 56 56" fill="none"><rect x="10" y="8" width="36" height="40" rx="4" stroke="#9AA0AD" stroke-width="2"/><path d="M20 20h16M20 27h16M20 34h10" stroke="#9AA0AD" stroke-width="2" stroke-linecap="round"/></svg>
+          <h3>Backup importado ✓</h3>
+          <p>Seleccioná un paciente para continuar.</p>
+        </div>`;
+      alert(`Listo. ${imported.patients.length} pacientes importados.`);
+    } catch(err) {
+      alert('Error al importar: ' + err.message);
+    }
+    input.value = '';
+  };
+  reader.readAsText(file);
+}
+
+// ── Lista de pacientes ────────────────────────────────────────────────────────
+function renderPatientList() {
+  const list = document.getElementById('patientList');
+  let patients = DB.patients;
+  if (currentCatFilter !== 'all') {
+    patients = patients.filter(p => p.categoria === currentCatFilter);
+  }
+  if (!patients.length) {
+    list.innerHTML = '<div class="empty-list">No hay pacientes aquí</div>';
+    return;
+  }
+  list.innerHTML = patients.map(p => {
+    const dias = diasDesde(p.fechaInicio);
+    const isActive = p.id === currentPatientId;
+    const dotColor = catDotColor(p.categoria);
+    return `
+      <div class="patient-item ${isActive ? 'active' : ''}" onclick="selectPatient('${p.id}')">
+        <div class="pi-avatar">${initials(p.nombre)}</div>
+        <div class="pi-info">
+          <div class="pi-name" style="display:flex;align-items:center;gap:5px">
+            ${p.nombre || 'Sin nombre'}
+            ${dotColor ? `<span class="pi-cat-dot" style="background:${dotColor}"></span>` : ''}
+          </div>
+          <div class="pi-sub">${p.dx || p.institucion || '—'}</div>
+        </div>
+        ${dias !== null ? `<div class="pi-days">${dias}d</div>` : ''}
+      </div>`;
+  }).join('');
+}
+
+// ── Seleccionar paciente ───────────────────────────────────────────────────────
+function selectPatient(id) {
+  currentPatientId = id;
+  currentTab = 'resumen';
+  renderPatientList();
+  renderPatient();
+  closeSidebar();
+}
+
+function getPatient(id) {
+  return DB.patients.find(p => p.id === id);
+}
+
+function renderPatient() {
+  const p = getPatient(currentPatientId);
+  if (!p) return;
+
+  // Topbar
+  const dias = diasDesde(p.fechaInicio);
+  document.getElementById('topbarPatient').style.display = 'block';
+  document.getElementById('topbarName').textContent = p.nombre || 'Sin nombre';
+  document.getElementById('topbarSub').textContent =
+    [p.dx, p.institucion].filter(Boolean).join(' · ') || '—';
+
+  const chip = document.getElementById('daysChip');
+  if (dias !== null) {
+    chip.style.display = 'flex';
+    document.getElementById('daysNum').textContent = dias;
+  } else {
+    chip.style.display = 'none';
+  }
+
+  const alertaChip = document.getElementById('alertaChip');
+  if (p.alerta) {
+    alertaChip.style.display = 'block';
+    alertaChip.textContent = '⚡ ' + p.alerta;
+  } else {
+    alertaChip.style.display = 'none';
+  }
+
+  document.getElementById('tabs').style.display = 'flex';
+  renderTab();
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    const tabs = ['resumen', 'sesiones', 'evaluaciones'];
+    t.classList.toggle('active', tabs[i] === tab);
+  });
+  renderTab();
+}
+
+function renderTab() {
+  const panel = document.getElementById('panel');
+  if (currentTab === 'resumen') renderResumen(panel);
+  else if (currentTab === 'sesiones') renderSesiones(panel);
+  else if (currentTab === 'evaluaciones') renderEvaluaciones(panel);
+}
+
+// ── RESUMEN ───────────────────────────────────────────────────────────────────
+function renderResumen(panel) {
+  const p = getPatient(currentPatientId);
+
+  panel.innerHTML = `
+    <div class="alerta-field">
+      <span class="alerta-icon">⚡</span>
+      <input type="text" id="rAlerta" value="${esc(p.alerta||'')}"
+        placeholder="Alerta / nota clave que no podés olvidar"
+        oninput="updateField('alerta', this.value)">
+    </div>
+
+    <div class="resumen-layout">
+      <div>
+        <div class="resumen-grid">
+          ${rField('Nombre completo', 'rNombre', p.nombre, 'nombre', 'text', false)}
+          ${rField2('Edad', 'rEdad', p.edad, 'edad', 'Contacto / WhatsApp', 'rContacto', p.contacto, 'contacto')}
+          ${rField2('Institución / Club', 'rInstitucion', p.institucion, 'institucion', 'Deporte / Posición', 'rDeporte', p.deporte, 'deporte')}
+          ${rField('Diagnóstico principal', 'rDx', p.dx, 'dx', 'text', false)}
+          ${rField2('Estructura / Lado', 'rEstructura', p.estructura, 'estructura', 'Cirujano / Médico', 'rCirujano', p.cirujano, 'cirujano')}
+          ${rField2('Fecha inicio / lesión', 'rFechaInicio', p.fechaInicio, 'fechaInicio', 'Estado / Fase', 'rEstado', p.estado, 'estado', 'date')}
+          ${rField('Cirugía / Injerto / Técnica', 'rCirugia', p.cirugia, 'cirugia', 'text', false)}
+          ${rField('Antecedentes relevantes', 'rAntecedentes', p.antecedentes, 'antecedentes', 'textarea', true)}
+          ${rField('Objetivos del paciente', 'rObjetivos', p.objetivos, 'objetivos', 'textarea', true)}
+          ${rField2('Medicación', 'rMedicacion', p.medicacion, 'medicacion', 'Contraindicaciones', 'rContra', p.contra, 'contra')}
+        </div>
+
+        <div style="margin-top:12px">
+          <button onclick="openEditPatient()" style="padding:8px 16px;background:transparent;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;color:var(--text-2);cursor:pointer;font-family:Inter,sans-serif;">
+            Editar datos del paciente
+          </button>
+          <button onclick="deletePatient()" style="padding:8px 16px;background:transparent;border:1px solid var(--red-light);border-radius:var(--radius-sm);font-size:12px;color:var(--red);cursor:pointer;font-family:Inter,sans-serif;margin-left:8px;">
+            Eliminar paciente
+          </button>
+        </div>
+      </div>
+
+      <div class="notas-libres">
+        <div class="notas-header">Notas libres</div>
+        <textarea id="rNotas" placeholder="Escribí acá lo que quieras: llamados, indicaciones del médico, cambios de plan, observaciones…"
+          oninput="updateField('notas', this.value)">${esc(p.notas||'')}</textarea>
+      </div>
+    </div>`;
+}
+
+function rField(label, id, val, key, type='text', full=false) {
+  const input = type === 'textarea'
+    ? `<textarea id="${id}" placeholder="—" oninput="updateField('${key}', this.value)">${esc(val||'')}</textarea>`
+    : `<input type="${type}" id="${id}" value="${esc(val||'')}" placeholder="—" oninput="updateField('${key}', this.value)">`;
+  return `<div class="field${full ? ' full' : ''}">
+    <span class="field-label">${label}</span>${input}</div>`;
+}
+
+function rField2(l1, id1, v1, k1, l2, id2, v2, k2, type='text') {
+  return rField(l1, id1, v1, k1, type) + rField(l2, id2, v2, k2, type);
+}
+
+function updateField(key, val) {
+  const p = getPatient(currentPatientId);
+  if (!p) return;
+  p[key] = val;
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(() => {
+    saveDB();
+    renderPatientList();
+    // Actualizar topbar y días si cambió fechaInicio
+    if (key === 'fechaInicio' || key === 'alerta' || key === 'nombre' || key === 'dx') {
+      renderPatient();
+    }
+  }, 600);
+}
+
+function esc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── SESIONES ──────────────────────────────────────────────────────────────────
+function renderSesiones(panel) {
+  const p = getPatient(currentPatientId);
+  const sesiones = (p.sesiones || []).slice().reverse();
+
+  panel.innerHTML = `
+    <div class="ses-toolbar">
+      <h3>${sesiones.length} sesión${sesiones.length !== 1 ? 'es' : ''}</h3>
+      <button class="btn-add-ses" onclick="openNewSesion()">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        Nueva sesión
+      </button>
+    </div>
+    ${!sesiones.length ? '<div class="ses-empty">Todavía no hay sesiones registradas.<br>Tocá "Nueva sesión" para empezar.</div>' : ''}
+    <div class="ses-list">
+      ${sesiones.map((s, i) => renderSesCard(s, sesiones.length - i, p.fechaInicio)).join('')}
+    </div>`;
+}
+
+function renderSesCard(s, num, fechaInicio) {
+  const dias = (s.fecha && fechaInicio)
+    ? Math.floor((new Date(s.fecha) - new Date(fechaInicio)) / 86400000)
+    : null;
+  const preview = s.intervencion
+    ? s.intervencion.replace(/\n/g,' ').slice(0, 80) + (s.intervencion.length > 80 ? '…' : '')
+    : '—';
+
+  return `
+    <div class="ses-card" id="sc_${s.id}">
+      <div class="ses-card-header" onclick="toggleSes('${s.id}')">
+        <div class="ses-num">${num}</div>
+        <div class="ses-fecha">${formatFecha(s.fecha)}</div>
+        ${s.fase ? `<span style="font-size:11px;color:var(--text-2);background:var(--surface);padding:3px 8px;border-radius:20px;">${esc(s.fase)}</span>` : ''}
+        ${dias !== null ? `<div class="ses-dias">día ${dias}</div>` : ''}
+        ${s.eva ? `<div class="ses-eva">${esc(s.eva)}</div>` : ''}
+      </div>
+      <div class="ses-preview" onclick="toggleSes('${s.id}')">${esc(preview)}</div>
+      <div class="ses-body" id="sb_${s.id}">
+        <div class="ses-fields">
+          <div class="ses-field">
+            <label>Fecha</label>
+            <input type="date" value="${s.fecha||''}" onchange="updateSes('${s.id}','fecha',this.value)">
+          </div>
+          <div class="ses-field">
+            <label>Estado / Fase RTP</label>
+            <input type="text" value="${esc(s.fase||'')}" placeholder="Fase 3 – Neuromuscular" oninput="updateSes('${s.id}','fase',this.value)">
+          </div>
+          <div class="ses-field full">
+            <label>S — Subjetivo</label>
+            <textarea oninput="updateSes('${s.id}','subjetivo',this.value)">${esc(s.subjetivo||'')}</textarea>
+          </div>
+          <div class="ses-field full">
+            <label>Intervención / Ejercicios</label>
+            <textarea style="min-height:90px" oninput="updateSes('${s.id}','intervencion',this.value)">${esc(s.intervencion||'')}</textarea>
+          </div>
+          <div class="ses-field">
+            <label>Carga / Volumen</label>
+            <input type="text" value="${esc(s.carga||'')}" oninput="updateSes('${s.id}','carga',this.value)">
+          </div>
+          <div class="ses-field">
+            <label>EVA fin / RPE</label>
+            <input type="text" value="${esc(s.eva||'')}" oninput="updateSes('${s.id}','eva',this.value)">
+          </div>
+          <div class="ses-field full">
+            <label>O+A — Objetivo + Impresión clínica</label>
+            <textarea oninput="updateSes('${s.id}','objetivo',this.value)">${esc(s.objetivo||'')}</textarea>
+          </div>
+          <div class="ses-field full">
+            <label>Plan próxima sesión</label>
+            <input type="text" value="${esc(s.plan||'')}" oninput="updateSes('${s.id}','plan',this.value)">
+          </div>
+        </div>
+        <div class="ses-actions">
+          <button class="btn-del-ses" onclick="deleteSes('${s.id}')">Eliminar</button>
+          <button class="btn-save-ses" onclick="saveDB();showSaveIndicator()">Guardar ✓</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function toggleSes(id) {
+  const body = document.getElementById('sb_' + id);
+  body.classList.toggle('open');
+}
+
+function updateSes(sesId, key, val) {
+  const p = getPatient(currentPatientId);
+  const ses = (p.sesiones || []).find(s => s.id === sesId);
+  if (!ses) return;
+  ses[key] = val;
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(saveDB, 800);
+}
+
+function deleteSes(sesId) {
+  if (!confirm('¿Eliminar esta sesión?')) return;
+  const p = getPatient(currentPatientId);
+  p.sesiones = (p.sesiones || []).filter(s => s.id !== sesId);
+  saveDB();
+  renderTab();
+}
+
+// Modal nueva sesión
+function openNewSesion() {
+  const today = new Date().toISOString().slice(0,10);
+  document.getElementById('sFecha').value = today;
+  document.getElementById('sFase').value = '';
+  document.getElementById('sSubjetivo').value = '';
+  document.getElementById('sIntervencion').value = '';
+  document.getElementById('sCarga').value = '';
+  document.getElementById('sEva').value = '';
+  document.getElementById('sObjetivo').value = '';
+  document.getElementById('sPlan').value = '';
+  document.getElementById('modalSesion').classList.add('open');
+}
+
+function closeModalSesion() {
+  document.getElementById('modalSesion').classList.remove('open');
+}
+
+function saveSesion() {
+  const fecha = document.getElementById('sFecha').value;
+  if (!fecha) { alert('La fecha es obligatoria.'); return; }
+  const p = getPatient(currentPatientId);
+  if (!p.sesiones) p.sesiones = [];
+  p.sesiones.push({
+    id: uid(),
+    fecha,
+    fase:        document.getElementById('sFase').value,
+    subjetivo:   document.getElementById('sSubjetivo').value,
+    intervencion:document.getElementById('sIntervencion').value,
+    carga:       document.getElementById('sCarga').value,
+    eva:         document.getElementById('sEva').value,
+    objetivo:    document.getElementById('sObjetivo').value,
+    plan:        document.getElementById('sPlan').value,
+  });
+  saveDB();
+  closeModalSesion();
+  renderTab();
+}
+
+// ── EVALUACIONES ──────────────────────────────────────────────────────────────
+function renderEvaluaciones(panel) {
+  const p = getPatient(currentPatientId);
+  const evals = p.evaluaciones || [];
+
+  panel.innerHTML = `
+    <div class="eval-toolbar">
+      <h3>${evals.length} evaluación${evals.length !== 1 ? 'es' : ''}</h3>
+      <button class="btn-add-eval" onclick="openNewEval()">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        Nueva evaluación
+      </button>
+    </div>
+    ${!evals.length
+      ? '<div class="ses-empty">Todavía no hay evaluaciones registradas.</div>'
+      : `<table class="eval-table">
+          <thead>
+            <tr>
+              <th>Fecha</th><th>Día evol.</th><th>Test</th>
+              <th>Afectado</th><th>Sano / Ref.</th><th>LSI %</th>
+              <th>Umbral</th><th>Obs.</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${evals.map(e => {
+              const dias = (e.fecha && p.fechaInicio)
+                ? Math.floor((new Date(e.fecha) - new Date(p.fechaInicio)) / 86400000)
+                : '—';
+              const lsi = parseFloat(e.lsi);
+              const pasa = !isNaN(lsi) ? (lsi >= 90 ? '✓ Pasa' : '✗ No pasa') : '';
+              const cls = lsiClass(e.lsi);
+              return `<tr>
+                <td>${formatFecha(e.fecha)}</td>
+                <td style="font-weight:700;color:var(--blue-chip)">${dias !== '—' ? 'día ' + dias : '—'}</td>
+                <td>${esc(e.test||'—')}</td>
+                <td>${esc(e.afectado||'—')}</td>
+                <td>${esc(e.sano||'—')}</td>
+                <td>${e.lsi ? `<span class="lsi-badge ${cls}">${e.lsi}%</span>` : '—'}</td>
+                <td>${esc(e.umbral||'—')}<br>${pasa ? `<small style="font-size:10px;color:var(--${lsi>=90?'green':'red'})">${pasa}</small>` : ''}</td>
+                <td style="max-width:180px;font-size:12px;color:var(--text-2)">${esc(e.obs||'')}</td>
+                <td><button class="btn-del-eval" onclick="deleteEval('${e.id}')">×</button></td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>`}`;
+}
+
+function openNewEval() {
+  const today = new Date().toISOString().slice(0,10);
+  document.getElementById('eFecha').value = today;
+  ['eTest','eAfectado','eSano','eLsi','eUmbral','eObs'].forEach(id => {
+    const el = document.getElementById(id);
+    el.value = '';
+  });
+  document.getElementById('modalEval').classList.add('open');
+}
+
+function closeModalEval() {
+  document.getElementById('modalEval').classList.remove('open');
+}
+
+function saveEval() {
+  const fecha = document.getElementById('eFecha').value;
+  if (!fecha) { alert('La fecha es obligatoria.'); return; }
+  const p = getPatient(currentPatientId);
+  if (!p.evaluaciones) p.evaluaciones = [];
+  p.evaluaciones.push({
+    id: uid(),
+    fecha,
+    test:     document.getElementById('eTest').value,
+    afectado: document.getElementById('eAfectado').value,
+    sano:     document.getElementById('eSano').value,
+    lsi:      document.getElementById('eLsi').value,
+    umbral:   document.getElementById('eUmbral').value,
+    obs:      document.getElementById('eObs').value,
+  });
+  saveDB();
+  closeModalEval();
+  renderTab();
+}
+
+function deleteEval(evalId) {
+  if (!confirm('¿Eliminar esta evaluación?')) return;
+  const p = getPatient(currentPatientId);
+  p.evaluaciones = (p.evaluaciones || []).filter(e => e.id !== evalId);
+  saveDB();
+  renderTab();
+}
+
+// ── CRUD pacientes ────────────────────────────────────────────────────────────
+function openNewPatient() {
+  editingPatientId = null;
+  document.getElementById('modalTitle').textContent = 'Nuevo paciente';
+  document.getElementById('mCategoria').value = '';
+  ['mNombre','mEdad','mContacto','mInstitucion','mDeporte','mCirujano',
+   'mDx','mEstructura','mFechaInicio','mCirugia','mAntecedentes',
+   'mObjetivos','mMedicacion','mContra','mAlerta'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function openEditPatient() {
+  const p = getPatient(currentPatientId);
+  editingPatientId = p.id;
+  document.getElementById('modalTitle').textContent = 'Editar paciente';
+  document.getElementById('mCategoria').value  = p.categoria || '';
+  document.getElementById('mNombre').value     = p.nombre || '';
+  document.getElementById('mEdad').value       = p.edad || '';
+  document.getElementById('mContacto').value   = p.contacto || '';
+  document.getElementById('mInstitucion').value= p.institucion || '';
+  document.getElementById('mDeporte').value    = p.deporte || '';
+  document.getElementById('mCirujano').value   = p.cirujano || '';
+  document.getElementById('mDx').value         = p.dx || '';
+  document.getElementById('mEstructura').value = p.estructura || '';
+  document.getElementById('mFechaInicio').value= p.fechaInicio || '';
+  document.getElementById('mCirugia').value    = p.cirugia || '';
+  document.getElementById('mAntecedentes').value= p.antecedentes || '';
+  document.getElementById('mObjetivos').value  = p.objetivos || '';
+  document.getElementById('mMedicacion').value = p.medicacion || '';
+  document.getElementById('mContra').value     = p.contra || '';
+  document.getElementById('mAlerta').value     = p.alerta || '';
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+  editingPatientId = null;
+}
+
+function savePatient() {
+  const nombre = document.getElementById('mNombre').value.trim();
+  if (!nombre) { alert('El nombre es obligatorio.'); return; }
+
+  const data = {
+    nombre,
+    categoria:   document.getElementById('mCategoria').value,
+    edad:        document.getElementById('mEdad').value,
+    contacto:    document.getElementById('mContacto').value,
+    institucion: document.getElementById('mInstitucion').value,
+    deporte:     document.getElementById('mDeporte').value,
+    cirujano:    document.getElementById('mCirujano').value,
+    dx:          document.getElementById('mDx').value,
+    estructura:  document.getElementById('mEstructura').value,
+    fechaInicio: document.getElementById('mFechaInicio').value,
+    cirugia:     document.getElementById('mCirugia').value,
+    antecedentes:document.getElementById('mAntecedentes').value,
+    objetivos:   document.getElementById('mObjetivos').value,
+    medicacion:  document.getElementById('mMedicacion').value,
+    contra:      document.getElementById('mContra').value,
+    alerta:      document.getElementById('mAlerta').value,
+  };
+
+  if (editingPatientId) {
+    const idx = DB.patients.findIndex(p => p.id === editingPatientId);
+    if (idx !== -1) Object.assign(DB.patients[idx], data);
+  } else {
+    DB.patients.unshift({ id: uid(), sesiones: [], evaluaciones: [], notas: '', ...data });
+    currentPatientId = DB.patients[0].id;
+  }
+
+  saveDB();
+  closeModal();
+  renderPatientList();
+  renderPatient();
+}
+
+function deletePatient() {
+  const p = getPatient(currentPatientId);
+  if (!confirm(`¿Eliminar a ${p.nombre}? Esta acción no se puede deshacer.`)) return;
+  DB.patients = DB.patients.filter(x => x.id !== currentPatientId);
+  currentPatientId = null;
+  saveDB();
+  renderPatientList();
+  // Reset main
+  document.getElementById('topbarPatient').style.display = 'none';
+  document.getElementById('daysChip').style.display = 'none';
+  document.getElementById('alertaChip').style.display = 'none';
+  document.getElementById('tabs').style.display = 'none';
+  document.getElementById('panel').innerHTML = `
+    <div class="empty-state">
+      <svg width="56" height="56" viewBox="0 0 56 56" fill="none"><rect x="10" y="8" width="36" height="40" rx="4" stroke="#9AA0AD" stroke-width="2"/><path d="M20 20h16M20 27h16M20 34h10" stroke="#9AA0AD" stroke-width="2" stroke-linecap="round"/></svg>
+      <h3>Seleccioná un paciente</h3>
+      <p>O creá uno nuevo desde la barra lateral.</p>
+    </div>`;
+}
+
+// ── Sidebar móvil ─────────────────────────────────────────────────────────────
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('open');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+loadDB();
+renderCatFilters();
+renderPatientList();
+if (DB.patients.length > 0) {
+  currentPatientId = DB.patients[0].id;
+  renderPatientList();
+  renderPatient();
+}
+</script>
+</body>
+</html>
