@@ -813,12 +813,6 @@ function renderPatientList() {
       </div>`;
   }).join('');
 }
-          <div class="pi-sub">${p.dx || p.institucion || '—'}</div>
-        </div>
-        ${dias !== null ? `<div class="pi-days">${dias}d</div>` : ''}
-      </div>`;
-  }).join('');
-}
 
 // ── Seleccionar paciente ───────────────────────────────────────────────────────
 function selectPatient(id) {
