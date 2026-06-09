@@ -8,6 +8,22 @@
 <title>Consultorio · Casartelli</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyC-H1Q7ganQheCNS5E-GfW9D0V04s-mneA",
+  authDomain: "consultorio-fc375.firebaseapp.com",
+  databaseURL: "https://consultorio-fc375-default-rtdb.firebaseio.com",
+  projectId: "consultorio-fc375",
+  storageBucket: "consultorio-fc375.firebasestorage.app",
+  messagingSenderId: "479178186370",
+  appId: "1:479178186370:web:e30e7089b64cd966239e9b"
+};
+firebase.initializeApp(firebaseConfig);
+const dbRef = firebase.database().ref('consultorio');
+</script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -535,16 +551,13 @@ let currentTab = 'resumen';
 let editingPatientId = null;
 let autoSaveTimer = null;
 
-// ── Persistencia ──────────────────────────────────────────────────────────────
+// ── Persistencia Firebase ─────────────────────────────────────────────────────
 function loadDB() {
-  try {
-    const raw = localStorage.getItem('casartelli_db');
-    if (raw) DB = JSON.parse(raw);
-  } catch(e) { DB = { patients: [] }; }
+  // Se carga desde Firebase en el init
 }
 
 function saveDB() {
-  localStorage.setItem('casartelli_db', JSON.stringify(DB));
+  dbRef.set(DB);
   showSaveIndicator();
 }
 
@@ -1367,62 +1380,90 @@ function closeSidebar() {
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
-loadDB();
+// Mostrar pantalla de carga
+document.getElementById('panel').innerHTML = `
+  <div class="empty-state">
+    <svg width="40" height="40" viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="16" stroke="#E2E5EA" stroke-width="4"/><path d="M20 4a16 16 0 0 1 16 16" stroke="#1B2A4A" stroke-width="4" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 20 20" to="360 20 20" dur=".8s" repeatCount="indefinite"/></path></svg>
+    <p style="color:var(--text-3);font-size:14px;margin-top:12px;">Conectando...</p>
+  </div>`;
 
-// Seed Kruszewski si no existe
-if (!DB.patients.find(p => p.nombre && p.nombre.includes('Kruszewski'))) {
-  DB.patients.unshift({
-    id: uid(),
-    nombre: 'Kruszewski',
-    edad: '67',
-    contacto: '1154964003',
-    institucion: 'Abril',
-    deporte: 'Gym · Tenis · Stretching',
-    cirujano: '',
-    dx: 'Síndrome meniscal',
-    estructura: 'Menisco interno y externo · Derecho',
-    fechaInicio: '2026-06-01',
-    estado: 'Fase 1',
-    cirugia: '',
-    antecedentes: 'Rotura degenerativa cuerno posterior y cuerpo del menisco interno (trazo oblicuo). Rotura degenerativa cuerno anterior y cuerpo del menisco externo. Artrosis.',
-    objetivos: 'Volver a hacer deporte y evitar dolor',
-    medicacion: '',
-    contra: '',
-    alerta: 'Artrosis, varias veces se inyectó plasma',
-    notas: '',
-    categoria: 'privado',
-    sesiones: [{
+// Cargar datos desde Firebase
+dbRef.once('value').then(snapshot => {
+  const data = snapshot.val();
+  if (data) {
+    DB = data;
+  }
+
+  // Seed Kruszewski si no existe
+  if (!DB.patients) DB.patients = [];
+  if (!DB.patients.find(p => p.nombre && p.nombre.includes('Kruszewski'))) {
+    DB.patients.unshift({
       id: uid(),
-      fecha: '2026-06-09',
-      fase: 'Fase 1',
-      subjetivo: 'Menos dolor cada día, leve dolor al caminar y al subir y bajar escaleras',
-      ejercicios: [
-        { nombre:'SLR', series:'3', reps:'8', kg:'BW' },
-        { nombre:'Puente glúteo', series:'3', reps:'8', kg:'BW' },
-        { nombre:'Abducción y aducción', series:'3', reps:'8', kg:'BW' },
-        { nombre:'Sentadillas', series:'3', reps:'6', kg:'BW' },
-      ],
-      eva: '4',
-      objetivo: 'Extensión y flexión FINAL limitada con dolor, sentadillas bien realizadas',
-      plan: 'Agregar banda elástica y peso para próximas sesiones',
-    }],
-    evaluaciones: [],
-    estudios: [],
-    movilidad: {
-      flex:   { estado:'limitada', grados:'dolor en FINAL del rango' },
-      ext:    { estado:'limitada', grados:'dolor en FINAL del rango' },
-    },
-  });
-  saveDB();
-}
+      nombre: 'Kruszewski',
+      edad: '67',
+      contacto: '1154964003',
+      institucion: 'Abril',
+      deporte: 'Gym · Tenis · Stretching',
+      cirujano: '',
+      dx: 'Síndrome meniscal',
+      estructura: 'Menisco interno y externo · Derecho',
+      fechaInicio: '2026-06-01',
+      estado: 'Fase 1',
+      cirugia: '',
+      antecedentes: 'Rotura degenerativa cuerno posterior y cuerpo del menisco interno (trazo oblicuo). Rotura degenerativa cuerno anterior y cuerpo del menisco externo. Artrosis.',
+      objetivos: 'Volver a hacer deporte y evitar dolor',
+      medicacion: '',
+      contra: '',
+      alerta: 'Artrosis, varias veces se inyectó plasma',
+      notas: '',
+      categoria: 'privado',
+      sesiones: [{
+        id: uid(),
+        fecha: '2026-06-09',
+        fase: 'Fase 1',
+        subjetivo: 'Menos dolor cada día, leve dolor al caminar y al subir y bajar escaleras',
+        ejercicios: [
+          { nombre:'SLR', series:'3', reps:'8', kg:'BW' },
+          { nombre:'Puente glúteo', series:'3', reps:'8', kg:'BW' },
+          { nombre:'Abducción y aducción', series:'3', reps:'8', kg:'BW' },
+          { nombre:'Sentadillas', series:'3', reps:'6', kg:'BW' },
+        ],
+        eva: '4',
+        objetivo: 'Extensión y flexión FINAL limitada con dolor, sentadillas bien realizadas',
+        plan: 'Agregar banda elástica y peso para próximas sesiones',
+      }],
+      evaluaciones: [],
+      estudios: [],
+      movilidad: {
+        flex:   { estado:'limitada', grados:'dolor en FINAL del rango' },
+        ext:    { estado:'limitada', grados:'dolor en FINAL del rango' },
+      },
+    });
+    saveDB();
+  }
 
-renderCatFilters();
-renderPatientList();
-if (DB.patients.length > 0) {
-  currentPatientId = DB.patients[0].id;
+  renderCatFilters();
   renderPatientList();
-  renderPatient();
-}
+  if (DB.patients.length > 0) {
+    currentPatientId = DB.patients[0].id;
+    renderPatientList();
+    renderPatient();
+  } else {
+    document.getElementById('panel').innerHTML = `
+      <div class="empty-state">
+        <svg width="56" height="56" viewBox="0 0 56 56" fill="none"><rect x="10" y="8" width="36" height="40" rx="4" stroke="#9AA0AD" stroke-width="2"/><path d="M20 20h16M20 27h16M20 34h10" stroke="#9AA0AD" stroke-width="2" stroke-linecap="round"/></svg>
+        <h3>Seleccioná un paciente</h3>
+        <p>O creá uno nuevo desde la barra lateral.</p>
+      </div>`;
+  }
+}).catch(err => {
+  console.error(err);
+  document.getElementById('panel').innerHTML = `
+    <div class="empty-state">
+      <h3>Error de conexión</h3>
+      <p>Verificá tu conexión a internet e intentá recargar la página.</p>
+    </div>`;
+});
 </script>
 </body>
 </html>
