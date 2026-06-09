@@ -230,6 +230,34 @@ input,textarea,select{font-family:'Inter',sans-serif;}
 .sidebar-footer{padding:10px 12px;border-top:1px solid rgba(255,255,255,.1);display:flex;gap:6px;}
 .btn-backup{flex:1;padding:8px 6px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:var(--radius-sm);color:rgba(255,255,255,.6);font-size:11px;font-weight:600;cursor:pointer;text-align:center;transition:background .15s;}
 .btn-backup:hover{background:rgba(255,255,255,.14);}
+/* Estado badges */
+.estado-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;}
+.estado-tratamiento{background:#EBF3FB;color:#1A4E8C;}
+.estado-alta{background:#EAF5EE;color:#1B5E3B;}
+.estado-abandono{background:#F5F5F5;color:#888;}
+/* Estado filter sidebar */
+.estado-filters{padding:2px 12px 8px;display:flex;gap:4px;flex-wrap:wrap;}
+.estado-pill{padding:4px 9px;border-radius:20px;font-size:10px;font-weight:600;cursor:pointer;border:1.5px solid rgba(255,255,255,.15);color:rgba(255,255,255,.45);transition:all .15s;white-space:nowrap;}
+.estado-pill.active{color:#fff;background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.35);}
+/* Episodio bar */
+.ep-bar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto;}
+.ep-bar::-webkit-scrollbar{height:0;}
+.ep-chip{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:var(--bg);color:var(--text-2);white-space:nowrap;transition:all .15s;}
+.ep-chip.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+.ep-chip.ep-alta{color:#1B5E3B;border-color:#1B5E3B;}
+.ep-chip.ep-alta.active{background:#1B5E3B;color:#fff;}
+.ep-chip.ep-abandono{color:#888;border-color:#ccc;}
+.ep-chip.ep-abandono.active{background:#888;color:#fff;}
+.btn-new-ep{padding:6px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:1.5px dashed var(--border);background:transparent;color:var(--text-3);white-space:nowrap;}
+/* Fotos */
+.foto-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-top:4px;}
+.foto-card{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;background:var(--bg);}
+.foto-img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;cursor:pointer;}
+.foto-placeholder{width:100%;aspect-ratio:4/3;background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--text-3);font-size:32px;}
+.foto-body{padding:10px 12px;}
+.foto-body input{width:100%;border:none;background:transparent;font-size:12px;color:var(--text-2);font-family:Inter,sans-serif;outline:none;margin-bottom:2px;}
+.foto-date{font-size:10px;color:var(--text-3);}
+.btn-del-foto{background:none;border:none;color:var(--text-3);cursor:pointer;font-size:16px;float:right;}
 
 .save-indicator{position:fixed;bottom:20px;right:20px;background:var(--navy);color:#fff;padding:8px 16px;border-radius:20px;font-size:12px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:500;}
 .save-indicator.show{opacity:1;}
@@ -251,6 +279,8 @@ const DEFAULT_CATS = [
   { id:'otro',       label:'Otro',         color:'#C0392B' },
 ];
 let currentCatFilter = 'all';
+let currentEstadoFilter = 'tratamiento'; // default: mostrar solo en tratamiento
+let currentEpisodioIdx = 0; // índice del episodio activo
 
 function getCats() {
   return DB.cats || DEFAULT_CATS;
@@ -277,6 +307,7 @@ function catLabel(catId) {
       Nuevo paciente
     </button>
     <div class="cat-filters" id="catFilters"></div>
+    <div class="estado-filters" id="estadoFilters"></div>
     <div class="patient-list" id="patientList">
       <div class="empty-list">Todavía no hay pacientes</div>
     </div>
@@ -315,7 +346,10 @@ function catLabel(catId) {
       <div class="tab active" onclick="switchTab('resumen')">Resumen</div>
       <div class="tab" onclick="switchTab('sesiones')">Sesiones</div>
       <div class="tab" onclick="switchTab('evaluaciones')">Evaluaciones</div>
+      <div class="tab" onclick="switchTab('fotos')">Fotos</div>
     </div>
+    <!-- Episodios -->
+    <div class="ep-bar" id="epBar" style="display:none"></div>
 
     <!-- Panel -->
     <div class="panel" id="panel">
@@ -718,29 +752,67 @@ function importDB(input) {
   reader.readAsText(file);
 }
 
-// ── Lista de pacientes ────────────────────────────────────────────────────────
+function renderEstadoFilters() {
+  const el = document.getElementById('estadoFilters');
+  const opts = [
+    { id:'todos',       label:'Todos' },
+    { id:'tratamiento', label:'🟢 Tratamiento' },
+    { id:'alta',        label:'✓ Alta' },
+    { id:'abandono',    label:'— Abandono' },
+  ];
+  el.innerHTML = opts.map(o =>
+    `<div class="estado-pill ${currentEstadoFilter===o.id?'active':''}" onclick="setEstadoFilter('${o.id}')">${o.label}</div>`
+  ).join('');
+}
+
+function setEstadoFilter(estado) {
+  currentEstadoFilter = estado;
+  renderEstadoFilters();
+  renderPatientList();
+}
+
+// Helper: get active episode of a patient
+function getEpisodio(p, idx) {
+  if (!p.episodios || !p.episodios.length) {
+    // Migrar paciente viejo al nuevo formato
+    return { sesiones: p.sesiones||[], evaluaciones: p.evaluaciones||[], estudios: p.estudios||[], movilidad: p.movilidad||{}, estado:'tratamiento', nombre:'Episodio 1', fechaInicio: p.fechaInicio||'', fechaAlta:'' };
+  }
+  return p.episodios[idx] || p.episodios[0];
+}
+
+function getPatientEstado(p) {
+  if (!p.episodios || !p.episodios.length) return p.estado || 'tratamiento';
+  // Estado del paciente = estado del episodio más reciente
+  const last = p.episodios[p.episodios.length - 1];
+  return last.estado || 'tratamiento';
+}
 function renderPatientList() {
   const list = document.getElementById('patientList');
-  let patients = DB.patients;
-  if (currentCatFilter !== 'all') {
-    patients = patients.filter(p => p.categoria === currentCatFilter);
-  }
-  if (!patients.length) {
-    list.innerHTML = '<div class="empty-list">No hay pacientes aquí</div>';
-    return;
-  }
+  let patients = DB.patients || [];
+  if (currentCatFilter !== 'all') patients = patients.filter(p => p.categoria === currentCatFilter);
+  if (currentEstadoFilter !== 'todos') patients = patients.filter(p => getPatientEstado(p) === currentEstadoFilter);
+  if (!patients.length) { list.innerHTML = '<div class="empty-list">No hay pacientes aquí</div>'; return; }
   list.innerHTML = patients.map(p => {
     const dias = diasDesde(p.fechaInicio);
     const isActive = p.id === currentPatientId;
     const dotColor = catDotColor(p.categoria);
+    const estado = getPatientEstado(p);
     return `
-      <div class="patient-item ${isActive ? 'active' : ''}" onclick="selectPatient('${p.id}')">
+      <div class="patient-item ${isActive?'active':''}" onclick="selectPatient('${p.id}')">
         <div class="pi-avatar">${initials(p.nombre)}</div>
         <div class="pi-info">
           <div class="pi-name" style="display:flex;align-items:center;gap:5px">
-            ${p.nombre || 'Sin nombre'}
-            ${dotColor ? `<span class="pi-cat-dot" style="background:${dotColor}"></span>` : ''}
+            ${p.nombre||'Sin nombre'}
+            ${dotColor?`<span class="pi-cat-dot" style="background:${dotColor}"></span>`:''}
+            ${estado==='alta'?`<span style="font-size:10px;color:#1B5E3B;font-weight:700">✓</span>`:''}
+            ${estado==='abandono'?`<span style="font-size:10px;color:#aaa">—</span>`:''}
           </div>
+          <div class="pi-sub">${p.dx||p.institucion||'—'}</div>
+        </div>
+        ${dias!==null&&estado==='tratamiento'?`<div class="pi-days">${dias}d</div>`:''}
+      </div>`;
+  }).join('');
+}
           <div class="pi-sub">${p.dx || p.institucion || '—'}</div>
         </div>
         ${dias !== null ? `<div class="pi-days">${dias}d</div>` : ''}
@@ -752,6 +824,12 @@ function renderPatientList() {
 function selectPatient(id) {
   currentPatientId = id;
   currentTab = 'resumen';
+  currentEpisodioIdx = 0;
+  // Set to last (most recent) episode by default
+  const p = DB.patients.find(x => x.id === id);
+  if (p && p.episodios && p.episodios.length) {
+    currentEpisodioIdx = p.episodios.length - 1;
+  }
   renderPatientList();
   renderPatient();
   closeSidebar();
@@ -765,30 +843,38 @@ function renderPatient() {
   const p = getPatient(currentPatientId);
   if (!p) return;
 
-  // Topbar
-  const dias = diasDesde(p.fechaInicio);
+  const ep = getEpisodio(p, currentEpisodioIdx);
+  const dias = diasDesde(ep.fechaInicio || p.fechaInicio);
+
   document.getElementById('topbarPatient').style.display = 'block';
   document.getElementById('topbarName').textContent = p.nombre || 'Sin nombre';
-  document.getElementById('topbarSub').textContent =
-    [p.dx, p.institucion].filter(Boolean).join(' · ') || '—';
+  document.getElementById('topbarSub').textContent = [p.dx, p.institucion].filter(Boolean).join(' · ') || '—';
 
   const chip = document.getElementById('daysChip');
-  if (dias !== null) {
+  if (dias !== null && ep.estado === 'tratamiento') {
     chip.style.display = 'flex';
     document.getElementById('daysNum').textContent = dias;
-  } else {
-    chip.style.display = 'none';
-  }
+  } else { chip.style.display = 'none'; }
 
   const alertaChip = document.getElementById('alertaChip');
-  if (p.alerta) {
-    alertaChip.style.display = 'block';
-    alertaChip.textContent = '⚡ ' + p.alerta;
-  } else {
-    alertaChip.style.display = 'none';
-  }
+  if (p.alerta) { alertaChip.style.display = 'block'; alertaChip.textContent = '⚡ ' + p.alerta; }
+  else { alertaChip.style.display = 'none'; }
 
   document.getElementById('tabs').style.display = 'flex';
+
+  // Episode bar
+  const epBar = document.getElementById('epBar');
+  const episodios = p.episodios || [];
+  if (episodios.length > 0) {
+    epBar.style.display = 'flex';
+    epBar.innerHTML = episodios.map((ep, i) => {
+      const cls = ep.estado === 'alta' ? 'ep-alta' : ep.estado === 'abandono' ? 'ep-abandono' : '';
+      return `<div class="ep-chip ${cls} ${i===currentEpisodioIdx?'active':''}" onclick="switchEpisodio(${i})">${esc(ep.nombre||'Ep. '+(i+1))}</div>`;
+    }).join('') + `<button class="btn-new-ep" onclick="addEpisodio()">+ Nuevo episodio</button>`;
+  } else {
+    epBar.style.display = 'none';
+  }
+
   renderTab();
 }
 
@@ -796,7 +882,7 @@ function renderPatient() {
 function switchTab(tab) {
   currentTab = tab;
   document.querySelectorAll('.tab').forEach((t, i) => {
-    const tabs = ['resumen', 'sesiones', 'evaluaciones'];
+    const tabs = ['resumen', 'sesiones', 'evaluaciones', 'fotos'];
     t.classList.toggle('active', tabs[i] === tab);
   });
   renderTab();
@@ -807,13 +893,42 @@ function renderTab() {
   if (currentTab === 'resumen') renderResumen(panel);
   else if (currentTab === 'sesiones') renderSesiones(panel);
   else if (currentTab === 'evaluaciones') renderEvaluaciones(panel);
+  else if (currentTab === 'fotos') renderFotos(panel);
+}
+
+function switchEpisodio(idx) {
+  currentEpisodioIdx = idx;
+  renderPatient();
+}
+
+function addEpisodio() {
+  const p = getPatient(currentPatientId);
+  if (!p.episodios) {
+    // Migrar datos viejos al primer episodio
+    p.episodios = [{
+      id: uid(), nombre: 'Episodio 1', estado: 'alta',
+      fechaInicio: p.fechaInicio||'', fechaAlta:'',
+      sesiones: p.sesiones||[], evaluaciones: p.evaluaciones||[],
+      estudios: p.estudios||[], movilidad: p.movilidad||{},
+    }];
+  }
+  const n = p.episodios.length + 1;
+  p.episodios.push({
+    id: uid(), nombre: `Episodio ${n}`, estado: 'tratamiento',
+    fechaInicio: new Date().toISOString().slice(0,10), fechaAlta:'',
+    sesiones: [], evaluaciones: [], estudios: [], movilidad: {},
+  });
+  currentEpisodioIdx = p.episodios.length - 1;
+  saveDB();
+  renderPatient();
 }
 
 // ── RESUMEN ───────────────────────────────────────────────────────────────────
 function renderResumen(panel) {
   const p = getPatient(currentPatientId);
-  const estudios = p.estudios || [];
-  const movilidad = p.movilidad || {};
+  const ep = getEpData(p);
+  const estudios = ep.estudios || [];
+  const movilidad = ep.movilidad || {};
 
   const MOV_ITEMS = [
     { key:'flex',   label:'Flexión' },
@@ -888,7 +1003,17 @@ function renderResumen(panel) {
           </div>
         </div>
 
-        <div style="margin-top:12px;display:flex;gap:8px;">
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <!-- Estado del episodio actual -->
+          <div style="display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 12px;">
+            <span style="font-size:11px;font-weight:600;color:var(--text-2);">Estado:</span>
+            <select onchange="updateEpEstado(this.value)"
+              style="border:none;background:transparent;font-size:12px;font-weight:700;font-family:Inter,sans-serif;color:var(--text);outline:none;cursor:pointer;">
+              <option value="tratamiento" ${(ep.estado||'tratamiento')==='tratamiento'?'selected':''}>🟢 En tratamiento</option>
+              <option value="alta"        ${ep.estado==='alta'?'selected':''}>✓ Alta</option>
+              <option value="abandono"    ${ep.estado==='abandono'?'selected':''}>— Abandono</option>
+            </select>
+          </div>
           <button onclick="openEditPatient()" style="padding:8px 16px;background:transparent;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;color:var(--text-2);cursor:pointer;font-family:Inter,sans-serif;">
             Editar datos del paciente
           </button>
@@ -904,6 +1029,18 @@ function renderResumen(panel) {
           oninput="updateField('notas', this.value)">${esc(p.notas||'')}</textarea>
       </div>
     </div>`;
+}
+
+function updateEpEstado(val) {
+  const p = getPatient(currentPatientId);
+  if (p.episodios && p.episodios[currentEpisodioIdx]) {
+    p.episodios[currentEpisodioIdx].estado = val;
+  } else {
+    p.estado = val;
+  }
+  saveDB();
+  renderPatientList();
+  renderPatient();
 }
 
 function renderEstudioRow(e, i) {
@@ -922,36 +1059,97 @@ function renderEstudioRow(e, i) {
   </div>`;
 }
 
+function getEpData(p) {
+  if (p.episodios && p.episodios[currentEpisodioIdx]) return p.episodios[currentEpisodioIdx];
+  return p; // fallback: patient itself has the data
+}
+
 function addEstudio() {
   const p = getPatient(currentPatientId);
-  if (!p.estudios) p.estudios = [];
-  p.estudios.push({ tipo:'Ecografía', fecha:'', resultado:'' });
-  saveDB();
-  renderTab();
+  const ep = getEpData(p);
+  if (!ep.estudios) ep.estudios = [];
+  ep.estudios.push({ tipo:'Ecografía', fecha:'', resultado:'' });
+  saveDB(); renderTab();
 }
 
 function updateEstudio(i, key, val) {
   const p = getPatient(currentPatientId);
-  if (!p.estudios || !p.estudios[i]) return;
-  p.estudios[i][key] = val;
+  const ep = getEpData(p);
+  if (!ep.estudios || !ep.estudios[i]) return;
+  ep.estudios[i][key] = val;
   clearTimeout(autoSaveTimer);
   autoSaveTimer = setTimeout(saveDB, 600);
 }
 
 function deleteEstudio(i) {
   const p = getPatient(currentPatientId);
-  p.estudios.splice(i, 1);
-  saveDB();
-  renderTab();
+  const ep = getEpData(p);
+  ep.estudios.splice(i, 1);
+  saveDB(); renderTab();
 }
 
 function updateMovilidad(movKey, field, val) {
   const p = getPatient(currentPatientId);
-  if (!p.movilidad) p.movilidad = {};
-  if (!p.movilidad[movKey]) p.movilidad[movKey] = {};
-  p.movilidad[movKey][field] = val;
+  const ep = getEpData(p);
+  if (!ep.movilidad) ep.movilidad = {};
+  if (!ep.movilidad[movKey]) ep.movilidad[movKey] = {};
+  ep.movilidad[movKey][field] = val;
   clearTimeout(autoSaveTimer);
   autoSaveTimer = setTimeout(saveDB, 600);
+}
+
+// ── FOTOS ─────────────────────────────────────────────────────────────────────
+function renderFotos(panel) {
+  const p = getPatient(currentPatientId);
+  const fotos = p.fotos || [];
+  panel.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 style="font-size:15px;font-weight:700;">${fotos.length} foto${fotos.length!==1?'s':''}</h3>
+      <button onclick="addFoto()" style="display:flex;align-items:center;gap:6px;padding:9px 16px;background:var(--navy);color:#fff;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;">
+        + Agregar foto
+      </button>
+    </div>
+    <p style="font-size:12px;color:var(--text-3);margin-bottom:14px;">Pegá el link de una foto de Google Drive, iCloud, WhatsApp o cualquier URL de imagen. Para Google Drive: abrís la foto → Compartir → Copiar link.</p>
+    ${!fotos.length ? '<div style="text-align:center;padding:40px;color:var(--text-3);">Todavía no hay fotos cargadas.</div>' : ''}
+    <div class="foto-grid">
+      ${fotos.map((f,i) => `
+        <div class="foto-card">
+          ${f.url
+            ? `<img class="foto-img" src="${esc(f.url)}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" onclick="window.open('${esc(f.url)}','_blank')">`
+            : ''}
+          <div class="foto-placeholder" style="${f.url?'display:none':''}">📷</div>
+          <div class="foto-body">
+            <button class="btn-del-foto" onclick="deleteFoto(${i})">×</button>
+            <input type="text" value="${esc(f.descripcion||'')}" placeholder="Descripción (ej: tobillo día 1)"
+              oninput="updateFoto(${i},'descripcion',this.value)">
+            <div class="foto-date">${f.fecha ? formatFecha(f.fecha) : '—'}</div>
+          </div>
+        </div>`).join('')}
+    </div>`;
+}
+
+function addFoto() {
+  const url = prompt('Pegá el link de la foto (Google Drive, iCloud, URL directa):');
+  if (!url) return;
+  const p = getPatient(currentPatientId);
+  if (!p.fotos) p.fotos = [];
+  p.fotos.push({ id:uid(), url:url.trim(), descripcion:'', fecha:new Date().toISOString().slice(0,10) });
+  saveDB(); renderTab();
+}
+
+function updateFoto(i, key, val) {
+  const p = getPatient(currentPatientId);
+  if (!p.fotos || !p.fotos[i]) return;
+  p.fotos[i][key] = val;
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(saveDB, 600);
+}
+
+function deleteFoto(i) {
+  if (!confirm('¿Eliminar esta foto?')) return;
+  const p = getPatient(currentPatientId);
+  p.fotos.splice(i, 1);
+  saveDB(); renderTab();
 }
 
 function rField(label, id, val, key, type='text', full=false) {
@@ -988,7 +1186,8 @@ function esc(str) {
 // ── SESIONES ──────────────────────────────────────────────────────────────────
 function renderSesiones(panel) {
   const p = getPatient(currentPatientId);
-  const sesiones = (p.sesiones || []).slice().reverse();
+  const ep = getEpData(p);
+  const sesiones = (ep.sesiones || []).slice().reverse();
 
   panel.innerHTML = `
     <div class="ses-toolbar">
@@ -1000,7 +1199,7 @@ function renderSesiones(panel) {
     </div>
     ${!sesiones.length ? '<div class="ses-empty">Todavía no hay sesiones registradas.<br>Tocá "Nueva sesión" para empezar.</div>' : ''}
     <div class="ses-list">
-      ${sesiones.map((s, i) => renderSesCard(s, sesiones.length - i, p.fechaInicio)).join('')}
+      ${sesiones.map((s, i) => renderSesCard(s, sesiones.length - i, ep.fechaInicio||p.fechaInicio)).join('')}
     </div>`;
 }
 
@@ -1097,9 +1296,9 @@ function updateSes(sesId, key, val) {
 function deleteSes(sesId) {
   if (!confirm('¿Eliminar esta sesión?')) return;
   const p = getPatient(currentPatientId);
-  p.sesiones = (p.sesiones || []).filter(s => s.id !== sesId);
-  saveDB();
-  renderTab();
+  const ep = getEpData(p);
+  ep.sesiones = (ep.sesiones || []).filter(s => s.id !== sesId);
+  saveDB(); renderTab();
 }
 
 // ── Ejercicios por sesión ─────────────────────────────────────────────────────
@@ -1158,10 +1357,10 @@ function saveSesion() {
   const fecha = document.getElementById('sFecha').value;
   if (!fecha) { alert('La fecha es obligatoria.'); return; }
   const p = getPatient(currentPatientId);
-  if (!p.sesiones) p.sesiones = [];
-  p.sesiones.push({
-    id: uid(),
-    fecha,
+  const ep = getEpData(p);
+  if (!ep.sesiones) ep.sesiones = [];
+  ep.sesiones.push({
+    id: uid(), fecha,
     fase:       document.getElementById('sFase').value,
     subjetivo:  document.getElementById('sSubjetivo').value,
     ejercicios: getEjercicios(),
@@ -1169,15 +1368,14 @@ function saveSesion() {
     objetivo:   document.getElementById('sObjetivo').value,
     plan:       document.getElementById('sPlan').value,
   });
-  saveDB();
-  closeModalSesion();
-  renderTab();
+  saveDB(); closeModalSesion(); renderTab();
 }
 
 // ── EVALUACIONES ──────────────────────────────────────────────────────────────
 function renderEvaluaciones(panel) {
   const p = getPatient(currentPatientId);
-  const evals = p.evaluaciones || [];
+  const ep = getEpData(p);
+  const evals = ep.evaluaciones || [];
 
   panel.innerHTML = `
     <div class="eval-toolbar">
@@ -1199,8 +1397,8 @@ function renderEvaluaciones(panel) {
           </thead>
           <tbody>
             ${evals.map(e => {
-              const dias = (e.fecha && p.fechaInicio)
-                ? Math.floor((new Date(e.fecha) - new Date(p.fechaInicio)) / 86400000)
+              const dias = (e.fecha && (ep.fechaInicio||p.fechaInicio))
+                ? Math.floor((new Date(e.fecha) - new Date(ep.fechaInicio||p.fechaInicio)) / 86400000)
                 : '—';
               const lsi = parseFloat(e.lsi);
               const pasa = !isNaN(lsi) ? (lsi >= 90 ? '✓ Pasa' : '✗ No pasa') : '';
@@ -1239,10 +1437,10 @@ function saveEval() {
   const fecha = document.getElementById('eFecha').value;
   if (!fecha) { alert('La fecha es obligatoria.'); return; }
   const p = getPatient(currentPatientId);
-  if (!p.evaluaciones) p.evaluaciones = [];
-  p.evaluaciones.push({
-    id: uid(),
-    fecha,
+  const ep = getEpData(p);
+  if (!ep.evaluaciones) ep.evaluaciones = [];
+  ep.evaluaciones.push({
+    id: uid(), fecha,
     test:     document.getElementById('eTest').value,
     afectado: document.getElementById('eAfectado').value,
     sano:     document.getElementById('eSano').value,
@@ -1250,17 +1448,15 @@ function saveEval() {
     umbral:   document.getElementById('eUmbral').value,
     obs:      document.getElementById('eObs').value,
   });
-  saveDB();
-  closeModalEval();
-  renderTab();
+  saveDB(); closeModalEval(); renderTab();
 }
 
 function deleteEval(evalId) {
   if (!confirm('¿Eliminar esta evaluación?')) return;
   const p = getPatient(currentPatientId);
-  p.evaluaciones = (p.evaluaciones || []).filter(e => e.id !== evalId);
-  saveDB();
-  renderTab();
+  const ep = getEpData(p);
+  ep.evaluaciones = (ep.evaluaciones || []).filter(e => e.id !== evalId);
+  saveDB(); renderTab();
 }
 
 // ── CRUD pacientes ────────────────────────────────────────────────────────────
@@ -1443,6 +1639,7 @@ dbRef.once('value').then(snapshot => {
   }
 
   renderCatFilters();
+  renderEstadoFilters();
   renderPatientList();
   if (DB.patients.length > 0) {
     currentPatientId = DB.patients[0].id;
