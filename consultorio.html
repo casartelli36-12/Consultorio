@@ -856,8 +856,33 @@ function renderTurnosShell() {
 }
 
 function buildWeekGrid(days, today) {
+  // Pre-agrupar todos los turnos por fecha para calcular solapamientos
+  const turnosByDay = {};
+  days.forEach(d=>{
+    const ds=ymd(d);
+    turnosByDay[ds] = Object.entries(TURNOS)
+      .filter(([,t])=>t.fecha===ds)
+      .sort((a,b)=>a[1].hora.localeCompare(b[1].hora));
+  });
+
+  // Para cada turno, calcular cuántas columnas necesita su franja horaria
+  function getColumns(ds, id) {
+    const all = turnosByDay[ds] || [];
+    const t = TURNOS[id];
+    if(!t) return { col: 0, total: 1 };
+    const tStart = timeToMin(t.hora);
+    const tEnd   = tStart + parseInt(t.duracion || 60);
+    // Turnos que se solapan con este
+    const overlapping = all.filter(([oid, ot])=>{
+      const oStart = timeToMin(ot.hora);
+      const oEnd   = oStart + parseInt(ot.duracion || 60);
+      return oStart < tEnd && oEnd > tStart;
+    });
+    const col = overlapping.findIndex(([oid])=>oid===id);
+    return { col, total: overlapping.length };
+  }
+
   let html = `<div class="tur-week-grid">`;
-  // header
   html += `<div class="tur-col-head time-stub"></div>`;
   days.forEach(d=>{
     const ds=ymd(d); const isTod=ds===today;
@@ -866,17 +891,21 @@ function buildWeekGrid(days, today) {
       <div class="tur-day-num ${isTod?'is-today':''}">${d.getDate()}</div>
     </div>`;
   });
-  // rows
+
   TUR_HOURS.forEach(h=>{
     html+=`<div class="tur-time-label">${String(h).padStart(2,'0')}:00</div>`;
     days.forEach(d=>{
       const ds=ymd(d); const isTod=ds===today;
-      const chips=Object.entries(TURNOS)
-        .filter(([,t])=>t.fecha===ds&&parseInt(t.hora)===h)
+      // Mostrar solo turnos que EMPIEZAN en esta hora (para no duplicar)
+      const chips=(turnosByDay[ds]||[])
+        .filter(([,t])=>parseInt(t.hora)===h)
         .map(([id,t])=>{
           const top=(parseInt(t.hora.split(':')[1])/60)*52;
           const ht=Math.max((parseInt(t.duracion||60)/60)*52,20);
-          return `<div class="tur-chip chip-${t.estado||'confirmado'}" style="top:${top}px;height:${ht}px" onclick="openTurDetail('${id}');event.stopPropagation()">
+          const {col, total} = getColumns(ds, id);
+          const w = total > 1 ? `calc(${100/total}% - 3px)` : 'calc(100% - 4px)';
+          const left = total > 1 ? `calc(${col*(100/total)}% + 1px)` : '2px';
+          return `<div class="tur-chip chip-${t.estado||'confirmado'}" style="top:${top}px;height:${ht}px;width:${w};left:${left};right:auto" onclick="openTurDetail('${id}');event.stopPropagation()">
             <div class="cn">${esc(t.paciente)}</div>
             <div class="ct">${t.hora}</div>
           </div>`;
@@ -886,6 +915,11 @@ function buildWeekGrid(days, today) {
   });
   html+=`</div>`;
   return html;
+}
+
+function timeToMin(hora) {
+  const [h,m] = hora.split(':').map(Number);
+  return h*60 + (m||0);
 }
 
 function buildDayView(ds, today) {
