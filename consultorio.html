@@ -210,7 +210,8 @@ input,textarea,select{font-family:'Inter',sans-serif;}
 .tur-view-toggle button.active{background:var(--navy);color:#fff;}
 
 /* Vista semanal */
-.tur-week-grid{display:grid;grid-template-columns:48px repeat(7,1fr);flex:1;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.tur-week-wrap{flex:1;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius);}
+.tur-week-grid{display:grid;grid-template-columns:48px repeat(7,1fr);}
 .tur-col-head{position:sticky;top:0;z-index:5;background:var(--navy);padding:8px 4px;text-align:center;border-right:1px solid rgba(255,255,255,.1);}
 .tur-col-head.time-stub{background:var(--navy);}
 .tur-col-head.today-col{background:var(--navy-light);}
@@ -230,7 +231,7 @@ input,textarea,select{font-family:'Inter',sans-serif;}
 .chip-realizado {background:var(--green-light);color:var(--green);border-left:3px solid var(--green);}
 
 /* Vista diaria */
-.tur-day-view{flex:1;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.tur-day-view{flex:1;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius);}
 .tur-day-header{background:var(--navy);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;}
 .tur-day-header-title{font-size:14px;font-weight:700;color:#fff;}
 .tur-day-header-count{font-size:12px;color:rgba(255,255,255,.5);}
@@ -785,6 +786,10 @@ function switchTab(tab){
 
 function renderTab(){
   const panel=document.getElementById('panel');
+  // Resetear estilos del panel (pueden haber sido modificados por turnos)
+  panel.style.padding='20px';
+  panel.style.display='block';
+  panel.style.flexDirection='';
   if(currentTab==='resumen')       renderResumen(panel);
   else if(currentTab==='sesiones')     renderSesiones(panel);
   else if(currentTab==='evaluaciones') renderEvaluaciones(panel);
@@ -810,6 +815,10 @@ function renderTurnos(panel) {
   const dl = document.getElementById('turPacientesList');
   dl.innerHTML = (DB.patients||[]).map(p=>`<option value="${esc(p.nombre)}">`).join('');
 
+  // Sin padding para que el calendario ocupe todo el espacio
+  panel.style.padding = '0 20px';
+  panel.style.display = 'flex';
+  panel.style.flexDirection = 'column';
   panel.innerHTML = `<div class="turnos-shell" id="turnosShell"></div>`;
   renderTurnosShell();
 }
@@ -882,7 +891,7 @@ function buildWeekGrid(days, today) {
     return { col, total: overlapping.length };
   }
 
-  let html = `<div class="tur-week-grid">`;
+  let html = `<div class="tur-week-wrap"><div class="tur-week-grid">`;
   html += `<div class="tur-col-head time-stub"></div>`;
   days.forEach(d=>{
     const ds=ymd(d); const isTod=ds===today;
@@ -913,7 +922,7 @@ function buildWeekGrid(days, today) {
       html+=`<div class="tur-cell ${isTod?'today-col':''}" onclick="openNewTurno('${ds}','${String(h).padStart(2,'0')}:00')">${chips}</div>`;
     });
   });
-  html+=`</div>`;
+  html+=`</div></div>`;
   return html;
 }
 
