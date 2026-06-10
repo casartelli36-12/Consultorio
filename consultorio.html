@@ -443,7 +443,19 @@ function catLabel(catId)    { const c = getCats().find(c=>c.id===catId); return 
       </div>
       <div class="modal-field"><label>Cómo llegó</label><textarea id="sSubjetivo" placeholder="Dolor 2/10. Durmió bien…"></textarea></div>
       <div class="modal-field">
-        <label>Ejercicios</label>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <label style="margin:0">Ejercicios</label>
+          <div style="display:flex;gap:6px;">
+            <button type="button" onclick="copiarUltimaSesion()"
+              style="padding:5px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text-2);font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap;">
+              ↩ Copiar última sesión
+            </button>
+            <button type="button" onclick="openModalPlantillas()"
+              style="padding:5px 10px;border:1px solid var(--orange);border-radius:var(--radius-sm);background:var(--orange-light);color:var(--orange);font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap;">
+              📋 Plantillas
+            </button>
+          </div>
+        </div>
         <div id="ejerciciosList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px;"></div>
         <button type="button" onclick="addEjercicioRow()" style="width:100%;padding:8px;border:1.5px dashed var(--border);border-radius:var(--radius-sm);background:transparent;color:var(--text-2);font-size:13px;cursor:pointer;font-family:Inter,sans-serif;">+ Agregar ejercicio</button>
       </div>
@@ -454,6 +466,36 @@ function catLabel(catId)    { const c = getCats().find(c=>c.id===catId); return 
     <div class="modal-footer">
       <button class="btn-secondary" onclick="closeModalSesion()">Cancelar</button>
       <button class="btn-primary" onclick="saveSesion()">Guardar sesión</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal plantillas -->
+<div class="modal-overlay" id="modalPlantillas">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <h2>Plantillas de ejercicios</h2>
+      <button class="btn-close" onclick="closeModalPlantillas()">×</button>
+    </div>
+    <div class="modal-body">
+      <!-- Guardar plantilla actual -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-bottom:16px;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);margin-bottom:8px;">Guardar ejercicios actuales como plantilla</div>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="plantillaNombre" placeholder="Nombre de la plantilla (ej: Post-ACL Fase 3)"
+            style="flex:1;border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;font-size:13px;font-family:Inter,sans-serif;outline:none;">
+          <button onclick="guardarPlantilla()"
+            style="padding:9px 16px;background:var(--navy);color:#fff;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;">
+            Guardar
+          </button>
+        </div>
+      </div>
+      <!-- Lista de plantillas -->
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);margin-bottom:8px;">Plantillas guardadas</div>
+      <div id="plantillasList"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModalPlantillas()">Cerrar</button>
     </div>
   </div>
 </div>
@@ -1311,6 +1353,103 @@ function openNewSesion(){
   document.getElementById('modalSesion').classList.add('open');
 }
 function closeModalSesion(){document.getElementById('modalSesion').classList.remove('open');}
+
+// ── Copiar última sesión ──────────────────────────────────────────────────────
+function copiarUltimaSesion(){
+  const p=getPatient(currentPatientId); if(!p) return;
+  const ep=getEpData(p);
+  const sesiones=ep.sesiones||[];
+  if(!sesiones.length){showToast('No hay sesiones anteriores');return;}
+  // La última sesión (la más reciente por fecha)
+  const ultima=[...sesiones].sort((a,b)=>b.fecha.localeCompare(a.fecha))[0];
+  const ejercicios=ultima.ejercicios||[];
+  if(!ejercicios.length){showToast('La última sesión no tiene ejercicios cargados');return;}
+  // Cargar también fase si está vacía
+  const faseEl=document.getElementById('sFase');
+  if(!faseEl.value && ultima.fase) faseEl.value=ultima.fase;
+  // Limpiar y cargar ejercicios
+  document.getElementById('ejerciciosList').innerHTML='';
+  ejercicios.forEach(e=>addEjercicioRow(e.nombre,e.series,e.reps,e.kg));
+  showToast('Ejercicios copiados ✓');
+}
+
+// ── Plantillas ────────────────────────────────────────────────────────────────
+function getPlantillas(){
+  try{ return JSON.parse(localStorage.getItem('consultorio_plantillas')||'[]'); }
+  catch(e){ return []; }
+}
+function savePlantillas(pl){
+  localStorage.setItem('consultorio_plantillas', JSON.stringify(pl));
+}
+
+function guardarPlantilla(){
+  const nombre=document.getElementById('plantillaNombre').value.trim();
+  if(!nombre){alert('Poné un nombre para la plantilla.');return;}
+  const ejercicios=getEjercicios();
+  if(!ejercicios.length){alert('Primero cargá al menos un ejercicio.');return;}
+  const pl=getPlantillas();
+  pl.unshift({id:uid(), nombre, ejercicios, fecha: new Date().toISOString().slice(0,10)});
+  savePlantillas(pl);
+  document.getElementById('plantillaNombre').value='';
+  renderPlantillasList();
+  showToast('Plantilla guardada ✓');
+}
+
+function aplicarPlantilla(id){
+  const pl=getPlantillas().find(p=>p.id===id);
+  if(!pl) return;
+  document.getElementById('ejerciciosList').innerHTML='';
+  pl.ejercicios.forEach(e=>addEjercicioRow(e.nombre,e.series,e.reps,e.kg));
+  closeModalPlantillas();
+  showToast(`Plantilla "${pl.nombre}" aplicada ✓`);
+}
+
+function eliminarPlantilla(id){
+  if(!confirm('¿Eliminar esta plantilla?')) return;
+  savePlantillas(getPlantillas().filter(p=>p.id!==id));
+  renderPlantillasList();
+}
+
+function renderPlantillasList(){
+  const pl=getPlantillas();
+  const el=document.getElementById('plantillasList');
+  if(!pl.length){
+    el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text-3);font-size:13px;">No hay plantillas guardadas.<br>Cargá ejercicios arriba y guardá una.</div>';
+    return;
+  }
+  el.innerHTML=pl.map(p=>`
+    <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:8px;display:flex;align-items:center;gap:10px;">
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:600;">${esc(p.nombre)}</div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:2px;">${p.ejercicios.length} ejercicio${p.ejercicios.length!==1?'s':''} · ${formatFecha(p.fecha)}</div>
+        <div style="font-size:11px;color:var(--text-2);margin-top:3px;">${p.ejercicios.map(e=>e.nombre).join(' · ')}</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0;">
+        <button onclick="aplicarPlantilla('${p.id}')"
+          style="padding:6px 12px;background:var(--navy);color:#fff;border:none;border-radius:var(--radius-sm);font-size:12px;font-weight:600;cursor:pointer;">
+          Aplicar
+        </button>
+        <button onclick="eliminarPlantilla('${p.id}')"
+          style="padding:6px 10px;background:transparent;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;color:var(--text-3);cursor:pointer;">
+          ×
+        </button>
+      </div>
+    </div>`).join('');
+}
+
+function openModalPlantillas(){
+  renderPlantillasList();
+  document.getElementById('modalPlantillas').classList.add('open');
+}
+function closeModalPlantillas(){
+  document.getElementById('modalPlantillas').classList.remove('open');
+}
+
+function showToast(msg){
+  const el=document.getElementById('saveIndicator');
+  el.textContent=msg;el.classList.add('show');
+  setTimeout(()=>{el.classList.remove('show');el.textContent='Guardado ✓';},2000);
+}
 function saveSesion(){
   const fecha=document.getElementById('sFecha').value;
   if(!fecha){alert('La fecha es obligatoria.');return;}
