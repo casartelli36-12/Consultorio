@@ -159,6 +159,20 @@ input,textarea,select{font-family:'Inter',sans-serif;}
 .btn-del-ses{padding:8px 14px;background:transparent;color:var(--text-3);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;cursor:pointer;}
 .ses-empty{text-align:center;padding:40px 20px;color:var(--text-3);font-size:14px;}
 
+/* Tabla ejercicios editable en sesiones */
+.ej-table-wrap{border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;margin-bottom:8px;}
+.ej-table-head{display:grid;grid-template-columns:2fr 52px 52px 62px 1fr auto;gap:0;background:var(--surface);padding:7px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3);}
+.ej-row{display:grid;grid-template-columns:2fr 52px 52px 62px 1fr auto;gap:4px;padding:6px 8px;border-top:1px solid var(--border);align-items:center;}
+.ej-row:nth-child(even){background:var(--surface);}
+.ej-input{border:1px solid transparent;border-radius:5px;padding:5px 7px;font-size:13px;font-family:Inter,sans-serif;color:var(--text);background:transparent;outline:none;width:100%;transition:border-color .15s,background .15s;}
+.ej-input:focus{border-color:var(--navy);background:#fff;}
+.ej-input.center{text-align:center;}
+.ej-input.nota{font-size:12px;color:var(--text-2);}
+.btn-ej-del{background:none;border:none;color:var(--text-3);cursor:pointer;font-size:16px;padding:0 4px;line-height:1;flex-shrink:0;}
+.btn-ej-del:hover{color:var(--red);}
+.btn-add-ej-row{width:100%;padding:7px;border:none;border-top:1px solid var(--border);background:var(--surface);color:var(--text-2);font-size:12px;cursor:pointer;font-family:Inter,sans-serif;text-align:left;padding-left:12px;}
+.btn-add-ej-row:hover{background:var(--border);}
+
 /* ── EVALUACIONES ── */
 .eval-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
 .btn-add-eval{display:flex;align-items:center;gap:6px;padding:9px 16px;background:var(--green);color:#fff;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;}
@@ -312,6 +326,7 @@ input,textarea,select{font-family:'Inter',sans-serif;}
   .modal-2col{grid-template-columns:1fr;}
   .days-chip .num{font-size:18px;}
   .tur-week-grid{grid-template-columns:40px repeat(7,1fr);}
+  .ej-table-head,.ej-row{grid-template-columns:2fr 46px 46px 56px 1fr auto;}
 }
 </style>
 </head>
@@ -456,7 +471,11 @@ function catLabel(catId)    { const c = getCats().find(c=>c.id===catId); return 
             </button>
           </div>
         </div>
-        <div id="ejerciciosList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px;"></div>
+        <!-- Header columnas modal nueva sesión -->
+        <div style="display:grid;grid-template-columns:2fr 52px 52px 62px 1fr auto;gap:4px;padding:5px 8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm) var(--radius-sm) 0 0;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3);">
+          <span>Ejercicio</span><span style="text-align:center">Series</span><span style="text-align:center">Reps/t</span><span style="text-align:center">Kg/BW</span><span>Notas</span><span></span>
+        </div>
+        <div id="ejerciciosList" style="border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius-sm) var(--radius-sm);overflow:hidden;margin-bottom:8px;"></div>
         <button type="button" onclick="addEjercicioRow()" style="width:100%;padding:8px;border:1.5px dashed var(--border);border-radius:var(--radius-sm);background:transparent;color:var(--text-2);font-size:13px;cursor:pointer;font-family:Inter,sans-serif;">+ Agregar ejercicio</button>
       </div>
       <div class="modal-field"><label>EVA / RPE</label><input type="text" id="sEva" placeholder="EVA 1 · RPE 7"></div>
@@ -478,7 +497,6 @@ function catLabel(catId)    { const c = getCats().find(c=>c.id===catId); return 
       <button class="btn-close" onclick="closeModalPlantillas()">×</button>
     </div>
     <div class="modal-body">
-      <!-- Guardar plantilla actual -->
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-bottom:16px;">
         <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);margin-bottom:8px;">Guardar ejercicios actuales como plantilla</div>
         <div style="display:flex;gap:8px;">
@@ -490,7 +508,6 @@ function catLabel(catId)    { const c = getCats().find(c=>c.id===catId); return 
           </button>
         </div>
       </div>
-      <!-- Lista de plantillas -->
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);margin-bottom:8px;">Plantillas guardadas</div>
       <div id="plantillasList"></div>
     </div>
@@ -535,6 +552,24 @@ function catLabel(catId)    { const c = getCats().find(c=>c.id===catId); return 
     <div class="modal-footer">
       <button class="btn-secondary" onclick="closeCatManager()">Cancelar</button>
       <button class="btn-primary" onclick="saveCats()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ MODAL EXPORTAR PACIENTE ═══════════════════ -->
+<div class="modal-overlay" id="modalExport">
+  <div class="modal" style="max-width:600px;">
+    <div class="modal-header">
+      <h2>Exportar paciente</h2>
+      <button class="btn-close" onclick="document.getElementById('modalExport').classList.remove('open')">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--text-2);margin-bottom:12px;">Copiá este texto y pegalo en el chat con Claude para analizar el caso.</p>
+      <textarea id="exportText" readonly style="width:100%;min-height:360px;border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;font-size:12px;font-family:monospace;line-height:1.6;resize:vertical;outline:none;background:var(--surface);color:var(--text);"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="document.getElementById('modalExport').classList.remove('open')">Cerrar</button>
+      <button class="btn-primary" onclick="copyExportText()">📋 Copiar todo</button>
     </div>
   </div>
 </div>
@@ -633,13 +668,13 @@ let editingPatientId = null;
 let autoSaveTimer = null;
 
 // ── TURNOS estado ──────────────────────────────────────────────────────────────
-let TURNOS = {};           // { id: { paciente, fecha, hora, duracion, estado, nota } }
-let turView = 'semana';    // 'semana' | 'dia'
-let turPivot = new Date(); // fecha pivote
+let TURNOS = {};
+let turView = 'semana';
+let turPivot = new Date();
 let turEditId = null;
 let turDetailId = null;
 
-const TUR_HOURS = Array.from({length:15},(_,i)=>i+7); // 7..21
+const TUR_HOURS = Array.from({length:15},(_,i)=>i+7);
 const DIAS_SHORT = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 
@@ -684,6 +719,100 @@ function getWeekMon(d) {
   const c=new Date(d); c.setHours(0,0,0,0);
   const day=c.getDay(); const diff=day===0?-6:1-day;
   c.setDate(c.getDate()+diff); return c;
+}
+
+// ── Exportar paciente ─────────────────────────────────────────────────────────
+function openExportPaciente() {
+  const p = getPatient(currentPatientId);
+  if(!p) return;
+  const ep = getEpData(p);
+  const sesiones = (ep.sesiones || []).slice().sort((a,b) => a.fecha.localeCompare(b.fecha));
+  const evaluaciones = ep.evaluaciones || [];
+
+  let lines = [];
+  lines.push('=== PACIENTE ===');
+  lines.push(`Nombre: ${p.nombre || '—'}`);
+  lines.push(`Edad: ${p.edad || '—'}`);
+  lines.push(`Contacto: ${p.contacto || '—'}`);
+  lines.push(`Institución: ${p.institucion || '—'}`);
+  lines.push(`Deporte/posición: ${p.deporte || '—'}`);
+  lines.push(`Diagnóstico: ${p.dx || '—'}`);
+  lines.push(`Estructura/lado: ${p.estructura || '—'}`);
+  lines.push(`Fecha inicio: ${formatFecha(p.fechaInicio)}`);
+  lines.push(`Cirugía/técnica: ${p.cirugia || '—'}`);
+  lines.push(`Cirujano/médico: ${p.cirujano || '—'}`);
+  if(p.antecedentes) lines.push(`Antecedentes: ${p.antecedentes}`);
+  if(p.objetivos)    lines.push(`Objetivos: ${p.objetivos}`);
+  if(p.medicacion)   lines.push(`Medicación: ${p.medicacion}`);
+  if(p.contra)       lines.push(`Contraindicaciones: ${p.contra}`);
+  if(p.alerta)       lines.push(`⚡ ALERTA: ${p.alerta}`);
+
+  // Movilidad
+  const mov = ep.movilidad || {};
+  const movItems = [
+    {key:'flex',label:'Flexión'},{key:'ext',label:'Extensión'},
+    {key:'rotInt',label:'Rot. interna'},{key:'rotExt',label:'Rot. externa'},
+    {key:'abd',label:'Abducción'},{key:'add',label:'Aducción'},
+    {key:'otro1',label:'Otro 1'},{key:'otro2',label:'Otro 2'}
+  ];
+  const movLines = movItems.filter(m=>mov[m.key]&&mov[m.key].estado).map(m=>`  ${m.label}: ${mov[m.key].estado}${mov[m.key].grados?' ('+mov[m.key].grados+')':''}`);
+  if(movLines.length) { lines.push(''); lines.push('--- MOVILIDAD ---'); lines.push(...movLines); }
+
+  // Estudios
+  const estudios = ep.estudios || [];
+  if(estudios.length) {
+    lines.push(''); lines.push('--- ESTUDIOS COMPLEMENTARIOS ---');
+    estudios.forEach(e => lines.push(`  ${e.tipo} ${e.fecha?'('+formatFecha(e.fecha)+')':''}: ${e.resultado||'—'}`));
+  }
+
+  // Notas libres
+  if(p.notas) { lines.push(''); lines.push('--- NOTAS LIBRES ---'); lines.push(p.notas); }
+
+  // Evaluaciones
+  if(evaluaciones.length) {
+    lines.push(''); lines.push('=== EVALUACIONES ===');
+    evaluaciones.forEach(e => {
+      const diasEv = (e.fecha && p.fechaInicio) ? Math.floor((new Date(e.fecha)-new Date(p.fechaInicio))/86400000) : null;
+      lines.push(`[${formatFecha(e.fecha)}${diasEv!==null?' · día '+diasEv:''}] ${e.test||'Test'}`);
+      if(e.afectado || e.sano) lines.push(`  Afectado: ${e.afectado||'—'} | Sano/Ref: ${e.sano||'—'}`);
+      if(e.lsi) lines.push(`  LSI: ${e.lsi}% (umbral: ${e.umbral||'—'})`);
+      if(e.obs) lines.push(`  Obs: ${e.obs}`);
+    });
+  }
+
+  // Sesiones
+  if(sesiones.length) {
+    lines.push(''); lines.push('=== SESIONES ===');
+    sesiones.forEach((s, i) => {
+      const diasSes = (s.fecha && p.fechaInicio) ? Math.floor((new Date(s.fecha)-new Date(p.fechaInicio))/86400000) : null;
+      lines.push(`\n[Sesión ${i+1} · ${formatFecha(s.fecha)}${diasSes!==null?' · día '+diasSes:''}${s.fase?' · '+s.fase:''}]`);
+      if(s.subjetivo) lines.push(`  Cómo llegó: ${s.subjetivo}`);
+      const ejercicios = s.ejercicios || [];
+      if(ejercicios.length) {
+        lines.push('  Ejercicios:');
+        ejercicios.forEach(e => {
+          let ej = `    - ${e.nombre}`;
+          if(e.series || e.reps) ej += ` | ${e.series||'—'}×${e.reps||'—'}`;
+          if(e.kg)   ej += ` | ${e.kg}`;
+          if(e.nota) ej += ` | Nota: ${e.nota}`;
+          lines.push(ej);
+        });
+      }
+      if(s.eva)      lines.push(`  EVA/RPE: ${s.eva}`);
+      if(s.objetivo) lines.push(`  Observaciones: ${s.objetivo}`);
+      if(s.plan)     lines.push(`  Plan próxima: ${s.plan}`);
+    });
+  }
+
+  document.getElementById('exportText').value = lines.join('\n');
+  document.getElementById('modalExport').classList.add('open');
+}
+
+function copyExportText() {
+  const el = document.getElementById('exportText');
+  el.select();
+  document.execCommand('copy');
+  showToast('Copiado al portapapeles ✓');
 }
 
 // ── Categorías ────────────────────────────────────────────────────────────────
@@ -828,11 +957,10 @@ function switchTab(tab){
 
 function renderTab(){
   const panel=document.getElementById('panel');
-  // Resetear estilos del panel (pueden haber sido modificados por turnos)
   panel.style.padding='20px';
   panel.style.display='block';
   panel.style.flexDirection='';
-  if(currentTab==='resumen')       renderResumen(panel);
+  if(currentTab==='resumen')           renderResumen(panel);
   else if(currentTab==='sesiones')     renderSesiones(panel);
   else if(currentTab==='evaluaciones') renderEvaluaciones(panel);
   else if(currentTab==='fotos')        renderFotos(panel);
@@ -853,11 +981,8 @@ function addEpisodio(){
 
 // ══════════════════ TURNOS ══════════════════════════════════════════════════
 function renderTurnos(panel) {
-  // Actualizar datalist de pacientes
   const dl = document.getElementById('turPacientesList');
   dl.innerHTML = (DB.patients||[]).map(p=>`<option value="${esc(p.nombre)}">`).join('');
-
-  // Sin padding para que el calendario ocupe todo el espacio
   panel.style.padding = '0 20px';
   panel.style.display = 'flex';
   panel.style.flexDirection = 'column';
@@ -868,12 +993,9 @@ function renderTurnos(panel) {
 function renderTurnosShell() {
   const shell = document.getElementById('turnosShell');
   if(!shell) return;
-
   const today = ymd(new Date());
   const ws    = getWeekMon(turPivot);
   const days  = Array.from({length:7},(_,i)=>addDays(ws,i));
-
-  // ── header con nav ──
   let weekLabel = '';
   if(turView==='semana'){
     const we=addDays(ws,6);
@@ -883,7 +1005,6 @@ function renderTurnosShell() {
   } else {
     weekLabel=`${DIAS_SHORT[turPivot.getDay()]} ${turPivot.getDate()} de ${MESES[turPivot.getMonth()]}`;
   }
-
   const navHtml=`
     <div class="tur-nav">
       <div class="tur-view-toggle">
@@ -898,16 +1019,13 @@ function renderTurnosShell() {
       <button class="tur-today-btn" onclick="turGoToday()">Hoy</button>
       <button onclick="openNewTurno('${today}','09:00')" style="padding:8px 16px;background:var(--orange);color:#fff;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;">+ Turno</button>
     </div>`;
-
   let viewHtml = '';
   if(turView==='semana') viewHtml = buildWeekGrid(days, today);
   else                   viewHtml = buildDayView(ymd(turPivot), today);
-
   shell.innerHTML = navHtml + viewHtml;
 }
 
 function buildWeekGrid(days, today) {
-  // Pre-agrupar todos los turnos por fecha para calcular solapamientos
   const turnosByDay = {};
   days.forEach(d=>{
     const ds=ymd(d);
@@ -915,15 +1033,12 @@ function buildWeekGrid(days, today) {
       .filter(([,t])=>t.fecha===ds)
       .sort((a,b)=>a[1].hora.localeCompare(b[1].hora));
   });
-
-  // Para cada turno, calcular cuántas columnas necesita su franja horaria
   function getColumns(ds, id) {
     const all = turnosByDay[ds] || [];
     const t = TURNOS[id];
     if(!t) return { col: 0, total: 1 };
     const tStart = timeToMin(t.hora);
     const tEnd   = tStart + parseInt(t.duracion || 60);
-    // Turnos que se solapan con este
     const overlapping = all.filter(([oid, ot])=>{
       const oStart = timeToMin(ot.hora);
       const oEnd   = oStart + parseInt(ot.duracion || 60);
@@ -932,7 +1047,6 @@ function buildWeekGrid(days, today) {
     const col = overlapping.findIndex(([oid])=>oid===id);
     return { col, total: overlapping.length };
   }
-
   let html = `<div class="tur-week-wrap"><div class="tur-week-grid">`;
   html += `<div class="tur-col-head time-stub"></div>`;
   days.forEach(d=>{
@@ -942,12 +1056,10 @@ function buildWeekGrid(days, today) {
       <div class="tur-day-num ${isTod?'is-today':''}">${d.getDate()}</div>
     </div>`;
   });
-
   TUR_HOURS.forEach(h=>{
     html+=`<div class="tur-time-label">${String(h).padStart(2,'0')}:00</div>`;
     days.forEach(d=>{
       const ds=ymd(d); const isTod=ds===today;
-      // Mostrar solo turnos que EMPIEZAN en esta hora (para no duplicar)
       const chips=(turnosByDay[ds]||[])
         .filter(([,t])=>parseInt(t.hora)===h)
         .map(([id,t])=>{
@@ -979,7 +1091,6 @@ function buildDayView(ds, today) {
   const turnosHoy=Object.entries(TURNOS).filter(([,t])=>t.fecha===ds).sort((a,b)=>a[1].hora.localeCompare(b[1].hora));
   const byHour={};
   turnosHoy.forEach(([id,t])=>{const h=parseInt(t.hora);if(!byHour[h])byHour[h]=[];byHour[h].push([id,t]);});
-
   let html=`<div class="tur-day-view">
     <div class="tur-day-header">
       <span class="tur-day-header-title">${label}</span>
@@ -1005,7 +1116,6 @@ function buildDayView(ds, today) {
 }
 
 function capitalizeTur(s){return s.charAt(0).toUpperCase()+s.slice(1);}
-
 function setTurView(v){turView=v;renderTurnosShell();}
 function turNavPrev(){
   if(turView==='semana') turPivot=addDays(turPivot,-7);
@@ -1019,7 +1129,6 @@ function turNavNext(){
 }
 function turGoToday(){turPivot=new Date();renderTurnosShell();}
 
-// ── Abrir modal nuevo turno ──
 function openNewTurno(fecha, hora){
   turEditId=null;
   document.getElementById('turModalTitle').textContent='Nuevo turno';
@@ -1032,8 +1141,6 @@ function openNewTurno(fecha, hora){
   document.getElementById('btnDeleteTurno').style.display='none';
   document.getElementById('modalTurno').classList.add('open');
 }
-
-// ── Detalle turno ──
 function openTurDetail(id){
   turDetailId=id;
   const t=TURNOS[id]; if(!t) return;
@@ -1051,7 +1158,6 @@ function openTurDetail(id){
   document.getElementById('btnMarcarRealizado').style.display=t.estado==='realizado'?'none':'block';
   document.getElementById('modalTurnoDetalle').classList.add('open');
 }
-
 function editTurnoFromDetail(){
   document.getElementById('modalTurnoDetalle').classList.remove('open');
   const t=TURNOS[turDetailId]; if(!t) return;
@@ -1066,12 +1172,10 @@ function editTurnoFromDetail(){
   document.getElementById('btnDeleteTurno').style.display='block';
   document.getElementById('modalTurno').classList.add('open');
 }
-
 function closeTurModal(){
   document.getElementById('modalTurno').classList.remove('open');
   turEditId=null;
 }
-
 function saveTurno(){
   const paciente=document.getElementById('tPaciente').value.trim();
   const fecha=document.getElementById('tFecha').value;
@@ -1085,7 +1189,6 @@ function saveTurno(){
     turEditId=null;
   });
 }
-
 function deleteTurno(){
   if(!turEditId) return;
   if(!confirm('¿Eliminar este turno?')) return;
@@ -1093,7 +1196,6 @@ function deleteTurno(){
     closeTurModal();showToastTur('Turno eliminado');turEditId=null;
   });
 }
-
 function deleteTurnoFromDetail(){
   if(!turDetailId) return;
   if(!confirm('¿Eliminar este turno?')) return;
@@ -1102,7 +1204,6 @@ function deleteTurnoFromDetail(){
     showToastTur('Turno eliminado');turDetailId=null;
   });
 }
-
 function marcarRealizado(){
   if(!turDetailId) return;
   const t={...TURNOS[turDetailId],estado:'realizado'};
@@ -1111,10 +1212,7 @@ function marcarRealizado(){
     showToastTur('Marcado como realizado ✓');
   });
 }
-
-function showToastTur(msg){showSaveIndicator();} // reusar el indicator
-
-// cerrar modales de turno al tocar el overlay
+function showToastTur(msg){showSaveIndicator();}
 document.getElementById('modalTurno').addEventListener('click',function(e){if(e.target===this)closeTurModal();});
 document.getElementById('modalTurnoDetalle').addEventListener('click',function(e){if(e.target===this)document.getElementById('modalTurnoDetalle').classList.remove('open');});
 
@@ -1183,6 +1281,7 @@ function renderResumen(panel) {
             </select>
           </div>
           <button onclick="openEditPatient()" style="padding:8px 16px;background:transparent;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;color:var(--text-2);cursor:pointer;font-family:Inter,sans-serif;">Editar datos del paciente</button>
+          <button onclick="openExportPaciente()" style="padding:8px 16px;background:transparent;border:1px solid var(--navy);border-radius:var(--radius-sm);font-size:12px;color:var(--navy);cursor:pointer;font-family:Inter,sans-serif;font-weight:600;">📤 Exportar para Claude</button>
           <button onclick="deletePatient()" style="padding:8px 16px;background:transparent;border:1px solid var(--red-light);border-radius:var(--radius-sm);font-size:12px;color:var(--red);cursor:pointer;font-family:Inter,sans-serif;">Eliminar paciente</button>
         </div>
       </div>
@@ -1282,23 +1381,78 @@ function renderSesiones(panel){
     ${!sesiones.length?'<div class="ses-empty">Todavía no hay sesiones registradas.</div>':''}
     <div class="ses-list">${sesiones.map((s,i)=>renderSesCard(s,sesiones.length-i,ep.fechaInicio||p.fechaInicio)).join('')}</div>`;
 }
+
+// ── Tabla de ejercicios editable en sesiones existentes ──────────────────────
+function buildEjTableEditable(sesId, ejercicios) {
+  const rows = ejercicios.map((e,i) => `
+    <div class="ej-row" id="ejrow_${sesId}_${i}">
+      <input class="ej-input" type="text" value="${esc(e.nombre||'')}" placeholder="Ejercicio"
+        oninput="updateEjField('${sesId}',${i},'nombre',this.value)">
+      <input class="ej-input center" type="text" value="${esc(e.series||'')}" placeholder="—"
+        oninput="updateEjField('${sesId}',${i},'series',this.value)">
+      <input class="ej-input center" type="text" value="${esc(e.reps||'')}" placeholder="—"
+        oninput="updateEjField('${sesId}',${i},'reps',this.value)">
+      <input class="ej-input center" type="text" value="${esc(e.kg||'')}" placeholder="—"
+        oninput="updateEjField('${sesId}',${i},'kg',this.value)">
+      <input class="ej-input nota" type="text" value="${esc(e.nota||'')}" placeholder="notas…"
+        oninput="updateEjField('${sesId}',${i},'nota',this.value)">
+      <button class="btn-ej-del" onclick="removeEjFromSes('${sesId}',${i})" title="Eliminar">×</button>
+    </div>`).join('');
+
+  return `<div class="ej-table-wrap" id="ejtable_${sesId}">
+    <div class="ej-table-head">
+      <span>Ejercicio</span>
+      <span style="text-align:center">Series</span>
+      <span style="text-align:center">Reps/t</span>
+      <span style="text-align:center">Kg/BW</span>
+      <span>Notas</span>
+      <span></span>
+    </div>
+    ${rows}
+    <button class="btn-add-ej-row" onclick="addEjToSes('${sesId}')">+ Agregar ejercicio</button>
+  </div>`;
+}
+
+function updateEjField(sesId, idx, field, val) {
+  const p = getPatient(currentPatientId);
+  const ep = getEpData(p);
+  const ses = (ep.sesiones||[]).find(s=>s.id===sesId);
+  if(!ses || !ses.ejercicios || !ses.ejercicios[idx]) return;
+  ses.ejercicios[idx][field] = val;
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(saveDB, 800);
+}
+
+function addEjToSes(sesId) {
+  const p = getPatient(currentPatientId);
+  const ep = getEpData(p);
+  const ses = (ep.sesiones||[]).find(s=>s.id===sesId);
+  if(!ses) return;
+  if(!ses.ejercicios) ses.ejercicios = [];
+  ses.ejercicios.push({nombre:'',series:'',reps:'',kg:'',nota:''});
+  saveDB();
+  // Rebuild solo la tabla, no toda la sesión (evitar perder foco en otros campos)
+  const tableEl = document.getElementById('ejtable_'+sesId);
+  if(tableEl) tableEl.outerHTML = buildEjTableEditable(sesId, ses.ejercicios);
+  // Si no existe el elemento (primera vez), hacer re-render completo
+  else renderTab();
+}
+
+function removeEjFromSes(sesId, idx) {
+  const p = getPatient(currentPatientId);
+  const ep = getEpData(p);
+  const ses = (ep.sesiones||[]).find(s=>s.id===sesId);
+  if(!ses || !ses.ejercicios) return;
+  ses.ejercicios.splice(idx, 1);
+  saveDB();
+  renderTab();
+}
+
 function renderSesCard(s,num,fechaInicio){
   const dias=(s.fecha&&fechaInicio)?Math.floor((new Date(s.fecha)-new Date(fechaInicio))/86400000):null;
   const ejercicios=s.ejercicios||[];
   const preview=ejercicios.length?ejercicios.map(e=>e.nombre+(e.series?` ${e.series}×${e.reps}`:'')).join('  ·  '):(s.intervencion||'—');
-  const ejTable=ejercicios.length?`
-    <div style="border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;margin-bottom:10px;">
-      <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;background:var(--surface);padding:7px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3);">
-        <span>Ejercicio</span><span style="text-align:center">Series</span><span style="text-align:center">Reps/t</span><span style="text-align:center">Kg/BW</span>
-      </div>
-      ${ejercicios.map((e,i)=>`<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;padding:8px 10px;font-size:13px;background:${i%2?'var(--surface)':'#fff'};border-top:1px solid var(--border);">
-        <span style="font-weight:500">${esc(e.nombre)}</span>
-        <span style="text-align:center;color:var(--text-2)">${esc(e.series||'—')}</span>
-        <span style="text-align:center;color:var(--text-2)">${esc(e.reps||'—')}</span>
-        <span style="text-align:center;color:var(--text-2)">${esc(e.kg||'—')}</span>
-      </div>`).join('')}
-    </div>`:
-    (s.intervencion?`<div style="font-size:13px;color:var(--text-2);margin-bottom:10px">${esc(s.intervencion)}</div>`:'');
+
   return `
     <div class="ses-card" id="sc_${s.id}">
       <div class="ses-card-header" onclick="toggleSes('${s.id}')">
@@ -1314,7 +1468,10 @@ function renderSesCard(s,num,fechaInicio){
           <div class="ses-field"><label>Fecha</label><input type="date" value="${s.fecha||''}" onchange="updateSes('${s.id}','fecha',this.value)"></div>
           <div class="ses-field"><label>Estado / Fase RTP</label><input type="text" value="${esc(s.fase||'')}" placeholder="Fase 3" oninput="updateSes('${s.id}','fase',this.value)"></div>
           <div class="ses-field full"><label>Cómo llegó</label><textarea oninput="updateSes('${s.id}','subjetivo',this.value)">${esc(s.subjetivo||'')}</textarea></div>
-          <div class="ses-field full"><label>Ejercicios</label>${ejTable}<div style="font-size:11px;color:var(--text-3);font-style:italic">Para editar ejercicios eliminá y volvé a cargar la sesión.</div></div>
+          <div class="ses-field full">
+            <label>Ejercicios</label>
+            ${buildEjTableEditable(s.id, ejercicios)}
+          </div>
           <div class="ses-field"><label>EVA / RPE</label><input type="text" value="${esc(s.eva||'')}" oninput="updateSes('${s.id}','eva',this.value)"></div>
           <div class="ses-field full"><label>Lo que observé</label><textarea oninput="updateSes('${s.id}','objetivo',this.value)">${esc(s.objetivo||'')}</textarea></div>
           <div class="ses-field full"><label>Plan próxima sesión</label><input type="text" value="${esc(s.plan||'')}" oninput="updateSes('${s.id}','plan',this.value)"></div>
@@ -1326,24 +1483,30 @@ function renderSesCard(s,num,fechaInicio){
       </div>
     </div>`;
 }
+
 function toggleSes(id){document.getElementById('sb_'+id).classList.toggle('open');}
-function updateSes(sesId,key,val){const p=getPatient(currentPatientId);const ses=(p.sesiones||[]).find(s=>s.id===sesId);if(!ses)return;ses[key]=val;clearTimeout(autoSaveTimer);autoSaveTimer=setTimeout(saveDB,800);}
+function updateSes(sesId,key,val){const p=getPatient(currentPatientId);const ep=getEpData(p);const ses=(ep.sesiones||[]).find(s=>s.id===sesId);if(!ses)return;ses[key]=val;clearTimeout(autoSaveTimer);autoSaveTimer=setTimeout(saveDB,800);}
 function deleteSes(sesId){if(!confirm('¿Eliminar esta sesión?'))return;const p=getPatient(currentPatientId);const ep=getEpData(p);ep.sesiones=(ep.sesiones||[]).filter(s=>s.id!==sesId);saveDB();renderTab();}
-function addEjercicioRow(nombre='',series='',reps='',kg=''){
+
+// ── Ejercicios en modal nueva sesión (con columna Notas) ─────────────────────
+function addEjercicioRow(nombre='',series='',reps='',kg='',nota=''){
   const container=document.getElementById('ejerciciosList');const id='ej_'+uid();const div=document.createElement('div');
-  div.id=id;div.style.cssText='display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:6px;align-items:center;';
+  div.id=id;
+  div.style.cssText='display:grid;grid-template-columns:2fr 52px 52px 62px 1fr auto;gap:4px;align-items:center;padding:4px 6px;border-top:1px solid var(--border);background:#fff;';
   div.innerHTML=`
-    <input type="text" value="${esc(nombre)}" placeholder="Ejercicio / intervención" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;font-size:13px;font-family:Inter,sans-serif;outline:none;">
-    <input type="text" value="${esc(series)}" placeholder="Series" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 8px;font-size:13px;font-family:Inter,sans-serif;outline:none;text-align:center;">
-    <input type="text" value="${esc(reps)}" placeholder="Reps/t" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 8px;font-size:13px;font-family:Inter,sans-serif;outline:none;text-align:center;">
-    <input type="text" value="${esc(kg)}" placeholder="Kg/BW" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 8px;font-size:13px;font-family:Inter,sans-serif;outline:none;text-align:center;">
+    <input type="text" value="${esc(nombre)}" placeholder="Ejercicio / intervención" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 9px;font-size:13px;font-family:Inter,sans-serif;outline:none;">
+    <input type="text" value="${esc(series)}" placeholder="—" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 6px;font-size:13px;font-family:Inter,sans-serif;outline:none;text-align:center;">
+    <input type="text" value="${esc(reps)}" placeholder="—" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 6px;font-size:13px;font-family:Inter,sans-serif;outline:none;text-align:center;">
+    <input type="text" value="${esc(kg)}" placeholder="—" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 6px;font-size:13px;font-family:Inter,sans-serif;outline:none;text-align:center;">
+    <input type="text" value="${esc(nota)}" placeholder="notas…" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 8px;font-size:12px;font-family:Inter,sans-serif;outline:none;color:var(--text-2);">
     <button onclick="document.getElementById('${id}').remove()" style="background:none;border:none;color:var(--text-3);cursor:pointer;font-size:18px;padding:0 4px;line-height:1;">×</button>`;
   container.appendChild(div);
 }
+
 function getEjercicios(){
   return Array.from(document.querySelectorAll('#ejerciciosList > div')).map(row=>{
     const inputs=row.querySelectorAll('input');
-    return{nombre:inputs[0].value,series:inputs[1].value,reps:inputs[2].value,kg:inputs[3].value};
+    return{nombre:inputs[0].value,series:inputs[1].value,reps:inputs[2].value,kg:inputs[3].value,nota:inputs[4].value};
   }).filter(e=>e.nombre.trim());
 }
 function openNewSesion(){
@@ -1360,16 +1523,13 @@ function copiarUltimaSesion(){
   const ep=getEpData(p);
   const sesiones=ep.sesiones||[];
   if(!sesiones.length){showToast('No hay sesiones anteriores');return;}
-  // La última sesión (la más reciente por fecha)
   const ultima=[...sesiones].sort((a,b)=>b.fecha.localeCompare(a.fecha))[0];
   const ejercicios=ultima.ejercicios||[];
   if(!ejercicios.length){showToast('La última sesión no tiene ejercicios cargados');return;}
-  // Cargar también fase si está vacía
   const faseEl=document.getElementById('sFase');
   if(!faseEl.value && ultima.fase) faseEl.value=ultima.fase;
-  // Limpiar y cargar ejercicios
   document.getElementById('ejerciciosList').innerHTML='';
-  ejercicios.forEach(e=>addEjercicioRow(e.nombre,e.series,e.reps,e.kg));
+  ejercicios.forEach(e=>addEjercicioRow(e.nombre,e.series,e.reps,e.kg,e.nota||''));
   showToast('Ejercicios copiados ✓');
 }
 
@@ -1381,7 +1541,6 @@ function getPlantillas(){
 function savePlantillas(pl){
   localStorage.setItem('consultorio_plantillas', JSON.stringify(pl));
 }
-
 function guardarPlantilla(){
   const nombre=document.getElementById('plantillaNombre').value.trim();
   if(!nombre){alert('Poné un nombre para la plantilla.');return;}
@@ -1394,22 +1553,19 @@ function guardarPlantilla(){
   renderPlantillasList();
   showToast('Plantilla guardada ✓');
 }
-
 function aplicarPlantilla(id){
   const pl=getPlantillas().find(p=>p.id===id);
   if(!pl) return;
   document.getElementById('ejerciciosList').innerHTML='';
-  pl.ejercicios.forEach(e=>addEjercicioRow(e.nombre,e.series,e.reps,e.kg));
+  pl.ejercicios.forEach(e=>addEjercicioRow(e.nombre,e.series,e.reps,e.kg,e.nota||''));
   closeModalPlantillas();
   showToast(`Plantilla "${pl.nombre}" aplicada ✓`);
 }
-
 function eliminarPlantilla(id){
   if(!confirm('¿Eliminar esta plantilla?')) return;
   savePlantillas(getPlantillas().filter(p=>p.id!==id));
   renderPlantillasList();
 }
-
 function renderPlantillasList(){
   const pl=getPlantillas();
   const el=document.getElementById('plantillasList');
@@ -1436,7 +1592,6 @@ function renderPlantillasList(){
       </div>
     </div>`).join('');
 }
-
 function openModalPlantillas(){
   renderPlantillasList();
   document.getElementById('modalPlantillas').classList.add('open');
@@ -1444,7 +1599,6 @@ function openModalPlantillas(){
 function closeModalPlantillas(){
   document.getElementById('modalPlantillas').classList.remove('open');
 }
-
 function showToast(msg){
   const el=document.getElementById('saveIndicator');
   el.textContent=msg;el.classList.add('show');
@@ -1553,21 +1707,18 @@ function closeSidebar(){document.getElementById('sidebar').classList.remove('ope
 // ── INIT ──────────────────────────────────────────────────────────────────────
 document.getElementById('panel').innerHTML=`<div class="empty-state"><svg width="40" height="40" viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="16" stroke="#E2E5EA" stroke-width="4"/><path d="M20 4a16 16 0 0 1 16 16" stroke="#1B2A4A" stroke-width="4" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 20 20" to="360 20 20" dur=".8s" repeatCount="indefinite"/></path></svg><p style="color:var(--text-3);font-size:14px;margin-top:12px;">Conectando...</p></div>`;
 
-// Listener en tiempo real para turnos
 turnosRef.on('value', snap=>{
   TURNOS=snap.val()||{};
   if(currentTab==='turnos') renderTurnosShell();
 });
 
-// Cargar pacientes
 dbRef.once('value').then(snapshot=>{
   const data=snapshot.val();
   if(data)DB=data;
   if(!DB.patients)DB.patients=[];
 
-  // Seed Kruszewski si no existe
   if(!DB.patients.find(p=>p.nombre&&p.nombre.includes('Kruszewski'))){
-    DB.patients.unshift({id:uid(),nombre:'Kruszewski',edad:'67',contacto:'1154964003',institucion:'Abril',deporte:'Gym · Tenis · Stretching',cirujano:'',dx:'Síndrome meniscal',estructura:'Menisco interno y externo · Derecho',fechaInicio:'2026-06-01',estado:'Fase 1',cirugia:'',antecedentes:'Rotura degenerativa cuerno posterior y cuerpo del menisco interno (trazo oblicuo). Rotura degenerativa cuerno anterior y cuerpo del menisco externo. Artrosis.',objetivos:'Volver a hacer deporte y evitar dolor',medicacion:'',contra:'',alerta:'Artrosis, varias veces se inyectó plasma',notas:'',categoria:'privado',sesiones:[{id:uid(),fecha:'2026-06-09',fase:'Fase 1',subjetivo:'Menos dolor cada día, leve dolor al caminar y al subir y bajar escaleras',ejercicios:[{nombre:'SLR',series:'3',reps:'8',kg:'BW'},{nombre:'Puente glúteo',series:'3',reps:'8',kg:'BW'},{nombre:'Abducción y aducción',series:'3',reps:'8',kg:'BW'},{nombre:'Sentadillas',series:'3',reps:'6',kg:'BW'}],eva:'4',objetivo:'Extensión y flexión FINAL limitada con dolor, sentadillas bien realizadas',plan:'Agregar banda elástica y peso para próximas sesiones'}],evaluaciones:[],estudios:[],movilidad:{flex:{estado:'limitada',grados:'dolor en FINAL del rango'},ext:{estado:'limitada',grados:'dolor en FINAL del rango'}}});
+    DB.patients.unshift({id:uid(),nombre:'Kruszewski',edad:'67',contacto:'1154964003',institucion:'Abril',deporte:'Gym · Tenis · Stretching',cirujano:'',dx:'Síndrome meniscal',estructura:'Menisco interno y externo · Derecho',fechaInicio:'2026-06-01',estado:'Fase 1',cirugia:'',antecedentes:'Rotura degenerativa cuerno posterior y cuerpo del menisco interno (trazo oblicuo). Rotura degenerativa cuerno anterior y cuerpo del menisco externo. Artrosis.',objetivos:'Volver a hacer deporte y evitar dolor',medicacion:'',contra:'',alerta:'Artrosis, varias veces se inyectó plasma',notas:'',categoria:'privado',sesiones:[{id:uid(),fecha:'2026-06-09',fase:'Fase 1',subjetivo:'Menos dolor cada día, leve dolor al caminar y al subir y bajar escaleras',ejercicios:[{nombre:'SLR',series:'3',reps:'8',kg:'BW',nota:''},{nombre:'Puente glúteo',series:'3',reps:'8',kg:'BW',nota:''},{nombre:'Abducción y aducción',series:'3',reps:'8',kg:'BW',nota:''},{nombre:'Sentadillas',series:'3',reps:'6',kg:'BW',nota:''}],eva:'4',objetivo:'Extensión y flexión FINAL limitada con dolor, sentadillas bien realizadas',plan:'Agregar banda elástica y peso para próximas sesiones'}],evaluaciones:[],estudios:[],movilidad:{flex:{estado:'limitada',grados:'dolor en FINAL del rango'},ext:{estado:'limitada',grados:'dolor en FINAL del rango'}}});
     saveDB();
   }
 
