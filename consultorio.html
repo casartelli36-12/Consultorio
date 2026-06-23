@@ -189,32 +189,42 @@ input,textarea,select{font-family:'Inter',sans-serif;}
 .lsi-bad{background:var(--red-light);color:var(--red);}
 .btn-del-eval{background:none;border:none;color:var(--text-3);cursor:pointer;padding:4px;font-size:16px;}
 
-/* ── CUESTIONARIOS (PROM) ── */
-.cuest-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px;flex-wrap:wrap;}
-.btn-add-cuest{display:flex;align-items:center;gap:6px;padding:9px 16px;background:#5E35B1;color:#fff;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;}
-.cuest-list{display:flex;flex-direction:column;gap:10px;}
-.cuest-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:box-shadow .15s;}
-.cuest-card:hover{box-shadow:var(--shadow);}
-.cuest-tag{font-size:11px;font-weight:700;color:#5E35B1;background:#F1ECFB;padding:4px 9px;border-radius:20px;flex-shrink:0;}
-.cuest-info{flex:1;min-width:0;}
-.cuest-fecha{font-size:13px;font-weight:600;color:var(--text);}
-.cuest-dias{font-size:11px;color:var(--text-3);margin-top:1px;}
-.cuest-scores{display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0;}
-.cuest-score-badge{font-size:11px;font-weight:700;padding:4px 9px;border-radius:20px;white-space:nowrap;}
-.btn-del-cuest{background:none;border:none;color:var(--text-3);cursor:pointer;font-size:18px;padding:0 4px;flex-shrink:0;}
-.cuest-empty{text-align:center;padding:40px 20px;color:var(--text-3);font-size:14px;}
-.cuest-subscale-block{border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:14px;overflow:hidden;}
-.cuest-subscale-head{background:var(--surface);padding:9px 12px;font-size:12px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:.04em;}
-.cuest-item-row{padding:10px 12px;border-top:1px solid var(--border);}
-.cuest-item-text{font-size:13px;color:var(--text);margin-bottom:7px;line-height:1.4;}
-.cuest-item-options{display:flex;gap:5px;flex-wrap:wrap;}
-.cuest-opt{font-size:11px;padding:6px 10px;border:1.5px solid var(--border);border-radius:20px;cursor:pointer;color:var(--text-2);background:var(--bg);transition:all .12s;white-space:nowrap;}
-.cuest-opt.selected{background:#5E35B1;color:#fff;border-color:#5E35B1;}
-.cuest-result-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px;}
-.cuest-result-box{border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;text-align:center;}
-.cuest-result-box .val{font-size:24px;font-weight:700;}
-.cuest-result-box .lbl{font-size:11px;color:var(--text-2);margin-top:3px;}
-.cuest-warn{background:#FFF8E1;border:1px solid #F0DDA0;border-radius:var(--radius-sm);padding:10px 12px;font-size:12px;color:#856B00;margin-bottom:14px;line-height:1.5;}
+/* ── INICIO (DASHBOARD) ── */
+.home-header{margin-bottom:20px;}
+.home-header h2{font-size:22px;font-weight:700;color:var(--text);}
+.home-header p{font-size:13px;color:var(--text-2);margin-top:3px;}
+.home-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.home-stat-tile{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:16px;cursor:pointer;transition:box-shadow .15s,border-color .15s;}
+.home-stat-tile:hover{box-shadow:var(--shadow);border-color:var(--navy);}
+.home-stat-tile.hst-warn{border-color:rgba(192,57,43,.3);background:var(--red-light);}
+.hst-num{font-size:26px;font-weight:700;color:var(--navy);line-height:1;}
+.home-stat-tile.hst-warn .hst-num{color:var(--red);}
+.hst-lbl{font-size:11px;color:var(--text-2);margin-top:5px;font-weight:500;}
+.home-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.home-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:16px;}
+.home-card-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px;}
+.home-empty-mini{font-size:13px;color:var(--text-3);text-align:center;padding:20px 10px;}
+.home-agenda-item{display:flex;align-items:center;gap:10px;padding:9px 8px;border-radius:var(--radius-sm);cursor:pointer;transition:background .12s;}
+.home-agenda-item:hover{background:var(--surface);}
+.hai-hora{font-size:12px;font-weight:700;color:var(--navy);background:var(--surface);padding:3px 7px;border-radius:6px;flex-shrink:0;}
+.hai-nombre{flex:1;font-size:13px;color:var(--text);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.home-donut-wrap{display:flex;align-items:center;gap:16px;}
+.home-legend{flex:1;display:flex;flex-direction:column;gap:7px;min-width:0;}
+.home-legend-item{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;}
+.home-legend-item:hover{opacity:.7;}
+.hli-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.hli-label{flex:1;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.hli-count{font-weight:700;color:var(--text);}
+.home-alert-item{display:flex;align-items:center;gap:10px;padding:10px 8px;border-radius:var(--radius-sm);cursor:pointer;transition:background .12s;border-bottom:1px solid var(--border);}
+.home-alert-item:last-child{border-bottom:none;}
+.home-alert-item:hover{background:var(--red-light);}
+.hai-avatar{width:32px;height:32px;border-radius:50%;background:var(--red-light);color:var(--red);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
+.hai-nombre-bold{font-size:13px;font-weight:700;color:var(--text);}
+.hai-alerta-txt{font-size:12px;color:var(--red);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+@media(max-width:900px){
+  .home-stats{grid-template-columns:repeat(2,1fr);}
+  .home-grid{grid-template-columns:1fr;}
+}
 
 /* ── MODALES ── */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:999;display:none;align-items:center;justify-content:center;padding:20px;}
@@ -339,6 +349,38 @@ input,textarea,select{font-family:'Inter',sans-serif;}
 .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:99;}
 .sidebar-overlay.open{display:block;}
 
+/* ── CUESTIONARIOS (PROMs) ── */
+.cuest-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;}
+.btn-add-cuest{display:flex;align-items:center;gap:6px;padding:9px 16px;background:var(--blue-chip);color:#fff;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;}
+.cuest-list{display:flex;flex-direction:column;gap:10px;}
+.cuest-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.cuest-card-header{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--surface);border-bottom:1px solid var(--border);cursor:pointer;flex-wrap:wrap;}
+.cuest-tipo{font-size:13px;font-weight:700;color:var(--navy);}
+.cuest-fecha{font-size:12px;color:var(--text-2);flex:1;}
+.cuest-scores{display:flex;gap:6px;flex-wrap:wrap;}
+.cuest-score-badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--blue-chip-light);color:var(--blue-chip);}
+.cuest-body{padding:14px;display:none;}
+.cuest-body.open{display:block;}
+.cuest-sub{margin-bottom:14px;}
+.cuest-sub-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);margin-bottom:6px;}
+.cuest-item-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;gap:10px;}
+.cuest-item-row:last-child{border-bottom:none;}
+.cuest-item-label{color:var(--text-2);flex:1;}
+.cuest-item-val{font-weight:700;color:var(--text);flex-shrink:0;}
+.cuest-empty{text-align:center;padding:40px 20px;color:var(--text-3);font-size:14px;}
+.cuest-form-item{display:flex;flex-direction:column;gap:6px;padding:10px 0;border-bottom:1px solid var(--border);}
+.cuest-form-item label{font-size:13px;color:var(--text);font-weight:500;}
+.cuest-form-item select{border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;font-size:13px;font-family:'Inter',sans-serif;outline:none;background:var(--bg);}
+.cuest-form-sub-header{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#fff;background:var(--navy);padding:8px 12px;margin:14px -20px 4px;}
+.cuest-form-sub-header:first-child{margin-top:0;}
+.cuest-type-pick{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.cuest-type-card{border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:14px;cursor:pointer;text-align:center;transition:all .15s;}
+.cuest-type-card:hover{border-color:var(--blue-chip);background:var(--blue-chip-light);}
+.cuest-type-card .ctc-name{font-size:14px;font-weight:700;color:var(--navy);}
+.cuest-type-card .ctc-region{font-size:11px;color:var(--text-3);margin-top:3px;}
+.cuest-type-card .ctc-desc{font-size:11px;color:var(--text-2);margin-top:5px;line-height:1.4;}
+.btn-del-cuest{background:none;border:none;color:var(--text-3);cursor:pointer;font-size:16px;padding:0 4px;}
+
 @media(max-width:900px){
   .resumen-layout{grid-template-columns:1fr;}
   .sidebar{position:fixed;left:0;top:0;bottom:0;transform:translateX(-100%);}
@@ -354,6 +396,7 @@ input,textarea,select{font-family:'Inter',sans-serif;}
   .days-chip .num{font-size:18px;}
   .tur-week-grid{grid-template-columns:40px repeat(7,1fr);}
   .ej-table-head,.ej-row{grid-template-columns:2fr 46px 46px 56px 1fr auto;}
+  .cuest-type-pick{grid-template-columns:1fr;}
 }
 </style>
 </head>
@@ -376,10 +419,446 @@ function catDotColor(catId) { const c = getCats().find(c=>c.id===catId); return 
 function catLabel(catId)    { const c = getCats().find(c=>c.id===catId); return c?c.label:''; }
 </script>
 
+<!-- ═══════════════════ DEFINICIONES DE CUESTIONARIOS (PROMs) ═══════════════════
+     Para agregar un cuestionario nuevo en el futuro: copiar un bloque de estos,
+     cambiar id / nombre / región / escala / subescalas+items. No hace falta
+     tocar nada más del código: la UI y el cálculo de score son genéricos. -->
+<script>
+const QUESTIONNAIRES = {
+
+  FAAM: {
+    nombre: 'FAAM',
+    nombreCompleto: 'Foot and Ankle Ability Measure',
+    region: 'Tobillo / Pie',
+    descripcion: 'Función en esguinces e inestabilidad de tobillo. Rápido de completar.',
+    escala: [
+      {v:4, l:'Sin dificultad'},
+      {v:3, l:'Dificultad leve'},
+      {v:2, l:'Dificultad moderada'},
+      {v:1, l:'Dificultad extrema'},
+      {v:0, l:'Incapaz de hacerlo'},
+    ],
+    subescalas: [
+      {
+        id:'ADL', label:'Actividades de la vida diaria',
+        items:[
+          'Estar de pie','Caminar en superficie plana','Caminar en superficie plana sin calzado',
+          'Subir pendientes','Bajar pendientes','Subir escaleras','Bajar escaleras',
+          'Caminar en superficie irregular','Subir y bajar de un cordón/escalón','Sentadilla',
+          'Pararse en puntas de pie','Caminar al iniciar la marcha (primeros pasos)',
+          'Caminar 5 minutos o menos','Caminar aproximadamente 10 minutos',
+          'Caminar 15 minutos o más','Tareas del hogar','Actividades de la vida diaria',
+          'Cuidado personal','Trabajo liviano a moderado (de pie, caminando)',
+          'Trabajo pesado (empujar/traccionar, subir, cargar)','Actividades recreativas',
+        ],
+      },
+      {
+        id:'Deportiva', label:'Subescala deportiva',
+        items:[
+          'Correr','Saltar','Aterrizar (recepción de salto)',
+          'Arrancar y frenar rápidamente','Movimientos laterales / cambios de dirección',
+          'Actividades de bajo impacto','Realizar la actividad con tu técnica habitual',
+          'Participar en el deporte deseado durante el tiempo que quisieras',
+        ],
+      },
+    ],
+  },
+
+  FAOS: {
+    nombre: 'FAOS',
+    nombreCompleto: 'Foot and Ankle Outcome Score',
+    region: 'Tobillo / Pie',
+    descripcion: 'Dolor, síntomas y calidad de vida en tobillo/pie. Más completo, útil en casos articulares o post-quirúrgicos.',
+    escala: [
+      {v:0, l:'Ninguno'},
+      {v:1, l:'Leve'},
+      {v:2, l:'Moderado'},
+      {v:3, l:'Severo'},
+      {v:4, l:'Extremo'},
+    ],
+    invertido: true, // 0 = mejor, a diferencia del FAAM. El score normalizado lo resuelve igual.
+    subescalas: [
+      {
+        id:'Dolor', label:'Dolor',
+        items:[
+          '¿Con qué frecuencia tenés dolor de tobillo/pie?','Al girar/pivotear sobre el tobillo',
+          'Al estirar completamente el tobillo/pie','Al subir o bajar escaleras',
+          'Por la noche, en la cama','Al estar sentado o acostado','Al estar de pie',
+          'Al caminar en superficie plana','Al subir o bajar de un auto',
+        ],
+      },
+      {
+        id:'Sintomas', label:'Síntomas',
+        items:[
+          'Hinchazón','Sensación de chasquidos, clics o crujidos','Bloqueo o traba del tobillo/pie',
+          'Rigidez al levantarte por la mañana','Rigidez luego de estar sentado, acostado o en reposo',
+        ],
+      },
+      {
+        id:'AVD', label:'Actividades de la vida diaria',
+        items:[
+          'Bajar escaleras','Subir escaleras','Levantarte de estar sentado','Estar de pie',
+          'Agacharte hasta el piso','Caminar en superficie plana','Subir o bajar de un auto',
+          'Ir de compras','Ponerte medias/calcetines','Levantarte de la cama',
+          'Sacarte medias/calcetines','Estar acostado en la cama','Entrar o salir de la bañera',
+          'Estar sentado','Sentarte o levantarte del inodoro','Tareas domésticas pesadas',
+          'Tareas domésticas livianas',
+        ],
+      },
+      {
+        id:'Deporte', label:'Deporte y recreación',
+        items:[
+          'Hacer sentadillas','Correr','Saltar','Girar/pivotear sobre el tobillo lesionado','Arrodillarte',
+        ],
+      },
+      {
+        id:'CalidadVida', label:'Calidad de vida',
+        items:[
+          '¿Con qué frecuencia sos consciente del problema en tu tobillo/pie?',
+          '¿Modificaste tu estilo de vida para evitar actividades que dañen el tobillo/pie?',
+          '¿Cuánto confiás en tu tobillo/pie?',
+          '¿Qué tan difícil te resulta en general convivir con el problema?',
+        ],
+      },
+    ],
+  },
+
+  VISA_A: {
+    nombre: 'VISA-A',
+    nombreCompleto: 'Victorian Institute of Sport Assessment – Aquiles',
+    region: 'Tendón de Aquiles',
+    descripcion: 'Tendinopatía aquílea: dolor, rigidez y tolerancia deportiva.',
+    escala: [
+      {v:10,l:'10 — Sin molestia'},{v:9,l:'9'},{v:8,l:'8'},{v:7,l:'7'},{v:6,l:'6'},
+      {v:5,l:'5'},{v:4,l:'4'},{v:3,l:'3'},{v:2,l:'2'},{v:1,l:'1'},{v:0,l:'0 — Máxima molestia / imposible'},
+    ],
+    subescalas: [
+      {
+        id:'Total', label:'Puntaje total',
+        items:[
+          'Rigidez en el tendón de Aquiles al levantarte por la mañana',
+          'Dolor al estirar la pantorrilla (elongación / lunge)',
+          'Dolor al bajar escaleras',
+          'Dolor o molestia durante o después de correr en terreno plano',
+          'Dolor o molestia durante o después de saltar',
+          'Dolor al estar de pie un tiempo prolongado',
+          'Capacidad de entrenar o participar en tu deporte actualmente',
+          'Nivel de actividad deportiva que podés mantener sin que el dolor te limite',
+        ],
+      },
+    ],
+  },
+
+  VISA_P: {
+    nombre: 'VISA-P',
+    nombreCompleto: 'Victorian Institute of Sport Assessment – Patelar (rodilla de saltador)',
+    region: 'Tendón rotuliano / Rodilla',
+    descripcion: 'Tendinopatía rotuliana (rodilla de saltador): dolor y tolerancia deportiva.',
+    escala: [
+      {v:10,l:'10 — Sin molestia'},{v:9,l:'9'},{v:8,l:'8'},{v:7,l:'7'},{v:6,l:'6'},
+      {v:5,l:'5'},{v:4,l:'4'},{v:3,l:'3'},{v:2,l:'2'},{v:1,l:'1'},{v:0,l:'0 — Máxima molestia / imposible'},
+    ],
+    subescalas: [
+      {
+        id:'Total', label:'Puntaje total',
+        items:[
+          'Rigidez o molestia en la rodilla al levantarte por la mañana',
+          'Dolor al subir o bajar escaleras',
+          'Dolor al ponerte en cuclillas',
+          'Dolor durante o después de correr en línea recta',
+          'Dolor durante o después de saltar o aterrizar',
+          'Dolor al estar sentado con la rodilla flexionada por un tiempo prolongado',
+          'Capacidad de entrenar o participar en tu deporte actualmente',
+          'Nivel de actividad deportiva que podés mantener sin que el dolor te limite',
+        ],
+      },
+    ],
+  },
+
+  PRTEE: {
+    nombre: 'PRTEE',
+    nombreCompleto: 'Patient-Rated Tennis Elbow Evaluation (codo de tenista)',
+    region: 'Codo (epicondilalgia lateral)',
+    descripcion: 'Codo de tenista: dolor y función del brazo afectado.',
+    escala: [
+      {v:0,l:'0 — Sin dolor / sin dificultad'},{v:1,l:'1'},{v:2,l:'2'},{v:3,l:'3'},{v:4,l:'4'},
+      {v:5,l:'5'},{v:6,l:'6'},{v:7,l:'7'},{v:8,l:'8'},{v:9,l:'9'},{v:10,l:'10 — Peor dolor / incapaz de hacerlo'},
+    ],
+    invertido: true,
+    subescalas: [
+      {
+        id:'Dolor', label:'Dolor',
+        items:[
+          'Dolor en reposo',
+          'Dolor al hacer un movimiento brusco o repentino con el brazo',
+          'Dolor al levantar un objeto pesado',
+          'Dolor al realizar una actividad que repite el mismo movimiento del brazo',
+          'Dolor en su peor momento',
+        ],
+      },
+      {
+        id:'Funcion', label:'Función',
+        items:[
+          'Girar el picaporte/manija de una puerta',
+          'Llevar una bolsa de compras con el brazo afectado',
+          'Ponerte una media o calcetín',
+          'Usar un destornillador u otra herramienta manual',
+          'Cortar carne con un cuchillo',
+          'Tareas que requieren esfuerzo del brazo (aspirar, rastrillar, barrer)',
+          'Levantar una taza o vaso lleno',
+          'Tareas de higiene personal',
+          'Usar el brazo afectado para empujarte y levantarte (ej. de una silla)',
+          'Tu actividad laboral o doméstica habitual',
+        ],
+      },
+    ],
+  },
+
+  LEFS: {
+    nombre: 'LEFS',
+    nombreCompleto: 'Lower Extremity Functional Scale (miembro inferior, general)',
+    region: 'Miembro inferior (general)',
+    descripcion: 'Función general de miembro inferior, sirve para cualquier lesión de cadera, rodilla, tobillo o pie.',
+    escala: [
+      {v:4, l:'Sin dificultad'},
+      {v:3, l:'Dificultad leve'},
+      {v:2, l:'Dificultad moderada'},
+      {v:1, l:'Dificultad extrema'},
+      {v:0, l:'Incapaz de hacerlo'},
+    ],
+    subescalas: [
+      {
+        id:'Total', label:'Puntaje total',
+        items:[
+          'Cualquiera de tus tareas domésticas habituales','Tu trabajo habitual o tareas escolares',
+          'Tus actividades habituales de cuidado personal (vestirte, bañarte)','Subir o bajar del auto',
+          'Caminar por la cuadra','Caminar entre habitaciones de tu casa','Ponerte medias o calcetines',
+          'Ponerte en cuclillas','Levantar un objeto del piso','Realizar actividades livianas alrededor de la casa',
+          'Realizar actividades pesadas alrededor de la casa','Entrar y salir de un auto','Caminar dos cuadras',
+          'Caminar una distancia de un kilómetro o más','Subir o bajar 10 escalones','Estar de pie durante 1 hora',
+          'Estar sentado durante 1 hora','Correr en terreno parejo','Correr en terreno irregular',
+          'Hacer giros bruscos mientras corrés a toda velocidad',
+        ],
+      },
+    ],
+  },
+
+  UEFI: {
+    nombre: 'UEFI',
+    nombreCompleto: 'Upper Extremity Functional Index (miembro superior, general)',
+    region: 'Miembro superior (general)',
+    descripcion: 'Función general de miembro superior, sirve para cualquier lesión de hombro, codo, muñeca o mano.',
+    escala: [
+      {v:4, l:'Sin dificultad'},
+      {v:3, l:'Dificultad leve'},
+      {v:2, l:'Dificultad moderada'},
+      {v:1, l:'Dificultad extrema'},
+      {v:0, l:'Incapaz de hacerlo'},
+    ],
+    subescalas: [
+      {
+        id:'Total', label:'Puntaje total',
+        items:[
+          'Cualquiera de tus tareas domésticas habituales','Tu trabajo habitual o tareas escolares',
+          'Abrir una puerta','Llevar una bolsa de compras con el brazo afectado',
+          'Quitarte una prenda por encima de la cabeza','Peinarte o cepillarte el cabello',
+          'Atender tareas de higiene personal','Levantar una bolsa de 5 kg a la altura de la cintura',
+          'Levantar una bolsa de 5 kg por encima de la cabeza','Cargar un objeto pesado a una distancia corta',
+          'Cambiar las sábanas de una cama','Vestirte','Trabajar en una computadora o escribir',
+          'Levantar un objeto pequeño desde una mesa','Realizar tareas que requieren movimientos repetidos del brazo',
+          'Abrir un frasco','Manejar o conducir un vehículo','Usar herramientas manuales',
+          'Realizar deportes o actividades recreativas que usan el brazo','Lanzar una pelota',
+        ],
+      },
+    ],
+  },
+
+  IKDC: {
+    nombre: 'IKDC',
+    nombreCompleto: 'International Knee Documentation Committee – Subjective Knee Form',
+    region: 'Rodilla (general / LCA / menisco)',
+    descripcion: 'Función y síntomas de rodilla en general. El más usado en literatura de LCA y lesiones meniscales.',
+    escala: [
+      {v:4, l:'Sin dificultad'},
+      {v:3, l:'Dificultad leve'},
+      {v:2, l:'Dificultad moderada'},
+      {v:1, l:'Dificultad extrema'},
+      {v:0, l:'Incapaz de hacerlo'},
+    ],
+    subescalas: [
+      {
+        id:'Total', label:'Puntaje total',
+        items:[
+          'Grado más alto de actividad que podés realizar sin dolor importante en la rodilla',
+          'Dolor en la rodilla','Rigidez o hinchazón','Sensación de que la rodilla cede o falla (inestabilidad)',
+          'Subir escaleras','Bajar escaleras','Ponerte en cuclillas','Sentarte con la rodilla flexionada',
+          'Levantarte de una silla','Correr en línea recta','Saltar y aterrizar sobre la pierna afectada',
+          'Arrancar y frenar rápidamente','Giros / cambios de dirección bruscos',
+          'Mantener el equilibrio sobre la pierna afectada','Caminar','Subir o bajar de un auto',
+          'Realizar tu actividad deportiva habitual','Nivel de función de la rodilla comparado con antes de la lesión',
+        ],
+      },
+    ],
+  },
+
+  KOOS: {
+    nombre: 'KOOS',
+    nombreCompleto: 'Knee injury and Osteoarthritis Outcome Score',
+    region: 'Rodilla (general / LCA / menisco)',
+    descripcion: 'Dolor, síntomas, función y calidad de vida en rodilla. Gold standard en LCA, menisco y artrosis.',
+    escala: [
+      {v:0, l:'Ninguno'},
+      {v:1, l:'Leve'},
+      {v:2, l:'Moderado'},
+      {v:3, l:'Severo'},
+      {v:4, l:'Extremo'},
+    ],
+    invertido: true,
+    subescalas: [
+      {
+        id:'Dolor', label:'Dolor',
+        items:[
+          '¿Con qué frecuencia tenés dolor de rodilla?','Al girar/pivotear sobre la rodilla',
+          'Al estirar completamente la rodilla','Al flexionar completamente la rodilla',
+          'Al caminar en superficie plana','Al subir o bajar escaleras','Por la noche, en la cama',
+          'Al estar sentado o acostado','Al estar de pie',
+        ],
+      },
+      {
+        id:'Sintomas', label:'Síntomas',
+        items:[
+          'Hinchazón','Sensación de roce, chasquidos u otro ruido articular','Sensación de traba o bloqueo',
+          'Capacidad de extender completamente la rodilla','Capacidad de flexionar completamente la rodilla',
+          'Rigidez al despertarte','Rigidez luego de estar sentado, acostado o en reposo durante el día',
+        ],
+      },
+      {
+        id:'AVD', label:'Actividades de la vida diaria',
+        items:[
+          'Bajar escaleras','Subir escaleras','Levantarte estando sentado','Estar de pie',
+          'Agacharte hasta el piso','Caminar en superficie plana','Entrar o salir de un auto',
+          'Ir de compras','Ponerte medias/calcetines','Levantarte de la cama','Quitarte medias/calcetines',
+          'Estar acostado en la cama (dar vueltas, mantener la posición de la rodilla)',
+          'Entrar o salir de la bañera o ducha','Estar sentado','Sentarte y levantarte del inodoro',
+          'Tareas domésticas pesadas','Tareas domésticas livianas',
+        ],
+      },
+      {
+        id:'Deporte', label:'Deporte y recreación',
+        items:[
+          'Ponerte en cuclillas','Correr','Saltar','Giros/pivots sobre la rodilla afectada','Arrodillarte',
+        ],
+      },
+      {
+        id:'CalidadVida', label:'Calidad de vida',
+        items:[
+          '¿Con qué frecuencia sos consciente del problema en tu rodilla?',
+          '¿Modificaste tu estilo de vida para evitar actividades que puedan dañarla?',
+          '¿Cuánto te afecta la falta de confianza en tu rodilla?',
+          '¿Qué tan difícil te resulta en general convivir con el problema?',
+        ],
+      },
+    ],
+  },
+
+  ACL_RSI: {
+    nombre: 'ACL-RSI',
+    nombreCompleto: 'ACL – Return to Sport after Injury scale',
+    region: 'Rodilla — LCA (readiness psicológica)',
+    descripcion: 'Confianza psicológica y miedo a la re-lesión antes de volver al deporte tras una lesión de LCA. No mide función, sino el aspecto mental del RTP.',
+    escala: [
+      {v:10,l:'10 — Totalmente confiado / sin preocupación'},{v:9,l:'9'},{v:8,l:'8'},{v:7,l:'7'},{v:6,l:'6'},
+      {v:5,l:'5'},{v:4,l:'4'},{v:3,l:'3'},{v:2,l:'2'},{v:1,l:'1'},{v:0,l:'0 — Nada confiado / máxima preocupación'},
+    ],
+    subescalas: [
+      {
+        id:'Total', label:'Puntaje total',
+        items:[
+          '¿Qué tan confiado/a te sentís en tu rodilla para rendir en tu deporte?',
+          '¿Qué tan confiado/a estás en que tu rodilla no se va a lesionar de nuevo si la sometés a estrés (girar, frenar, saltar)?',
+          '¿Qué tan confiado/a te sentís en general sobre volver a tu deporte sin miedo a una nueva lesión?',
+          '¿Sentís que tu rodilla se siente normal cuando hacés tu deporte?',
+          '¿Qué tan frustrado/a te sentís por tu lesión de rodilla?',
+          '¿Sentís miedo de lesionarte la rodilla de nuevo al practicar tu deporte?',
+          '¿Estás nervioso/a por jugar tu deporte?',
+          '¿Te genera tensión o ansiedad pensar en jugar tu deporte?',
+          '¿Tenés dudas sobre si vas a poder rendir al nivel que tenías antes de la lesión?',
+          '¿Pensás en tu lesión de rodilla mientras practicás tu deporte?',
+          '¿Te preocupa lesionarte otra parte del cuerpo por proteger la rodilla?',
+          'En general, ¿qué tan preparado/a te sentís mentalmente para volver a tu deporte al nivel previo?',
+        ],
+      },
+    ],
+  },
+
+  DASH: {
+    nombre: 'DASH',
+    nombreCompleto: 'Disabilities of the Arm, Shoulder and Hand',
+    region: 'Hombro / Miembro superior',
+    descripcion: 'Función general de miembro superior. El más usado en hombro y patología de manguito rotador.',
+    escala: [
+      {v:4, l:'Sin dificultad'},
+      {v:3, l:'Dificultad leve'},
+      {v:2, l:'Dificultad moderada'},
+      {v:1, l:'Dificultad extrema'},
+      {v:0, l:'Incapaz de hacerlo'},
+    ],
+    subescalas: [
+      {
+        id:'Total', label:'Puntaje total',
+        items:[
+          'Abrir un frasco nuevo o muy ajustado','Escribir','Girar una llave','Preparar una comida',
+          'Abrir una puerta pesada','Colocar un objeto en un estante por encima de tu cabeza',
+          'Realizar tareas domésticas pesadas (lavar paredes, pisos)','Hacer jardinería','Hacer la cama',
+          'Cargar una bolsa de compras o un portafolios','Cargar un objeto pesado (más de 5 kg)',
+          'Cambiar una lamparita por encima de tu cabeza','Lavarte o peinarte el cabello','Lavarte la espalda',
+          'Ponerte un pulóver/sweater','Usar un cuchillo para cortar comida',
+          'Actividades recreativas con poco esfuerzo del brazo (ej. jugar a las cartas)',
+          'Actividades recreativas con esfuerzo o impacto del brazo (ej. golf, martillar, tenis)',
+          'Actividades en las que movés el brazo libremente (ej. frisbee, paleta)',
+          'Manejar tus necesidades de transporte (manejar, subir/bajar del colectivo)',
+          'Actividad sexual',
+          'Cuánto te interfirió tu problema de hombro/brazo/mano en tus actividades sociales habituales',
+          'Cuánto te limitó tu problema de hombro/brazo/mano en tu trabajo u otra actividad diaria',
+          'Dolor en el brazo, hombro o mano','Dolor al realizar una actividad específica con el brazo/hombro/mano',
+          'Hormigueo (alfileres y agujas) en el brazo, hombro o mano','Debilidad en el brazo, hombro o mano',
+          'Rigidez en el brazo, hombro o mano','Dificultad para dormir por el dolor en el brazo, hombro o mano',
+          'Sentís que tenés menos confianza o sos menos capaz de usar tu brazo, hombro o mano',
+        ],
+      },
+    ],
+  },
+
+};
+
+// Devuelve {subescalaId: scoreNormalizado(0-100)} a partir de las respuestas crudas
+function calcularScoresCuestionario(tipoId, respuestas) {
+  const def = QUESTIONNAIRES[tipoId];
+  if(!def) return {};
+  const maxVal = Math.max(...def.escala.map(e=>e.v));
+  const scores = {};
+  def.subescalas.forEach(sub => {
+    let suma = 0, n = 0;
+    sub.items.forEach((_, i) => {
+      const key = tipoId+'_'+sub.id+'_'+i;
+      const val = respuestas[key];
+      if(val !== undefined && val !== null && val !== '') { suma += parseFloat(val); n++; }
+    });
+    if(n === 0) { scores[sub.id] = null; return; }
+    const mean = suma / n;
+    // Normalizamos siempre a "mayor = mejor función", 0-100
+    scores[sub.id] = def.invertido
+      ? Math.round((1 - mean / maxVal) * 100)
+      : Math.round((mean / maxVal) * 100);
+  });
+  return scores;
+}
+</script>
+
 <div class="app">
   <aside class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-      <h1>Casartelli · MP 10722</h1>
+    <div class="sidebar-header" onclick="goHome()" style="cursor:pointer;" title="Volver al inicio">
+      <h1>🏠 Casartelli · MP 10722</h1>
       <p>Consultorio kinesiológico</p>
     </div>
     <button class="btn-new-patient" onclick="openNewPatient()">
@@ -570,33 +1049,44 @@ function catLabel(catId)    { const c = getCats().find(c=>c.id===catId); return 
   </div>
 </div>
 
-<!-- ═══════════════════ MODAL CUESTIONARIO (PROM) ═══════════════════ -->
-<div class="modal-overlay" id="modalCuest">
-  <div class="modal" style="max-width:640px;">
-    <div class="modal-header">
-      <h2 id="cuestModalTitle">Nuevo cuestionario</h2>
-      <button class="btn-close" onclick="closeModalCuest()">×</button>
-    </div>
-    <div class="modal-body" id="cuestModalBody">
-      <!-- contenido dinámico -->
+<!-- ═══════════════════ MODAL CUESTIONARIOS (PROMs) ═══════════════════ -->
+<div class="modal-overlay" id="modalCuestPick">
+  <div class="modal" style="max-width:460px;">
+    <div class="modal-header"><h2>Nuevo cuestionario</h2><button class="btn-close" onclick="closeModalCuestPick()">×</button></div>
+    <div class="modal-body">
+      <p style="font-size:12px;color:var(--text-3);margin-bottom:12px;">Elegí qué cuestionario completar</p>
+      <div class="cuest-type-pick" id="cuestTypePick"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn-secondary" onclick="closeModalCuest()">Cancelar</button>
-      <button class="btn-primary" id="btnGuardarCuest" onclick="saveCuestionario()">Guardar</button>
+      <button class="btn-secondary" onclick="closeModalCuestPick()">Cancelar</button>
     </div>
   </div>
 </div>
 
-<!-- ═══════════════════ MODAL VER CUESTIONARIO (solo lectura / resultado) ═══════════════════ -->
-<div class="modal-overlay" id="modalCuestVer">
+<div class="modal-overlay" id="modalCuestForm">
   <div class="modal" style="max-width:560px;">
-    <div class="modal-header">
-      <h2 id="cuestVerTitle">Resultado</h2>
-      <button class="btn-close" onclick="document.getElementById('modalCuestVer').classList.remove('open')">×</button>
+    <div class="modal-header"><h2 id="cuestFormTitle">Cuestionario</h2><button class="btn-close" onclick="closeModalCuestForm()">×</button></div>
+    <div class="modal-body">
+      <div class="modal-field"><label>Fecha *</label><input type="date" id="cuFecha"></div>
+      <div id="cuestFormItems"></div>
     </div>
-    <div class="modal-body" id="cuestVerBody"></div>
     <div class="modal-footer">
-      <button class="btn-secondary" onclick="document.getElementById('modalCuestVer').classList.remove('open')">Cerrar</button>
+      <button class="btn-secondary" onclick="closeModalCuestForm()">Cancelar</button>
+      <button class="btn-primary" onclick="saveCuestionario()">Guardar cuestionario</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalCuestManager">
+  <div class="modal" style="max-width:460px;">
+    <div class="modal-header"><h2>Gestionar cuestionarios</h2><button class="btn-close" onclick="closeCuestManager()">×</button></div>
+    <div class="modal-body">
+      <p style="font-size:12px;color:var(--text-3);margin-bottom:12px;">Desmarcá los que no querés que aparezcan al elegir un cuestionario nuevo. No borra los que ya completaste.</p>
+      <div id="cuestManagerList" style="display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeCuestManager()">Cancelar</button>
+      <button class="btn-primary" onclick="saveCuestManager()">Guardar</button>
     </div>
   </div>
 </div>
@@ -725,6 +1215,8 @@ let currentPatientId = null;
 let currentTab = 'resumen';
 let editingPatientId = null;
 let autoSaveTimer = null;
+let cuestPickTipo = null;
+let editingCuestId = null;
 
 // ── TURNOS estado ──────────────────────────────────────────────────────────────
 let TURNOS = {};
@@ -787,6 +1279,7 @@ function openExportPaciente() {
   const ep = getEpData(p);
   const sesiones = (ep.sesiones || []).slice().sort((a,b) => a.fecha.localeCompare(b.fecha));
   const evaluaciones = ep.evaluaciones || [];
+  const cuestionarios = (ep.cuestionarios || []).slice().sort((a,b) => a.fecha.localeCompare(b.fecha));
 
   let lines = [];
   lines.push('=== PACIENTE ===');
@@ -839,20 +1332,17 @@ function openExportPaciente() {
     });
   }
 
-  // Cuestionarios (PROM)
-  const cuestionarios = (ep.cuestionarios || []).slice().sort((a,b) => a.fecha.localeCompare(b.fecha));
+  // Cuestionarios (PROMs)
   if(cuestionarios.length) {
-    lines.push(''); lines.push('=== CUESTIONARIOS (PROM) ===');
+    lines.push(''); lines.push('=== CUESTIONARIOS (PROMs) ===');
     cuestionarios.forEach(c => {
-      const def = CUESTIONARIOS_DEFS[c.tipoId];
+      const def = QUESTIONNAIRES[c.tipoId];
       const diasC = (c.fecha && p.fechaInicio) ? Math.floor((new Date(c.fecha)-new Date(p.fechaInicio))/86400000) : null;
-      lines.push(`[${formatFecha(c.fecha)}${diasC!==null?' · día '+diasC:''}] ${def?def.id:c.tipoId}`);
-      if(def && c.scores) {
-        def.subscales.forEach(sub => {
-          const sc = c.scores[sub.key];
-          lines.push(`  ${sub.label}: ${sc==null?'—':sc+'%'}`);
-        });
-      }
+      lines.push(`[${formatFecha(c.fecha)}${diasC!==null?' · día '+diasC:''}] ${def?def.nombre:c.tipoId}`);
+      Object.entries(c.scores||{}).forEach(([subId,score])=>{
+        const subLabel = def?.subescalas.find(s=>s.id===subId)?.label || subId;
+        lines.push(`  ${subLabel}: ${score!==null?score+'%':'—'}`);
+      });
     });
   }
 
@@ -956,12 +1446,16 @@ function renderEstadoFilters(){
 function setEstadoFilter(e){currentEstadoFilter=e;renderEstadoFilters();renderPatientList();}
 
 function getEpisodio(p,idx){
-  if(!p.episodios||!p.episodios.length) return {sesiones:p.sesiones||[],evaluaciones:p.evaluaciones||[],estudios:p.estudios||[],movilidad:p.movilidad||{},estado:'tratamiento',nombre:'Episodio 1',fechaInicio:p.fechaInicio||'',fechaAlta:''};
+  if(!p.episodios||!p.episodios.length) return {sesiones:p.sesiones||[],evaluaciones:p.evaluaciones||[],estudios:p.estudios||[],cuestionarios:p.cuestionarios||[],movilidad:p.movilidad||{},estado:'tratamiento',nombre:'Episodio 1',fechaInicio:p.fechaInicio||'',fechaAlta:''};
   return p.episodios[idx]||p.episodios[0];
 }
 function getPatientEstado(p){
   if(!p.episodios||!p.episodios.length) return p.estado||'tratamiento';
   return p.episodios[p.episodios.length-1].estado||'tratamiento';
+}
+function getAllEpisodios(p){
+  if(p.episodios&&p.episodios.length) return p.episodios;
+  return [{sesiones:p.sesiones||[],evaluaciones:p.evaluaciones||[],cuestionarios:p.cuestionarios||[],estudios:p.estudios||[],movilidad:p.movilidad||{},estado:p.estado||'tratamiento',fechaInicio:p.fechaInicio||''}];
 }
 function renderPatientList(){
   const list=document.getElementById('patientList');
@@ -1039,7 +1533,7 @@ function renderTab(){
   if(currentTab==='resumen')           renderResumen(panel);
   else if(currentTab==='sesiones')     renderSesiones(panel);
   else if(currentTab==='evaluaciones') renderEvaluaciones(panel);
-  else if(currentTab==='cuestionarios') renderCuestionarios(panel);
+  else if(currentTab==='cuestionarios')renderCuestionarios(panel);
   else if(currentTab==='fotos')        renderFotos(panel);
   else if(currentTab==='turnos')       renderTurnos(panel);
 }
@@ -1048,12 +1542,198 @@ function switchEpisodio(idx){currentEpisodioIdx=idx;renderPatient();}
 function addEpisodio(){
   const p=getPatient(currentPatientId);
   if(!p.episodios){
-    p.episodios=[{id:uid(),nombre:'Episodio 1',estado:'alta',fechaInicio:p.fechaInicio||'',fechaAlta:'',sesiones:p.sesiones||[],evaluaciones:p.evaluaciones||[],estudios:p.estudios||[],movilidad:p.movilidad||{}}];
+    p.episodios=[{id:uid(),nombre:'Episodio 1',estado:'alta',fechaInicio:p.fechaInicio||'',fechaAlta:'',sesiones:p.sesiones||[],evaluaciones:p.evaluaciones||[],estudios:p.estudios||[],cuestionarios:p.cuestionarios||[],movilidad:p.movilidad||{}}];
   }
   const n=p.episodios.length+1;
-  p.episodios.push({id:uid(),nombre:`Episodio ${n}`,estado:'tratamiento',fechaInicio:new Date().toISOString().slice(0,10),fechaAlta:'',sesiones:[],evaluaciones:[],estudios:[],movilidad:{}});
+  p.episodios.push({id:uid(),nombre:`Episodio ${n}`,estado:'tratamiento',fechaInicio:new Date().toISOString().slice(0,10),fechaAlta:'',sesiones:[],evaluaciones:[],estudios:[],cuestionarios:[],movilidad:{}});
   currentEpisodioIdx=p.episodios.length-1;
   saveDB();renderPatient();
+}
+
+// ══════════════════ CUESTIONARIOS (PROMs) ═══════════════════════════════════
+function renderCuestionarios(panel){
+  const p=getPatient(currentPatientId);const ep=getEpData(p);
+  const cuestionarios=(ep.cuestionarios||[]).slice().reverse();
+  panel.innerHTML=`
+    <div class="cuest-toolbar">
+      <h3 style="font-size:15px;font-weight:700;">${cuestionarios.length} cuestionario${cuestionarios.length!==1?'s':''}</h3>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-backup" style="background:transparent;border:1px solid var(--border);color:var(--text-2);" onclick="openCuestManager()" title="Elegir qué cuestionarios aparecen">⚙ Gestionar</button>
+        <button class="btn-add-cuest" onclick="openCuestPick()">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          Nuevo cuestionario
+        </button>
+      </div>
+    </div>
+    ${!cuestionarios.length?'<div class="cuest-empty">Todavía no hay cuestionarios registrados.</div>':''}
+    <div class="cuest-list">${cuestionarios.map(c=>renderCuestCard(c,ep.fechaInicio||p.fechaInicio)).join('')}</div>`;
+}
+
+function renderCuestCard(c, fechaInicio){
+  const def=QUESTIONNAIRES[c.tipoId];
+  if(!def) return '';
+  const dias=(c.fecha&&fechaInicio)?Math.floor((new Date(c.fecha)-new Date(fechaInicio))/86400000):null;
+  const scores=c.scores||{};
+  return `
+    <div class="cuest-card" id="cc_${c.id}">
+      <div class="cuest-card-header" onclick="toggleCuest('${c.id}')">
+        <span class="cuest-tipo" style="background:${regionColor(def.region)}1A;color:${regionColor(def.region)};padding:3px 9px;border-radius:20px;">${esc(def.nombre)}</span>
+        <span class="cuest-fecha">${formatFecha(c.fecha)}${dias!==null?' · día '+dias:''}</span>
+        <div class="cuest-scores">
+          ${def.subescalas.map(sub=>{
+            const sc=scores[sub.id];
+            return `<span class="cuest-score-badge">${esc(sub.label)}: ${sc!==null&&sc!==undefined?sc+'%':'—'}</span>`;
+          }).join('')}
+        </div>
+        <button class="btn-del-cuest" onclick="event.stopPropagation();deleteCuestionario('${c.id}')">×</button>
+      </div>
+      <div class="cuest-body" id="cb_${c.id}">
+        ${def.subescalas.map(sub=>`
+          <div class="cuest-sub">
+            <div class="cuest-sub-title">${esc(sub.label)} — ${scores[sub.id]!==null&&scores[sub.id]!==undefined?scores[sub.id]+'%':'sin datos'}</div>
+            ${sub.items.map((item,i)=>{
+              const key=c.tipoId+'_'+sub.id+'_'+i;
+              const val=(c.respuestas||{})[key];
+              const opt=def.escala.find(e=>String(e.v)===String(val));
+              return `<div class="cuest-item-row"><span class="cuest-item-label">${esc(item)}</span><span class="cuest-item-val">${opt?esc(opt.l):'—'}</span></div>`;
+            }).join('')}
+          </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+function toggleCuest(id){document.getElementById('cb_'+id).classList.toggle('open');}
+
+const REGION_COLORS = {
+  'Tobillo / Pie': '#5E35B1',
+  'Tendón de Aquiles': '#C0392B',
+  'Tendón rotuliano / Rodilla': '#1A4E8C',
+  'Codo (epicondilalgia lateral)': '#B8962E',
+  'Miembro inferior (general)': '#1B5E3B',
+  'Miembro superior (general)': '#E87722',
+  'Rodilla (general / LCA / menisco)': '#1A4E8C',
+  'Rodilla — LCA (readiness psicológica)': '#8E44AD',
+  'Hombro / Miembro superior': '#D4A017',
+};
+function regionColor(region){ return REGION_COLORS[region] || '#5A6373'; }
+
+function openCuestPick(){
+  const el=document.getElementById('cuestTypePick');
+  const disabled = DB.cuestionariosDisabled || [];
+  const visibles = Object.entries(QUESTIONNAIRES).filter(([id])=>!disabled.includes(id));
+  if(!visibles.length){
+    el.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--text-3);font-size:13px;padding:20px;">No hay cuestionarios habilitados.<br>Activá alguno desde "⚙ Gestionar".</div>';
+    document.getElementById('modalCuestPick').classList.add('open');
+    return;
+  }
+  // Agrupar por región
+  const porRegion = {};
+  visibles.forEach(([id,def])=>{
+    if(!porRegion[def.region]) porRegion[def.region]=[];
+    porRegion[def.region].push([id,def]);
+  });
+  el.innerHTML = Object.entries(porRegion).map(([region,defs])=>`
+    <div style="grid-column:1/-1;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:${regionColor(region)};margin:10px 0 2px;">${esc(region)}</div>
+    ${defs.map(([id,def])=>`
+      <div class="cuest-type-card" style="border-left:4px solid ${regionColor(region)}" onclick="pickCuestType('${id}')">
+        <div class="ctc-name">${esc(def.nombre)}</div>
+        <div class="ctc-region">${esc(def.nombreCompleto)}</div>
+        ${def.descripcion?`<div class="ctc-desc">${esc(def.descripcion)}</div>`:''}
+      </div>`).join('')}`).join('');
+  document.getElementById('modalCuestPick').classList.add('open');
+}
+function closeModalCuestPick(){document.getElementById('modalCuestPick').classList.remove('open');}
+
+function openCuestManager(){
+  const el=document.getElementById('cuestManagerList');
+  const disabled = DB.cuestionariosDisabled || [];
+  el.innerHTML = Object.entries(QUESTIONNAIRES).map(([id,def])=>`
+    <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;">
+      <input type="checkbox" id="cm_${id}" ${disabled.includes(id)?'':'checked'} style="width:16px;height:16px;flex-shrink:0;">
+      <span style="flex:1;">
+        <div style="font-size:13px;font-weight:600;">${esc(def.nombre)}</div>
+        <div style="font-size:11px;color:var(--text-3);">${esc(def.region)} · ${esc(def.nombreCompleto)}</div>
+        ${def.descripcion?`<div style="font-size:11px;color:var(--text-2);margin-top:2px;">${esc(def.descripcion)}</div>`:''}
+      </span>
+    </label>`).join('');
+  document.getElementById('modalCuestManager').classList.add('open');
+}
+function closeCuestManager(){document.getElementById('modalCuestManager').classList.remove('open');}
+function saveCuestManager(){
+  const disabled=[];
+  Object.keys(QUESTIONNAIRES).forEach(id=>{
+    const cb=document.getElementById('cm_'+id);
+    if(cb && !cb.checked) disabled.push(id);
+  });
+  DB.cuestionariosDisabled = disabled;
+  saveDB();
+  closeCuestManager();
+  showToast('Cuestionarios actualizados ✓');
+}
+
+function pickCuestType(tipoId){
+  closeModalCuestPick();
+  editingCuestId=null;
+  openCuestForm(tipoId, new Date().toISOString().slice(0,10), {});
+}
+
+function openCuestForm(tipoId, fecha, respuestas){
+  const def=QUESTIONNAIRES[tipoId];
+  if(!def) return;
+  cuestPickTipo=tipoId;
+  document.getElementById('cuestFormTitle').textContent=def.nombre+' · '+def.nombreCompleto;
+  document.getElementById('cuFecha').value=fecha;
+  const itemsEl=document.getElementById('cuestFormItems');
+  let html='';
+  def.subescalas.forEach(sub=>{
+    html+=`<div class="cuest-form-sub-header">${esc(sub.label)}</div>`;
+    sub.items.forEach((item,i)=>{
+      const key=tipoId+'_'+sub.id+'_'+i;
+      const current=respuestas[key];
+      html+=`<div class="cuest-form-item">
+        <label>${esc(item)}</label>
+        <select id="cuq_${key}">
+          <option value="">— Sin responder —</option>
+          ${def.escala.map(e=>`<option value="${e.v}" ${String(current)===String(e.v)?'selected':''}>${esc(e.l)}</option>`).join('')}
+        </select>
+      </div>`;
+    });
+  });
+  itemsEl.innerHTML=html;
+  document.getElementById('modalCuestForm').classList.add('open');
+}
+function closeModalCuestForm(){document.getElementById('modalCuestForm').classList.remove('open');editingCuestId=null;}
+
+function saveCuestionario(){
+  const fecha=document.getElementById('cuFecha').value;
+  if(!fecha){alert('La fecha es obligatoria.');return;}
+  const def=QUESTIONNAIRES[cuestPickTipo];
+  if(!def) return;
+  const respuestas={};
+  def.subescalas.forEach(sub=>{
+    sub.items.forEach((_,i)=>{
+      const key=cuestPickTipo+'_'+sub.id+'_'+i;
+      const sel=document.getElementById('cuq_'+key);
+      if(sel && sel.value!=='') respuestas[key]=sel.value;
+    });
+  });
+  const scores=calcularScoresCuestionario(cuestPickTipo, respuestas);
+  const p=getPatient(currentPatientId);const ep=getEpData(p);
+  if(!ep.cuestionarios) ep.cuestionarios=[];
+  if(editingCuestId){
+    const idx=ep.cuestionarios.findIndex(c=>c.id===editingCuestId);
+    if(idx!==-1) ep.cuestionarios[idx]={...ep.cuestionarios[idx],fecha,respuestas,scores};
+  } else {
+    ep.cuestionarios.push({id:uid(),tipoId:cuestPickTipo,fecha,respuestas,scores});
+  }
+  saveDB();closeModalCuestForm();renderTab();
+}
+
+function deleteCuestionario(id){
+  if(!confirm('¿Eliminar este cuestionario?'))return;
+  const p=getPatient(currentPatientId);const ep=getEpData(p);
+  ep.cuestionarios=(ep.cuestionarios||[]).filter(c=>c.id!==id);
+  saveDB();renderTab();
 }
 
 // ══════════════════ TURNOS ══════════════════════════════════════════════════
@@ -1734,259 +2414,6 @@ function saveEval(){
 }
 function deleteEval(evalId){if(!confirm('¿Eliminar esta evaluación?'))return;const p=getPatient(currentPatientId);const ep=getEpData(p);ep.evaluaciones=(ep.evaluaciones||[]).filter(e=>e.id!==evalId);saveDB();renderTab();}
 
-// ══════════════════ CUESTIONARIOS (PROM) ═══════════════════════════════════
-// Motor genérico: para sumar un cuestionario nuevo (KOOS, Lysholm, DASH, etc.)
-// solo hay que agregar una entrada acá con sus subescalas e ítems.
-// scaleType 'faam' → 4=mejor puntaje (sin dificultad) ; 'faos' → 0=mejor (ninguno), se invierte al puntuar.
-
-const FAAM_SCALE = [
-  {v:4, l:'Sin dificultad'},
-  {v:3, l:'Dificultad leve'},
-  {v:2, l:'Dificultad moderada'},
-  {v:1, l:'Dificultad extrema'},
-  {v:0, l:'Incapaz'},
-  {v:null, l:'N/A'}
-];
-const FAOS_SCALE = [
-  {v:0, l:'Ninguno'},
-  {v:1, l:'Leve'},
-  {v:2, l:'Moderado'},
-  {v:3, l:'Severo'},
-  {v:4, l:'Extremo'}
-];
-
-const CUESTIONARIOS_DEFS = {
-  FAAM: {
-    id:'FAAM', nombre:'FAAM – Foot and Ankle Ability Measure', region:'Tobillo / Pie', scaleType:'faam',
-    subscales:[
-      { key:'adl', label:'Actividades de la vida diaria (ADL)', items:[
-        'Estar de pie','Caminar en terreno parejo','Caminar en terreno parejo sin calzado',
-        'Caminar cuesta arriba','Caminar cuesta abajo','Subir escaleras','Bajar escaleras',
-        'Caminar en terreno irregular','Subir o bajar de un cordón / escalón','Ponerse en cuclillas',
-        'Pararse en puntas de pie','Caminar hasta 5 minutos','Caminar aproximadamente 10 minutos',
-        'Caminar 15 minutos o más','Tareas domésticas / actividades cotidianas',
-        'Actividades de cuidado personal (vestirse, higiene)','Trabajo liviano o moderado (de pie, caminando)',
-        'Trabajo pesado (empujar, traccionar, trepar, cargar)','Actividades recreativas',
-        'Mantener el equilibrio sobre el pie afectado','Nivel de función actual comparado con antes de la lesión'
-      ]},
-      { key:'sport', label:'Subescala deportiva', items:[
-        'Correr','Saltar','Aterrizar luego de un salto','Arrancar y frenar rápidamente',
-        'Movimientos laterales / cambios de dirección','Actividades de bajo impacto',
-        'Capacidad de realizar la actividad con su técnica habitual',
-        'Capacidad de participar en su deporte el tiempo que desearía'
-      ]}
-    ]
-  },
-  FAOS: {
-    id:'FAOS', nombre:'FAOS – Foot and Ankle Outcome Score', region:'Tobillo / Pie', scaleType:'faos',
-    subscales:[
-      { key:'pain', label:'Dolor', items:[
-        'Frecuencia de dolor en el tobillo/pie','Al girar o pivotear sobre el pie',
-        'Al estirar completamente el pie','Al flexionar completamente el pie',
-        'Al caminar en superficie plana','Al subir o bajar escaleras',
-        'Por la noche, en la cama','Al estar sentado o acostado','Al estar de pie'
-      ]},
-      { key:'symptoms', label:'Otros síntomas', items:[
-        'Hinchazón (edema)','Sensación de roce, chasquidos u otro ruido articular',
-        'Sensación de traba o bloqueo','Rigidez al despertarse',
-        'Rigidez luego de estar sentado, acostado o en reposo durante el día',
-        'Inestabilidad o sensación de que el tobillo cede','Dificultad para apoyar el peso completo'
-      ]},
-      { key:'adl', label:'Actividades de la vida diaria', items:[
-        'Bajar escaleras','Subir escaleras','Levantarse estando sentado','Estar de pie',
-        'Agacharse hasta el piso','Caminar en superficie plana','Entrar o salir de un auto',
-        'Ir de compras','Ponerse medias o calcetines','Levantarse de la cama',
-        'Quitarse medias o calcetines','Estar acostado en la cama (dar vueltas, mantener la posición del pie)',
-        'Entrar o salir de la bañera o ducha','Estar sentado','Sentarse y levantarse del inodoro',
-        'Tareas domésticas pesadas','Tareas domésticas livianas'
-      ]},
-      { key:'sport', label:'Deporte y recreación', items:[
-        'Agacharse en cuclillas','Correr','Saltar','Giros / pivots sobre el pie afectado','Estar de rodillas'
-      ]},
-      { key:'qol', label:'Calidad de vida', items:[
-        '¿Con qué frecuencia es consciente de su problema de tobillo/pie?',
-        '¿Modificó su estilo de vida para evitar actividades que puedan dañarlo?',
-        '¿Cuánto le afecta la falta de confianza en su tobillo/pie?',
-        'En general, ¿cuánta dificultad tiene con su tobillo/pie?'
-      ]}
-    ]
-  }
-};
-
-function getScaleForDef(def){ return def.scaleType==='faam' ? FAAM_SCALE : FAOS_SCALE; }
-
-function calcSubscaleScore(def, sub, respuestas){
-  let sum=0, count=0;
-  sub.items.forEach((_,i)=>{
-    const v = respuestas[sub.key+'_'+i];
-    if(v===undefined || v==='NA') return;
-    sum += Number(v); count++;
-  });
-  if(count===0) return null;
-  let score = (sum/count)*25;          // 0-4 → 0-100
-  if(def.scaleType==='faos') score = 100 - score;  // faos: 0=mejor, se invierte
-  return Math.round(score);
-}
-
-let currentCuestEditId=null, currentCuestTipo=null, currentCuestRespuestas={};
-
-function renderCuestionarios(panel){
-  const p=getPatient(currentPatientId); const ep=getEpData(p);
-  const cuests=(ep.cuestionarios||[]).slice().sort((a,b)=>b.fecha.localeCompare(a.fecha));
-  panel.innerHTML=`
-    <div class="cuest-toolbar">
-      <h3>${cuests.length} cuestionario${cuests.length!==1?'s':''}</h3>
-      <button class="btn-add-cuest" onclick="openNewCuestionario()">
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        Nuevo cuestionario
-      </button>
-    </div>
-    ${!cuests.length?'<div class="cuest-empty">Todavía no hay cuestionarios cargados.<br>Por ahora están disponibles FAAM y FAOS (tobillo/pie) — se pueden ir sumando más sin tocar el resto.</div>':''}
-    <div class="cuest-list">${cuests.map(c=>renderCuestCard(c, ep.fechaInicio||p.fechaInicio)).join('')}</div>`;
-}
-
-function renderCuestCard(c, fechaInicio){
-  const def=CUESTIONARIOS_DEFS[c.tipoId]; if(!def) return '';
-  const dias=(c.fecha && fechaInicio) ? Math.floor((new Date(c.fecha)-new Date(fechaInicio))/86400000) : null;
-  return `<div class="cuest-card" onclick="viewCuestionario('${c.id}')">
-    <span class="cuest-tag">${def.id}</span>
-    <div class="cuest-info">
-      <div class="cuest-fecha">${formatFecha(c.fecha)}</div>
-      <div class="cuest-dias">${dias!==null?'día '+dias:''}</div>
-    </div>
-    <div class="cuest-scores">
-      ${def.subscales.map(sub=>{
-        const sc=c.scores ? c.scores[sub.key] : null;
-        if(sc===null||sc===undefined) return '';
-        const cls = sc>=90?'lsi-ok':sc>=75?'lsi-warn':'lsi-bad';
-        return `<span class="cuest-score-badge ${cls}">${sub.label.split(' ')[0]} ${sc}%</span>`;
-      }).join('')}
-    </div>
-    <button class="btn-del-cuest" onclick="event.stopPropagation();deleteCuestionario('${c.id}')" title="Eliminar">×</button>
-  </div>`;
-}
-
-function openNewCuestionario(){
-  currentCuestEditId=null; currentCuestTipo=null; currentCuestRespuestas={};
-  document.getElementById('cuestModalTitle').textContent='Nuevo cuestionario';
-  renderCuestTypeSelector(new Date().toISOString().slice(0,10), null);
-  document.getElementById('modalCuest').classList.add('open');
-}
-
-function editCuestionario(id){
-  document.getElementById('modalCuestVer').classList.remove('open');
-  const p=getPatient(currentPatientId); const ep=getEpData(p);
-  const c=(ep.cuestionarios||[]).find(x=>x.id===id); if(!c) return;
-  currentCuestEditId=id; currentCuestTipo=c.tipoId; currentCuestRespuestas={...(c.respuestas||{})};
-  document.getElementById('cuestModalTitle').textContent='Editar cuestionario';
-  renderCuestTypeSelector(c.fecha, c.tipoId);
-  document.getElementById('modalCuest').classList.add('open');
-}
-
-function closeModalCuest(){
-  document.getElementById('modalCuest').classList.remove('open');
-  currentCuestTipo=null; currentCuestRespuestas={}; currentCuestEditId=null;
-}
-
-function renderCuestTypeSelector(fecha, tipoPre){
-  const opts = Object.values(CUESTIONARIOS_DEFS).map(d=>`<option value="${d.id}" ${tipoPre===d.id?'selected':''}>${d.nombre}</option>`).join('');
-  document.getElementById('cuestModalBody').innerHTML = `
-    <div class="cuest-warn">⚠ Verificá la redacción de los ítems contra la versión validada en español antes de usar estos puntajes para decisiones clínicas definitivas (alta, RTP). Pensado para seguimiento de evolución propio.</div>
-    <div class="modal-2col">
-      <div class="modal-field"><label>Fecha *</label><input type="date" id="cqFecha" value="${fecha||new Date().toISOString().slice(0,10)}"></div>
-      <div class="modal-field"><label>Cuestionario *</label><select id="cqTipo" onchange="onCuestTipoChange()"><option value="">Elegí…</option>${opts}</select></div>
-    </div>
-    <div id="cqFormArea"></div>`;
-  if(tipoPre){ renderCuestFormArea(); }
-}
-
-function onCuestTipoChange(){
-  currentCuestTipo = document.getElementById('cqTipo').value;
-  currentCuestRespuestas = {};
-  renderCuestFormArea();
-}
-
-function renderCuestFormArea(){
-  const area=document.getElementById('cqFormArea');
-  if(!currentCuestTipo){ area.innerHTML=''; return; }
-  const def=CUESTIONARIOS_DEFS[currentCuestTipo];
-  const scale=getScaleForDef(def);
-  area.innerHTML = def.subscales.map(sub=>`
-    <div class="cuest-subscale-block">
-      <div class="cuest-subscale-head">${sub.label}</div>
-      ${sub.items.map((item,i)=>{
-        const itemId = sub.key+'_'+i;
-        const current = currentCuestRespuestas[itemId];
-        return `<div class="cuest-item-row">
-          <div class="cuest-item-text">${i+1}. ${esc(item)}</div>
-          <div class="cuest-item-options">
-            ${scale.map(opt=>{
-              const val = opt.v===null?'NA':opt.v;
-              const isSel = current!==undefined && (current===val);
-              return `<span class="cuest-opt ${isSel?'selected':''}" onclick="setCuestRespuesta('${itemId}',${opt.v===null?`'NA'`:opt.v},this)">${opt.l}</span>`;
-            }).join('')}
-          </div>
-        </div>`;
-      }).join('')}
-    </div>`).join('');
-}
-
-function setCuestRespuesta(itemId, val, btnEl){
-  currentCuestRespuestas[itemId]=val;
-  const row=btnEl.parentElement;
-  row.querySelectorAll('.cuest-opt').forEach(b=>b.classList.remove('selected'));
-  btnEl.classList.add('selected');
-}
-
-function saveCuestionario(){
-  const fecha=document.getElementById('cqFecha').value;
-  if(!fecha){ alert('La fecha es obligatoria.'); return; }
-  if(!currentCuestTipo){ alert('Elegí qué cuestionario vas a completar.'); return; }
-  const def=CUESTIONARIOS_DEFS[currentCuestTipo];
-  const scores={};
-  def.subscales.forEach(sub=>{ scores[sub.key]=calcSubscaleScore(def,sub,currentCuestRespuestas); });
-  const p=getPatient(currentPatientId); const ep=getEpData(p);
-  if(!ep.cuestionarios) ep.cuestionarios=[];
-  const data={ id: currentCuestEditId||uid(), tipoId: currentCuestTipo, fecha, respuestas:{...currentCuestRespuestas}, scores };
-  if(currentCuestEditId){
-    const idx=ep.cuestionarios.findIndex(c=>c.id===currentCuestEditId);
-    if(idx!==-1) ep.cuestionarios[idx]=data; else ep.cuestionarios.push(data);
-  } else {
-    ep.cuestionarios.push(data);
-  }
-  saveDB(); closeModalCuest(); renderTab();
-}
-
-function viewCuestionario(id){
-  const p=getPatient(currentPatientId); const ep=getEpData(p);
-  const c=(ep.cuestionarios||[]).find(x=>x.id===id); if(!c) return;
-  const def=CUESTIONARIOS_DEFS[c.tipoId]; if(!def) return;
-  document.getElementById('cuestVerTitle').textContent=`${def.id} · ${formatFecha(c.fecha)}`;
-  document.getElementById('cuestVerBody').innerHTML=`
-    <div class="cuest-result-grid">
-      ${def.subscales.map(sub=>{
-        const sc = c.scores ? c.scores[sub.key] : null;
-        const color = sc==null?'var(--text-3)':sc>=90?'var(--green)':sc>=75?'#856B00':'var(--red)';
-        return `<div class="cuest-result-box">
-          <div class="val" style="color:${color}">${sc==null?'—':sc+'%'}</div>
-          <div class="lbl">${sub.label}</div>
-        </div>`;
-      }).join('')}
-    </div>
-    <div style="display:flex;gap:8px;margin-top:16px;">
-      <button class="btn-secondary" style="flex:1" onclick="editCuestionario('${c.id}')">Editar respuestas</button>
-      <button class="btn-danger" style="flex:1" onclick="deleteCuestionario('${c.id}');document.getElementById('modalCuestVer').classList.remove('open')">Eliminar</button>
-    </div>`;
-  document.getElementById('modalCuestVer').classList.add('open');
-}
-
-function deleteCuestionario(id){
-  if(!confirm('¿Eliminar este cuestionario?')) return;
-  const p=getPatient(currentPatientId); const ep=getEpData(p);
-  ep.cuestionarios=(ep.cuestionarios||[]).filter(c=>c.id!==id);
-  saveDB(); renderTab();
-}
-
 // ── CRUD PACIENTES ────────────────────────────────────────────────────────────
 function populateCatSelect(sel=''){
   document.getElementById('mCategoria').innerHTML='<option value="">Sin categoría</option>'+getCats().map(c=>`<option value="${c.id}" ${c.id===sel?'selected':''}>${c.label}</option>`).join('');
@@ -2015,15 +2442,166 @@ function savePatient(){
   const nombre=document.getElementById('mNombre').value.trim();if(!nombre){alert('El nombre es obligatorio.');return;}
   const data={nombre,categoria:document.getElementById('mCategoria').value,edad:document.getElementById('mEdad').value,contacto:document.getElementById('mContacto').value,institucion:document.getElementById('mInstitucion').value,deporte:document.getElementById('mDeporte').value,cirujano:document.getElementById('mCirujano').value,dx:document.getElementById('mDx').value,estructura:document.getElementById('mEstructura').value,fechaInicio:document.getElementById('mFechaInicio').value,cirugia:document.getElementById('mCirugia').value,antecedentes:document.getElementById('mAntecedentes').value,objetivos:document.getElementById('mObjetivos').value,medicacion:document.getElementById('mMedicacion').value,contra:document.getElementById('mContra').value,alerta:document.getElementById('mAlerta').value};
   if(editingPatientId){const idx=DB.patients.findIndex(p=>p.id===editingPatientId);if(idx!==-1)Object.assign(DB.patients[idx],data);}
-  else{DB.patients.unshift({id:uid(),sesiones:[],evaluaciones:[],notas:'',...data});currentPatientId=DB.patients[0].id;}
+  else{DB.patients.unshift({id:uid(),sesiones:[],evaluaciones:[],cuestionarios:[],notas:'',...data});currentPatientId=DB.patients[0].id;}
   saveDB();closeModal();renderPatientList();renderPatient();
 }
 function deletePatient(){
   const p=getPatient(currentPatientId);if(!confirm(`¿Eliminar a ${p.nombre}?`))return;
   DB.patients=DB.patients.filter(x=>x.id!==currentPatientId);currentPatientId=null;
   saveDB();renderPatientList();
-  resetMainPanel('Seleccioná un paciente','O creá uno nuevo desde la barra lateral.');
+  renderHomeDashboard();
 }
+// ══════════════════ INICIO (DASHBOARD) ══════════════════════════════════════
+function renderHomeDashboard(){
+  document.getElementById('topbarPatient').style.display='none';
+  document.getElementById('daysChip').style.display='none';
+  document.getElementById('alertaChip').style.display='none';
+  document.getElementById('tabs').style.display='none';
+  document.getElementById('epBar').style.display='none';
+  const panel=document.getElementById('panel');
+  panel.style.padding='24px';
+  panel.style.display='block';
+
+  const pts = DB.patients||[];
+  if(!pts.length){
+    panel.innerHTML=`<div class="empty-state"><svg width="56" height="56" viewBox="0 0 56 56" fill="none"><rect x="10" y="8" width="36" height="40" rx="4" stroke="#9AA0AD" stroke-width="2"/><path d="M20 20h16M20 27h16M20 34h10" stroke="#9AA0AD" stroke-width="2" stroke-linecap="round"/></svg><h3>Todavía no hay pacientes</h3><p>Creá el primero desde la barra lateral para empezar.</p></div>`;
+    return;
+  }
+
+  const enTratamiento = pts.filter(p=>getPatientEstado(p)==='tratamiento');
+  const today = ymd(new Date());
+  const hoyStr = `${DIAS_SHORT[new Date().getDay()]} ${new Date().getDate()} de ${MESES[new Date().getMonth()]}`;
+
+  // Turnos de hoy
+  const turnosHoy = Object.entries(TURNOS).filter(([,t])=>t.fecha===today).sort((a,b)=>a[1].hora.localeCompare(b[1].hora));
+
+  // Cuestionarios este mes (todos los pacientes/episodios)
+  const ym = today.slice(0,7);
+  let cuestMes=0;
+  pts.forEach(p=>getAllEpisodios(p).forEach(ep=>(ep.cuestionarios||[]).forEach(c=>{ if(c.fecha&&c.fecha.startsWith(ym)) cuestMes++; })));
+
+  // Alertas activas (pacientes en tratamiento con alerta cargada)
+  const conAlerta = enTratamiento.filter(p=>p.alerta&&p.alerta.trim());
+
+  // Donut por categoría (solo pacientes en tratamiento)
+  const cats=getCats();
+  const porCat={};
+  enTratamiento.forEach(p=>{ const k=p.categoria||'_sin'; porCat[k]=(porCat[k]||0)+1; });
+  const donutData = Object.entries(porCat).map(([catId,count])=>({
+    catId, count,
+    label: catId==='_sin'?'Sin categoría':catLabel(catId),
+    color: catId==='_sin'?'#C7CCD4':(catDotColor(catId)||'#888'),
+  })).sort((a,b)=>b.count-a.count);
+
+  panel.innerHTML = `
+    <div class="home-header">
+      <h2>Hola, Lucas 👋</h2>
+      <p>${hoyStr} · ${enTratamiento.length} paciente${enTratamiento.length!==1?'s':''} en tratamiento</p>
+    </div>
+
+    <div class="home-stats">
+      <div class="home-stat-tile" onclick="goToTurnosToday()">
+        <div class="hst-num">${turnosHoy.length}</div>
+        <div class="hst-lbl">Turno${turnosHoy.length!==1?'s':''} hoy</div>
+      </div>
+      <div class="home-stat-tile" onclick="setEstadoFilter('tratamiento')">
+        <div class="hst-num">${enTratamiento.length}</div>
+        <div class="hst-lbl">En tratamiento</div>
+      </div>
+      <div class="home-stat-tile">
+        <div class="hst-num">${cuestMes}</div>
+        <div class="hst-lbl">Cuestionarios este mes</div>
+      </div>
+      <div class="home-stat-tile ${conAlerta.length?'hst-warn':''}">
+        <div class="hst-num">${conAlerta.length}</div>
+        <div class="hst-lbl">Alertas activas</div>
+      </div>
+    </div>
+
+    <div class="home-grid">
+      <div class="home-card">
+        <div class="home-card-title">📅 Agenda de hoy</div>
+        ${!turnosHoy.length?'<div class="home-empty-mini">No tenés turnos para hoy 🎉</div>':
+          turnosHoy.map(([id,t])=>`
+            <div class="home-agenda-item" onclick="openTurDetail('${id}')">
+              <span class="hai-hora">${t.hora}</span>
+              <span class="hai-nombre">${esc(t.paciente)}</span>
+              <span class="tur-badge badge-${t.estado||'confirmado'}">${capitalizeTur(t.estado||'confirmado')}</span>
+            </div>`).join('')}
+      </div>
+
+      <div class="home-card">
+        <div class="home-card-title">📊 Pacientes activos por categoría</div>
+        ${!donutData.length?'<div class="home-empty-mini">No hay pacientes en tratamiento.</div>':`
+        <div class="home-donut-wrap">
+          ${buildDonutSVG(donutData)}
+          <div class="home-legend">
+            ${donutData.map(d=>`
+              <div class="home-legend-item" onclick="${d.catId!=='_sin'?`setCatFilter('${d.catId}')`:''}">
+                <span class="hli-dot" style="background:${d.color}"></span>
+                <span class="hli-label">${esc(d.label)}</span>
+                <span class="hli-count">${d.count}</span>
+              </div>`).join('')}
+          </div>
+        </div>`}
+      </div>
+
+      <div class="home-card" style="grid-column:1/-1">
+        <div class="home-card-title">⚡ Alertas activas</div>
+        ${!conAlerta.length?'<div class="home-empty-mini">Ningún paciente en tratamiento tiene una alerta cargada.</div>':
+          conAlerta.map(p=>`
+            <div class="home-alert-item" onclick="selectPatient('${p.id}')">
+              <div class="hai-avatar">${initials(p.nombre)}</div>
+              <div style="flex:1;min-width:0;">
+                <div class="hai-nombre-bold">${esc(p.nombre)}</div>
+                <div class="hai-alerta-txt">${esc(p.alerta)}</div>
+              </div>
+            </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+function goToTurnosToday(){
+  // Sin paciente seleccionado todavía: mostramos turnos igual seleccionando el primer paciente disponible no hace falta;
+  // si no hay paciente activo, abrimos turnos del primer paciente de la lista para tener tabs visibles.
+  if(!currentPatientId && DB.patients && DB.patients.length){
+    currentPatientId=DB.patients[0].id;
+    if(DB.patients[0].episodios&&DB.patients[0].episodios.length) currentEpisodioIdx=DB.patients[0].episodios.length-1;
+    renderPatientList();renderPatient();
+  }
+  switchTab('turnos');
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    const tabs=['resumen','sesiones','evaluaciones','cuestionarios','fotos','turnos'];
+    t.classList.toggle('active',tabs[i]==='turnos');
+  });
+}
+
+function buildDonutSVG(data){
+  const total=data.reduce((s,d)=>s+d.count,0);
+  const r=46, cx=60, cy=60, sw=20;
+  const circ=2*Math.PI*r;
+  let offset=0;
+  const segs=data.map(d=>{
+    const frac=d.count/total;
+    const dash=frac*circ;
+    const seg=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${d.color}" stroke-width="${sw}" stroke-dasharray="${dash} ${circ-dash}" stroke-dashoffset="${-offset}" stroke-linecap="butt"/>`;
+    offset+=dash;
+    return seg;
+  }).join('');
+  return `<svg width="120" height="120" viewBox="0 0 120 120" style="flex-shrink:0;">
+    <g transform="rotate(-90 ${cx} ${cy})">${segs}</g>
+    <text x="${cx}" y="${cy-3}" text-anchor="middle" font-size="22" font-weight="700" fill="var(--text)" font-family="Inter,sans-serif">${total}</text>
+    <text x="${cx}" y="${cy+13}" text-anchor="middle" font-size="9" fill="var(--text-3)" font-family="Inter,sans-serif">activos</text>
+  </svg>`;
+}
+
+function goHome(){
+  currentPatientId=null;
+  renderPatientList();
+  renderHomeDashboard();
+  closeSidebar();
+}
+
 function resetMainPanel(title,sub){
   document.getElementById('topbarPatient').style.display='none';document.getElementById('daysChip').style.display='none';
   document.getElementById('alertaChip').style.display='none';document.getElementById('tabs').style.display='none';
@@ -2039,25 +2617,23 @@ document.getElementById('panel').innerHTML=`<div class="empty-state"><svg width=
 
 turnosRef.on('value', snap=>{
   TURNOS=snap.val()||{};
-  if(currentTab==='turnos') renderTurnosShell();
+  if(currentTab==='turnos' && currentPatientId) renderTurnosShell();
+  if(!currentPatientId && DB.patients) renderHomeDashboard();
 });
 
 dbRef.once('value').then(snapshot=>{
   const data=snapshot.val();
   if(data)DB=data;
   if(!DB.patients)DB.patients=[];
+  if(!DB.cuestionariosDisabled) DB.cuestionariosDisabled=['FAOS'];
 
   if(!DB.patients.find(p=>p.nombre&&p.nombre.includes('Kruszewski'))){
-    DB.patients.unshift({id:uid(),nombre:'Kruszewski',edad:'67',contacto:'1154964003',institucion:'Abril',deporte:'Gym · Tenis · Stretching',cirujano:'',dx:'Síndrome meniscal',estructura:'Menisco interno y externo · Derecho',fechaInicio:'2026-06-01',estado:'Fase 1',cirugia:'',antecedentes:'Rotura degenerativa cuerno posterior y cuerpo del menisco interno (trazo oblicuo). Rotura degenerativa cuerno anterior y cuerpo del menisco externo. Artrosis.',objetivos:'Volver a hacer deporte y evitar dolor',medicacion:'',contra:'',alerta:'Artrosis, varias veces se inyectó plasma',notas:'',categoria:'privado',sesiones:[{id:uid(),fecha:'2026-06-09',fase:'Fase 1',subjetivo:'Menos dolor cada día, leve dolor al caminar y al subir y bajar escaleras',ejercicios:[{nombre:'SLR',series:'3',reps:'8',kg:'BW',nota:''},{nombre:'Puente glúteo',series:'3',reps:'8',kg:'BW',nota:''},{nombre:'Abducción y aducción',series:'3',reps:'8',kg:'BW',nota:''},{nombre:'Sentadillas',series:'3',reps:'6',kg:'BW',nota:''}],eva:'4',objetivo:'Extensión y flexión FINAL limitada con dolor, sentadillas bien realizadas',plan:'Agregar banda elástica y peso para próximas sesiones'}],evaluaciones:[],estudios:[],movilidad:{flex:{estado:'limitada',grados:'dolor en FINAL del rango'},ext:{estado:'limitada',grados:'dolor en FINAL del rango'}}});
+    DB.patients.unshift({id:uid(),nombre:'Kruszewski',edad:'67',contacto:'1154964003',institucion:'Abril',deporte:'Gym · Tenis · Stretching',cirujano:'',dx:'Síndrome meniscal',estructura:'Menisco interno y externo · Derecho',fechaInicio:'2026-06-01',estado:'Fase 1',cirugia:'',antecedentes:'Rotura degenerativa cuerno posterior y cuerpo del menisco interno (trazo oblicuo). Rotura degenerativa cuerno anterior y cuerpo del menisco externo. Artrosis.',objetivos:'Volver a hacer deporte y evitar dolor',medicacion:'',contra:'',alerta:'Artrosis, varias veces se inyectó plasma',notas:'',categoria:'privado',sesiones:[{id:uid(),fecha:'2026-06-09',fase:'Fase 1',subjetivo:'Menos dolor cada día, leve dolor al caminar y al subir y bajar escaleras',ejercicios:[{nombre:'SLR',series:'3',reps:'8',kg:'BW',nota:''},{nombre:'Puente glúteo',series:'3',reps:'8',kg:'BW',nota:''},{nombre:'Abducción y aducción',series:'3',reps:'8',kg:'BW',nota:''},{nombre:'Sentadillas',series:'3',reps:'6',kg:'BW',nota:''}],eva:'4',objetivo:'Extensión y flexión FINAL limitada con dolor, sentadillas bien realizadas',plan:'Agregar banda elástica y peso para próximas sesiones'}],evaluaciones:[],estudios:[],cuestionarios:[],movilidad:{flex:{estado:'limitada',grados:'dolor en FINAL del rango'},ext:{estado:'limitada',grados:'dolor en FINAL del rango'}}});
     saveDB();
   }
 
   renderCatFilters();renderEstadoFilters();renderPatientList();
-  if(DB.patients.length>0){
-    currentPatientId=DB.patients[0].id;renderPatientList();renderPatient();
-  } else {
-    resetMainPanel('Seleccioná un paciente','O creá uno nuevo desde la barra lateral.');
-  }
+  renderHomeDashboard();
 }).catch(err=>{
   console.error(err);
   document.getElementById('panel').innerHTML=`<div class="empty-state"><h3>Error de conexión</h3><p>Verificá tu conexión e intentá recargar.</p></div>`;
