@@ -189,6 +189,33 @@ input,textarea,select{font-family:'Inter',sans-serif;}
 .lsi-bad{background:var(--red-light);color:var(--red);}
 .btn-del-eval{background:none;border:none;color:var(--text-3);cursor:pointer;padding:4px;font-size:16px;}
 
+/* ── CUESTIONARIOS (PROM) ── */
+.cuest-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px;flex-wrap:wrap;}
+.btn-add-cuest{display:flex;align-items:center;gap:6px;padding:9px 16px;background:#5E35B1;color:#fff;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;}
+.cuest-list{display:flex;flex-direction:column;gap:10px;}
+.cuest-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:box-shadow .15s;}
+.cuest-card:hover{box-shadow:var(--shadow);}
+.cuest-tag{font-size:11px;font-weight:700;color:#5E35B1;background:#F1ECFB;padding:4px 9px;border-radius:20px;flex-shrink:0;}
+.cuest-info{flex:1;min-width:0;}
+.cuest-fecha{font-size:13px;font-weight:600;color:var(--text);}
+.cuest-dias{font-size:11px;color:var(--text-3);margin-top:1px;}
+.cuest-scores{display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0;}
+.cuest-score-badge{font-size:11px;font-weight:700;padding:4px 9px;border-radius:20px;white-space:nowrap;}
+.btn-del-cuest{background:none;border:none;color:var(--text-3);cursor:pointer;font-size:18px;padding:0 4px;flex-shrink:0;}
+.cuest-empty{text-align:center;padding:40px 20px;color:var(--text-3);font-size:14px;}
+.cuest-subscale-block{border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:14px;overflow:hidden;}
+.cuest-subscale-head{background:var(--surface);padding:9px 12px;font-size:12px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:.04em;}
+.cuest-item-row{padding:10px 12px;border-top:1px solid var(--border);}
+.cuest-item-text{font-size:13px;color:var(--text);margin-bottom:7px;line-height:1.4;}
+.cuest-item-options{display:flex;gap:5px;flex-wrap:wrap;}
+.cuest-opt{font-size:11px;padding:6px 10px;border:1.5px solid var(--border);border-radius:20px;cursor:pointer;color:var(--text-2);background:var(--bg);transition:all .12s;white-space:nowrap;}
+.cuest-opt.selected{background:#5E35B1;color:#fff;border-color:#5E35B1;}
+.cuest-result-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px;}
+.cuest-result-box{border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;text-align:center;}
+.cuest-result-box .val{font-size:24px;font-weight:700;}
+.cuest-result-box .lbl{font-size:11px;color:var(--text-2);margin-top:3px;}
+.cuest-warn{background:#FFF8E1;border:1px solid #F0DDA0;border-radius:var(--radius-sm);padding:10px 12px;font-size:12px;color:#856B00;margin-bottom:14px;line-height:1.5;}
+
 /* ── MODALES ── */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:999;display:none;align-items:center;justify-content:center;padding:20px;}
 .modal-overlay.open{display:flex;}
@@ -394,6 +421,7 @@ function catLabel(catId)    { const c = getCats().find(c=>c.id===catId); return 
       <div class="tab active" onclick="switchTab('resumen')">Resumen</div>
       <div class="tab" onclick="switchTab('sesiones')">Sesiones</div>
       <div class="tab" onclick="switchTab('evaluaciones')">Evaluaciones</div>
+      <div class="tab" onclick="switchTab('cuestionarios')">Cuestionarios</div>
       <div class="tab" onclick="switchTab('fotos')">Fotos</div>
       <div class="tab" onclick="switchTab('turnos')">📅 Turnos</div>
     </div>
@@ -538,6 +566,37 @@ function catLabel(catId)    { const c = getCats().find(c=>c.id===catId); return 
     <div class="modal-footer">
       <button class="btn-secondary" onclick="closeModalEval()">Cancelar</button>
       <button class="btn-primary" onclick="saveEval()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ MODAL CUESTIONARIO (PROM) ═══════════════════ -->
+<div class="modal-overlay" id="modalCuest">
+  <div class="modal" style="max-width:640px;">
+    <div class="modal-header">
+      <h2 id="cuestModalTitle">Nuevo cuestionario</h2>
+      <button class="btn-close" onclick="closeModalCuest()">×</button>
+    </div>
+    <div class="modal-body" id="cuestModalBody">
+      <!-- contenido dinámico -->
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModalCuest()">Cancelar</button>
+      <button class="btn-primary" id="btnGuardarCuest" onclick="saveCuestionario()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ MODAL VER CUESTIONARIO (solo lectura / resultado) ═══════════════════ -->
+<div class="modal-overlay" id="modalCuestVer">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header">
+      <h2 id="cuestVerTitle">Resultado</h2>
+      <button class="btn-close" onclick="document.getElementById('modalCuestVer').classList.remove('open')">×</button>
+    </div>
+    <div class="modal-body" id="cuestVerBody"></div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="document.getElementById('modalCuestVer').classList.remove('open')">Cerrar</button>
     </div>
   </div>
 </div>
@@ -780,6 +839,23 @@ function openExportPaciente() {
     });
   }
 
+  // Cuestionarios (PROM)
+  const cuestionarios = (ep.cuestionarios || []).slice().sort((a,b) => a.fecha.localeCompare(b.fecha));
+  if(cuestionarios.length) {
+    lines.push(''); lines.push('=== CUESTIONARIOS (PROM) ===');
+    cuestionarios.forEach(c => {
+      const def = CUESTIONARIOS_DEFS[c.tipoId];
+      const diasC = (c.fecha && p.fechaInicio) ? Math.floor((new Date(c.fecha)-new Date(p.fechaInicio))/86400000) : null;
+      lines.push(`[${formatFecha(c.fecha)}${diasC!==null?' · día '+diasC:''}] ${def?def.id:c.tipoId}`);
+      if(def && c.scores) {
+        def.subscales.forEach(sub => {
+          const sc = c.scores[sub.key];
+          lines.push(`  ${sub.label}: ${sc==null?'—':sc+'%'}`);
+        });
+      }
+    });
+  }
+
   // Sesiones
   if(sesiones.length) {
     lines.push(''); lines.push('=== SESIONES ===');
@@ -949,7 +1025,7 @@ function renderPatient(){
 function switchTab(tab){
   currentTab=tab;
   document.querySelectorAll('.tab').forEach((t,i)=>{
-    const tabs=['resumen','sesiones','evaluaciones','fotos','turnos'];
+    const tabs=['resumen','sesiones','evaluaciones','cuestionarios','fotos','turnos'];
     t.classList.toggle('active',tabs[i]===tab);
   });
   renderTab();
@@ -963,6 +1039,7 @@ function renderTab(){
   if(currentTab==='resumen')           renderResumen(panel);
   else if(currentTab==='sesiones')     renderSesiones(panel);
   else if(currentTab==='evaluaciones') renderEvaluaciones(panel);
+  else if(currentTab==='cuestionarios') renderCuestionarios(panel);
   else if(currentTab==='fotos')        renderFotos(panel);
   else if(currentTab==='turnos')       renderTurnos(panel);
 }
@@ -1656,6 +1733,259 @@ function saveEval(){
   saveDB();closeModalEval();renderTab();
 }
 function deleteEval(evalId){if(!confirm('¿Eliminar esta evaluación?'))return;const p=getPatient(currentPatientId);const ep=getEpData(p);ep.evaluaciones=(ep.evaluaciones||[]).filter(e=>e.id!==evalId);saveDB();renderTab();}
+
+// ══════════════════ CUESTIONARIOS (PROM) ═══════════════════════════════════
+// Motor genérico: para sumar un cuestionario nuevo (KOOS, Lysholm, DASH, etc.)
+// solo hay que agregar una entrada acá con sus subescalas e ítems.
+// scaleType 'faam' → 4=mejor puntaje (sin dificultad) ; 'faos' → 0=mejor (ninguno), se invierte al puntuar.
+
+const FAAM_SCALE = [
+  {v:4, l:'Sin dificultad'},
+  {v:3, l:'Dificultad leve'},
+  {v:2, l:'Dificultad moderada'},
+  {v:1, l:'Dificultad extrema'},
+  {v:0, l:'Incapaz'},
+  {v:null, l:'N/A'}
+];
+const FAOS_SCALE = [
+  {v:0, l:'Ninguno'},
+  {v:1, l:'Leve'},
+  {v:2, l:'Moderado'},
+  {v:3, l:'Severo'},
+  {v:4, l:'Extremo'}
+];
+
+const CUESTIONARIOS_DEFS = {
+  FAAM: {
+    id:'FAAM', nombre:'FAAM – Foot and Ankle Ability Measure', region:'Tobillo / Pie', scaleType:'faam',
+    subscales:[
+      { key:'adl', label:'Actividades de la vida diaria (ADL)', items:[
+        'Estar de pie','Caminar en terreno parejo','Caminar en terreno parejo sin calzado',
+        'Caminar cuesta arriba','Caminar cuesta abajo','Subir escaleras','Bajar escaleras',
+        'Caminar en terreno irregular','Subir o bajar de un cordón / escalón','Ponerse en cuclillas',
+        'Pararse en puntas de pie','Caminar hasta 5 minutos','Caminar aproximadamente 10 minutos',
+        'Caminar 15 minutos o más','Tareas domésticas / actividades cotidianas',
+        'Actividades de cuidado personal (vestirse, higiene)','Trabajo liviano o moderado (de pie, caminando)',
+        'Trabajo pesado (empujar, traccionar, trepar, cargar)','Actividades recreativas',
+        'Mantener el equilibrio sobre el pie afectado','Nivel de función actual comparado con antes de la lesión'
+      ]},
+      { key:'sport', label:'Subescala deportiva', items:[
+        'Correr','Saltar','Aterrizar luego de un salto','Arrancar y frenar rápidamente',
+        'Movimientos laterales / cambios de dirección','Actividades de bajo impacto',
+        'Capacidad de realizar la actividad con su técnica habitual',
+        'Capacidad de participar en su deporte el tiempo que desearía'
+      ]}
+    ]
+  },
+  FAOS: {
+    id:'FAOS', nombre:'FAOS – Foot and Ankle Outcome Score', region:'Tobillo / Pie', scaleType:'faos',
+    subscales:[
+      { key:'pain', label:'Dolor', items:[
+        'Frecuencia de dolor en el tobillo/pie','Al girar o pivotear sobre el pie',
+        'Al estirar completamente el pie','Al flexionar completamente el pie',
+        'Al caminar en superficie plana','Al subir o bajar escaleras',
+        'Por la noche, en la cama','Al estar sentado o acostado','Al estar de pie'
+      ]},
+      { key:'symptoms', label:'Otros síntomas', items:[
+        'Hinchazón (edema)','Sensación de roce, chasquidos u otro ruido articular',
+        'Sensación de traba o bloqueo','Rigidez al despertarse',
+        'Rigidez luego de estar sentado, acostado o en reposo durante el día',
+        'Inestabilidad o sensación de que el tobillo cede','Dificultad para apoyar el peso completo'
+      ]},
+      { key:'adl', label:'Actividades de la vida diaria', items:[
+        'Bajar escaleras','Subir escaleras','Levantarse estando sentado','Estar de pie',
+        'Agacharse hasta el piso','Caminar en superficie plana','Entrar o salir de un auto',
+        'Ir de compras','Ponerse medias o calcetines','Levantarse de la cama',
+        'Quitarse medias o calcetines','Estar acostado en la cama (dar vueltas, mantener la posición del pie)',
+        'Entrar o salir de la bañera o ducha','Estar sentado','Sentarse y levantarse del inodoro',
+        'Tareas domésticas pesadas','Tareas domésticas livianas'
+      ]},
+      { key:'sport', label:'Deporte y recreación', items:[
+        'Agacharse en cuclillas','Correr','Saltar','Giros / pivots sobre el pie afectado','Estar de rodillas'
+      ]},
+      { key:'qol', label:'Calidad de vida', items:[
+        '¿Con qué frecuencia es consciente de su problema de tobillo/pie?',
+        '¿Modificó su estilo de vida para evitar actividades que puedan dañarlo?',
+        '¿Cuánto le afecta la falta de confianza en su tobillo/pie?',
+        'En general, ¿cuánta dificultad tiene con su tobillo/pie?'
+      ]}
+    ]
+  }
+};
+
+function getScaleForDef(def){ return def.scaleType==='faam' ? FAAM_SCALE : FAOS_SCALE; }
+
+function calcSubscaleScore(def, sub, respuestas){
+  let sum=0, count=0;
+  sub.items.forEach((_,i)=>{
+    const v = respuestas[sub.key+'_'+i];
+    if(v===undefined || v==='NA') return;
+    sum += Number(v); count++;
+  });
+  if(count===0) return null;
+  let score = (sum/count)*25;          // 0-4 → 0-100
+  if(def.scaleType==='faos') score = 100 - score;  // faos: 0=mejor, se invierte
+  return Math.round(score);
+}
+
+let currentCuestEditId=null, currentCuestTipo=null, currentCuestRespuestas={};
+
+function renderCuestionarios(panel){
+  const p=getPatient(currentPatientId); const ep=getEpData(p);
+  const cuests=(ep.cuestionarios||[]).slice().sort((a,b)=>b.fecha.localeCompare(a.fecha));
+  panel.innerHTML=`
+    <div class="cuest-toolbar">
+      <h3>${cuests.length} cuestionario${cuests.length!==1?'s':''}</h3>
+      <button class="btn-add-cuest" onclick="openNewCuestionario()">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        Nuevo cuestionario
+      </button>
+    </div>
+    ${!cuests.length?'<div class="cuest-empty">Todavía no hay cuestionarios cargados.<br>Por ahora están disponibles FAAM y FAOS (tobillo/pie) — se pueden ir sumando más sin tocar el resto.</div>':''}
+    <div class="cuest-list">${cuests.map(c=>renderCuestCard(c, ep.fechaInicio||p.fechaInicio)).join('')}</div>`;
+}
+
+function renderCuestCard(c, fechaInicio){
+  const def=CUESTIONARIOS_DEFS[c.tipoId]; if(!def) return '';
+  const dias=(c.fecha && fechaInicio) ? Math.floor((new Date(c.fecha)-new Date(fechaInicio))/86400000) : null;
+  return `<div class="cuest-card" onclick="viewCuestionario('${c.id}')">
+    <span class="cuest-tag">${def.id}</span>
+    <div class="cuest-info">
+      <div class="cuest-fecha">${formatFecha(c.fecha)}</div>
+      <div class="cuest-dias">${dias!==null?'día '+dias:''}</div>
+    </div>
+    <div class="cuest-scores">
+      ${def.subscales.map(sub=>{
+        const sc=c.scores ? c.scores[sub.key] : null;
+        if(sc===null||sc===undefined) return '';
+        const cls = sc>=90?'lsi-ok':sc>=75?'lsi-warn':'lsi-bad';
+        return `<span class="cuest-score-badge ${cls}">${sub.label.split(' ')[0]} ${sc}%</span>`;
+      }).join('')}
+    </div>
+    <button class="btn-del-cuest" onclick="event.stopPropagation();deleteCuestionario('${c.id}')" title="Eliminar">×</button>
+  </div>`;
+}
+
+function openNewCuestionario(){
+  currentCuestEditId=null; currentCuestTipo=null; currentCuestRespuestas={};
+  document.getElementById('cuestModalTitle').textContent='Nuevo cuestionario';
+  renderCuestTypeSelector(new Date().toISOString().slice(0,10), null);
+  document.getElementById('modalCuest').classList.add('open');
+}
+
+function editCuestionario(id){
+  document.getElementById('modalCuestVer').classList.remove('open');
+  const p=getPatient(currentPatientId); const ep=getEpData(p);
+  const c=(ep.cuestionarios||[]).find(x=>x.id===id); if(!c) return;
+  currentCuestEditId=id; currentCuestTipo=c.tipoId; currentCuestRespuestas={...(c.respuestas||{})};
+  document.getElementById('cuestModalTitle').textContent='Editar cuestionario';
+  renderCuestTypeSelector(c.fecha, c.tipoId);
+  document.getElementById('modalCuest').classList.add('open');
+}
+
+function closeModalCuest(){
+  document.getElementById('modalCuest').classList.remove('open');
+  currentCuestTipo=null; currentCuestRespuestas={}; currentCuestEditId=null;
+}
+
+function renderCuestTypeSelector(fecha, tipoPre){
+  const opts = Object.values(CUESTIONARIOS_DEFS).map(d=>`<option value="${d.id}" ${tipoPre===d.id?'selected':''}>${d.nombre}</option>`).join('');
+  document.getElementById('cuestModalBody').innerHTML = `
+    <div class="cuest-warn">⚠ Verificá la redacción de los ítems contra la versión validada en español antes de usar estos puntajes para decisiones clínicas definitivas (alta, RTP). Pensado para seguimiento de evolución propio.</div>
+    <div class="modal-2col">
+      <div class="modal-field"><label>Fecha *</label><input type="date" id="cqFecha" value="${fecha||new Date().toISOString().slice(0,10)}"></div>
+      <div class="modal-field"><label>Cuestionario *</label><select id="cqTipo" onchange="onCuestTipoChange()"><option value="">Elegí…</option>${opts}</select></div>
+    </div>
+    <div id="cqFormArea"></div>`;
+  if(tipoPre){ renderCuestFormArea(); }
+}
+
+function onCuestTipoChange(){
+  currentCuestTipo = document.getElementById('cqTipo').value;
+  currentCuestRespuestas = {};
+  renderCuestFormArea();
+}
+
+function renderCuestFormArea(){
+  const area=document.getElementById('cqFormArea');
+  if(!currentCuestTipo){ area.innerHTML=''; return; }
+  const def=CUESTIONARIOS_DEFS[currentCuestTipo];
+  const scale=getScaleForDef(def);
+  area.innerHTML = def.subscales.map(sub=>`
+    <div class="cuest-subscale-block">
+      <div class="cuest-subscale-head">${sub.label}</div>
+      ${sub.items.map((item,i)=>{
+        const itemId = sub.key+'_'+i;
+        const current = currentCuestRespuestas[itemId];
+        return `<div class="cuest-item-row">
+          <div class="cuest-item-text">${i+1}. ${esc(item)}</div>
+          <div class="cuest-item-options">
+            ${scale.map(opt=>{
+              const val = opt.v===null?'NA':opt.v;
+              const isSel = current!==undefined && (current===val);
+              return `<span class="cuest-opt ${isSel?'selected':''}" onclick="setCuestRespuesta('${itemId}',${opt.v===null?`'NA'`:opt.v},this)">${opt.l}</span>`;
+            }).join('')}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`).join('');
+}
+
+function setCuestRespuesta(itemId, val, btnEl){
+  currentCuestRespuestas[itemId]=val;
+  const row=btnEl.parentElement;
+  row.querySelectorAll('.cuest-opt').forEach(b=>b.classList.remove('selected'));
+  btnEl.classList.add('selected');
+}
+
+function saveCuestionario(){
+  const fecha=document.getElementById('cqFecha').value;
+  if(!fecha){ alert('La fecha es obligatoria.'); return; }
+  if(!currentCuestTipo){ alert('Elegí qué cuestionario vas a completar.'); return; }
+  const def=CUESTIONARIOS_DEFS[currentCuestTipo];
+  const scores={};
+  def.subscales.forEach(sub=>{ scores[sub.key]=calcSubscaleScore(def,sub,currentCuestRespuestas); });
+  const p=getPatient(currentPatientId); const ep=getEpData(p);
+  if(!ep.cuestionarios) ep.cuestionarios=[];
+  const data={ id: currentCuestEditId||uid(), tipoId: currentCuestTipo, fecha, respuestas:{...currentCuestRespuestas}, scores };
+  if(currentCuestEditId){
+    const idx=ep.cuestionarios.findIndex(c=>c.id===currentCuestEditId);
+    if(idx!==-1) ep.cuestionarios[idx]=data; else ep.cuestionarios.push(data);
+  } else {
+    ep.cuestionarios.push(data);
+  }
+  saveDB(); closeModalCuest(); renderTab();
+}
+
+function viewCuestionario(id){
+  const p=getPatient(currentPatientId); const ep=getEpData(p);
+  const c=(ep.cuestionarios||[]).find(x=>x.id===id); if(!c) return;
+  const def=CUESTIONARIOS_DEFS[c.tipoId]; if(!def) return;
+  document.getElementById('cuestVerTitle').textContent=`${def.id} · ${formatFecha(c.fecha)}`;
+  document.getElementById('cuestVerBody').innerHTML=`
+    <div class="cuest-result-grid">
+      ${def.subscales.map(sub=>{
+        const sc = c.scores ? c.scores[sub.key] : null;
+        const color = sc==null?'var(--text-3)':sc>=90?'var(--green)':sc>=75?'#856B00':'var(--red)';
+        return `<div class="cuest-result-box">
+          <div class="val" style="color:${color}">${sc==null?'—':sc+'%'}</div>
+          <div class="lbl">${sub.label}</div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button class="btn-secondary" style="flex:1" onclick="editCuestionario('${c.id}')">Editar respuestas</button>
+      <button class="btn-danger" style="flex:1" onclick="deleteCuestionario('${c.id}');document.getElementById('modalCuestVer').classList.remove('open')">Eliminar</button>
+    </div>`;
+  document.getElementById('modalCuestVer').classList.add('open');
+}
+
+function deleteCuestionario(id){
+  if(!confirm('¿Eliminar este cuestionario?')) return;
+  const p=getPatient(currentPatientId); const ep=getEpData(p);
+  ep.cuestionarios=(ep.cuestionarios||[]).filter(c=>c.id!==id);
+  saveDB(); renderTab();
+}
 
 // ── CRUD PACIENTES ────────────────────────────────────────────────────────────
 function populateCatSelect(sel=''){
