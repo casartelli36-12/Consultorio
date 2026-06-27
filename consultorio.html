@@ -198,13 +198,9 @@ input,textarea,select{font-family:'Inter',sans-serif;}
 .mov-row{padding:10px 14px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);}
 .mov-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);margin-bottom:6px;}
 .mov-picker{display:flex;gap:6px;align-items:center;}
-.mov-dot{width:24px;height:24px;border-radius:50%;border:2px solid transparent;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;opacity:.45;transition:opacity .15s,transform .1s;}
-.mov-dot:hover{transform:scale(1.08);}
-.mov-dot.verde{background:var(--green);}
-.mov-dot.amarillo{background:#E8A400;}
-.mov-dot.rojo{background:var(--red);}
-.mov-dot.sel{opacity:1;border-color:var(--navy);}
-.mov-nota{flex:1;min-width:70px;border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:11px;font-family:Inter,sans-serif;outline:none;color:var(--text-2);}
+.mov-grados{width:54px;border:1px solid var(--border);border-radius:6px;padding:4px 6px;font-size:12px;font-family:Inter,sans-serif;outline:none;text-align:center;}
+.mov-grados:focus{border-color:var(--orange);}
+.mov-nota{border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:11px;font-family:Inter,sans-serif;outline:none;color:var(--text-2);}
 .mov-hist{display:flex;gap:3px;align-items:center;margin-top:7px;overflow-x:auto;padding-bottom:2px;}
 .mov-hist-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
 .mov-hist-dot.verde{background:var(--green);}
@@ -1397,9 +1393,15 @@ function openExportPaciente() {
 
   // Movilidad
   const movEntry = getMovEntryActual(ep);
-  const movSemLabel = {verde:'Bien / completa', amarillo:'Más o menos / limitada', rojo:'Mal / ausente'};
-  const movLines = MOV_ITEMS.filter(m=>movEntry.items&&movEntry.items[m.key]).map(m=>`  ${m.label}: ${movSemLabel[movEntry.items[m.key]]||movEntry.items[m.key]}${movEntry.notas&&movEntry.notas[m.key]?' ('+movEntry.notas[m.key]+')':''}`);
-  if(movLines.length) { lines.push(''); lines.push(`--- MOVILIDAD (${formatFecha(movEntry.fecha||todayISO())}) ---`); lines.push(...movLines); }
+  const movLines = MOV_ITEMS.filter(m=>(movEntry.valores&&movEntry.valores[m.key]!=null&&movEntry.valores[m.key]!=='')||movEntry.notas?.[m.key]).map(m=>{
+    const grados=movEntry.valores?movEntry.valores[m.key]:'';
+    const standard=getMovStandard(ep,m.key);
+    const ev=evalMov(grados,standard);
+    const valorTxt=grados!==''&&grados!=null?`${grados}°${ev&&ev.clase?' ('+ev.label+')':''}`:'';
+    const nota=movEntry.notas&&movEntry.notas[m.key]?' — '+movEntry.notas[m.key]:'';
+    return `  ${m.label}: ${valorTxt}${nota}`;
+  });
+  if(movLines.length) { lines.push(''); lines.push(`--- MOVILIDAD (${formatFecha(movEntry.fecha||todayISO())}${ep.movilidadArticulacion?' · '+ep.movilidadArticulacion:''}) ---`); lines.push(...movLines); }
 
   // Estudios
   const estudios = ep.estudios || [];
@@ -2151,44 +2153,77 @@ function getEpData(p){if(p.episodios&&p.episodios[currentEpisodioIdx])return p.e
 function addEstudio(){const p=getPatient(currentPatientId);const ep=getEpData(p);if(!ep.estudios)ep.estudios=[];ep.estudios.push({tipo:'Ecografía',fecha:'',resultado:''});saveDB();renderTab();}
 function updateEstudio(i,key,val){const p=getPatient(currentPatientId);const ep=getEpData(p);if(!ep.estudios||!ep.estudios[i])return;ep.estudios[i][key]=val;clearTimeout(autoSaveTimer);autoSaveTimer=setTimeout(saveDB,600);}
 function deleteEstudio(i){const p=getPatient(currentPatientId);const ep=getEpData(p);ep.estudios.splice(i,1);saveDB();renderTab();}
-// ── Movilidad: historial con semáforo (verde/amarillo/rojo) por fecha ───────
-const MOV_OLD_TO_SEMAFORO={completa:'verde',limitada:'amarillo',ausente:'rojo'};
+// ── Movilidad: cargás los grados medidos y el semáforo lo calcula la app sola,
+// comparando contra valores de referencia goniométricos estándar según la articulación.
+// 'rango': cuanto más cerca del valor de referencia, mejor (verde ≥90%, amarillo 75-89%, rojo <75%)
+// 'deficit': el valor de referencia es 0° (ej. extensión completa); el número medido ES el déficit
+//   en grados (verde 0-3°, amarillo 4-10°, rojo >10°) — uso típico en extensión de rodilla/codo.
+const ROM_STANDARDS={
+  rodilla:{ flex:{value:135,mode:'rango'}, ext:{value:0,mode:'deficit'} },
+  cadera:{ flex:{value:120,mode:'rango'}, ext:{value:20,mode:'rango'}, rotInt:{value:40,mode:'rango'}, rotExt:{value:45,mode:'rango'}, abd:{value:45,mode:'rango'}, add:{value:30,mode:'rango'} },
+  tobillo:{ flex:{value:20,mode:'rango'}, ext:{value:50,mode:'rango'} },
+  hombro:{ flex:{value:180,mode:'rango'}, ext:{value:60,mode:'rango'}, rotInt:{value:70,mode:'rango'}, rotExt:{value:90,mode:'rango'}, abd:{value:180,mode:'rango'}, add:{value:50,mode:'rango'} },
+  codo:{ flex:{value:145,mode:'rango'}, ext:{value:0,mode:'deficit'}, rotInt:{value:80,mode:'rango'}, rotExt:{value:80,mode:'rango'} },
+  columna:{ flex:{value:60,mode:'rango'}, ext:{value:25,mode:'rango'}, rotInt:{value:30,mode:'rango'}, rotExt:{value:30,mode:'rango'}, abd:{value:25,mode:'rango'}, add:{value:25,mode:'rango'} },
+  muneca:{ flex:{value:80,mode:'rango'}, ext:{value:70,mode:'rango'}, abd:{value:20,mode:'rango'}, add:{value:30,mode:'rango'} },
+};
+const ARTICULACIONES=[{id:'rodilla',label:'Rodilla'},{id:'cadera',label:'Cadera'},{id:'tobillo',label:'Tobillo / pie'},{id:'hombro',label:'Hombro'},{id:'codo',label:'Codo'},{id:'columna',label:'Columna'},{id:'muneca',label:'Muñeca / mano'},{id:'otro',label:'Otra / sin estándar'}];
+
 function getMovHistorial(ep){
-  if(!ep.movilidadHistorial){
-    ep.movilidadHistorial=[];
+  if(!ep.movilidadHistorialV3){
+    ep.movilidadHistorialV3=[];
     const old=ep.movilidad;
-    if(old && Object.keys(old).some(k=>old[k]&&old[k].estado)){
-      const items={}, notas={};
-      Object.keys(old).forEach(k=>{ if(old[k]){ items[k]=MOV_OLD_TO_SEMAFORO[old[k].estado]||''; notas[k]=old[k].grados||''; } });
-      ep.movilidadHistorial.push({id:uid(), fecha: ep.fechaInicio || todayISO(), items, notas});
+    if(old && Object.keys(old).some(k=>old[k]&&(old[k].estado||old[k].grados))){
+      const valores={}, notas={};
+      const estadoTxt={completa:'Completa',limitada:'Limitada',ausente:'Ausente'};
+      Object.keys(old).forEach(k=>{ if(old[k]){ notas[k]=old[k].grados || estadoTxt[old[k].estado] || ''; } });
+      ep.movilidadHistorialV3.push({id:uid(), fecha: ep.fechaInicio || todayISO(), valores, notas});
     }
   }
-  return ep.movilidadHistorial;
+  return ep.movilidadHistorialV3;
 }
-// Entrada de hoy: si no existe, se clona la más reciente (para no repetir todo de cero)
+// Entrada de hoy: si no existe, se clona la más reciente (para no tener que volver a medir todo)
 function getMovEntryHoy(ep){
   const hist=getMovHistorial(ep);
   const hoy=todayISO();
   let entry=hist.find(h=>h.fecha===hoy);
   if(!entry){
     const last=hist.length?hist[hist.length-1]:null;
-    entry={id:uid(), fecha:hoy, items: last?{...last.items}:{}, notas: last?{...last.notas}:{}};
+    entry={id:uid(), fecha:hoy, valores: last?{...last.valores}:{}, notas: last?{...last.notas}:{}};
     hist.push(entry);
     hist.sort((a,b)=>a.fecha.localeCompare(b.fecha));
   }
   return entry;
 }
-// Para mostrar sin crear entradas nuevas (solo lectura, antes de tocar nada)
+// Solo lectura, sin crear entradas nuevas (para mostrar antes de tocar nada)
 function getMovEntryActual(ep){
   const hist=getMovHistorial(ep);
   const hoy=todayISO();
-  return hist.find(h=>h.fecha===hoy) || (hist.length?hist[hist.length-1]:{items:{},notas:{}});
+  return hist.find(h=>h.fecha===hoy) || (hist.length?hist[hist.length-1]:{valores:{},notas:{}});
+}
+function getMovStandard(ep,movKey){
+  const art=ep.movilidadArticulacion||'';
+  return (ROM_STANDARDS[art]||{})[movKey]||null;
+}
+// Evalúa un valor medido contra el estándar de la articulación → {pct|deficit, clase}
+function evalMov(grados, standard){
+  if(grados==null||grados==='') return null;
+  const g=parseFloat(grados); if(isNaN(g)) return null;
+  if(!standard) return {label:`${g}°`, clase:''};
+  if(standard.mode==='deficit'){
+    const cls=g<=3?'lsi-ok':g<=10?'lsi-warn':'lsi-bad';
+    return {label:`${g}° déficit`, clase:cls};
+  }
+  const pct=standard.value?Math.round((g/standard.value)*100):null;
+  if(pct==null) return {label:`${g}°`, clase:''};
+  return {label:`${pct}%`, clase:lsiClass(pct)};
 }
 function updateMovilidad(movKey,field,val){
   const p=getPatient(currentPatientId);const ep=getEpData(p);
   const entry=getMovEntryHoy(ep);
-  if(field==='semaforo'){
-    entry.items[movKey]=val;
+  if(field==='grados'){
+    if(!entry.valores)entry.valores={};
+    entry.valores[movKey]=val;
     clearTimeout(autoSaveTimer);autoSaveTimer=setTimeout(saveDB,600);
     renderMovCard();
   } else if(field==='nota'){
@@ -2197,31 +2232,46 @@ function updateMovilidad(movKey,field,val){
     clearTimeout(autoSaveTimer);autoSaveTimer=setTimeout(saveDB,600);
   }
 }
+function updateMovArticulacion(val){
+  const p=getPatient(currentPatientId);const ep=getEpData(p);
+  ep.movilidadArticulacion=val;
+  saveDB();
+  renderMovCard();
+}
 const MOV_ITEMS=[{key:'flex',label:'Flexión'},{key:'ext',label:'Extensión'},{key:'rotInt',label:'Rot. interna'},{key:'rotExt',label:'Rot. externa'},{key:'abd',label:'Abducción'},{key:'add',label:'Aducción'},{key:'otro1',label:'Otro 1'},{key:'otro2',label:'Otro 2'}];
 function buildMovCardHTML(ep){
   const entry=getMovEntryActual(ep);
   const hist=getMovHistorial(ep);
+  const art=ep.movilidadArticulacion||'';
   return `
-    <div style="padding:10px 14px;background:var(--navy);display:flex;justify-content:space-between;align-items:center;">
+    <div style="padding:10px 14px;background:var(--navy);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
       <span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.06em;">Movilidad</span>
-      <span style="font-size:10px;color:rgba(255,255,255,.5);">🟢 bien · 🟡 más o menos · 🔴 mal</span>
+      <select onchange="updateMovArticulacion(this.value)" style="border:none;border-radius:6px;padding:4px 6px;font-size:11px;font-family:Inter,sans-serif;outline:none;">
+        <option value="">Elegí articulación…</option>
+        ${ARTICULACIONES.map(a=>`<option value="${a.id}" ${art===a.id?'selected':''}>${a.label}</option>`).join('')}
+      </select>
     </div>
+    ${!art?`<div class="mov-hist-empty" style="padding:10px 14px;">Elegí la articulación arriba para que el semáforo se calcule solo contra valores de referencia. Mientras tanto podés cargar los grados igual, sin color.</div>`:''}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
       ${MOV_ITEMS.map(m=>{
-        const val=(entry.items||{})[m.key]||'';
+        const grados=(entry.valores||{})[m.key]??'';
         const nota=(entry.notas||{})[m.key]||'';
+        const standard=getMovStandard(ep,m.key);
+        const ev=evalMov(grados,standard);
+        const badge=ev?(ev.clase?`<span class="lsi-badge ${ev.clase}">${ev.label}</span>`:`<span style="font-size:11px;color:var(--text-3);">${ev.label}</span>`):`<span style="font-size:11px;color:var(--text-3);">—</span>`;
+        const refTxt=standard?(standard.mode==='deficit'?'déficit esperado 0°':`ref. ${standard.value}°`):(art?'sin estándar para este movimiento':'');
         const histDots=hist.map(h=>{
-          const v=(h.items||{})[m.key];
-          return `<span class="mov-hist-dot ${v||'vacio'}" title="${esc(formatFechaCorta(h.fecha))}${v?' — '+v:''}"></span>`;
+          const he=evalMov((h.valores||{})[m.key], standard);
+          const cls=he&&he.clase?(he.clase==='lsi-ok'?'verde':he.clase==='lsi-warn'?'amarillo':'rojo'):'vacio';
+          return `<span class="mov-hist-dot ${cls}" title="${esc(formatFechaCorta(h.fecha))}${he?' — '+he.label:''}"></span>`;
         }).join('');
         return `<div class="mov-row">
-          <div class="mov-label">${m.label}</div>
+          <div class="mov-label">${m.label}${refTxt?` <span style="text-transform:none;opacity:.7;">(${refTxt})</span>`:''}</div>
           <div class="mov-picker">
-            <div class="mov-dot rojo ${val==='rojo'?'sel':''}" title="Mal / ausente" onclick="updateMovilidad('${m.key}','semaforo','rojo')"></div>
-            <div class="mov-dot amarillo ${val==='amarillo'?'sel':''}" title="Más o menos / limitada" onclick="updateMovilidad('${m.key}','semaforo','amarillo')"></div>
-            <div class="mov-dot verde ${val==='verde'?'sel':''}" title="Bien / completa" onclick="updateMovilidad('${m.key}','semaforo','verde')"></div>
-            <input class="mov-nota" type="text" value="${esc(nota)}" placeholder="nota (opc.)" oninput="updateMovilidad('${m.key}','nota',this.value)">
+            <input class="mov-grados" type="number" value="${esc(grados)}" placeholder="°" title="Grados medidos" oninput="updateMovilidad('${m.key}','grados',this.value)">
+            ${badge}
           </div>
+          <input class="mov-nota" type="text" value="${esc(nota)}" placeholder="nota (opc.)" oninput="updateMovilidad('${m.key}','nota',this.value)" style="margin-top:5px;width:100%;">
           ${hist.length?`<div class="mov-hist">${histDots}</div>`:`<div class="mov-hist-empty">Sin evolución registrada todavía</div>`}
         </div>`;
       }).join('')}
