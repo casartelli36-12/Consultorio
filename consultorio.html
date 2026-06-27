@@ -233,6 +233,21 @@ input,textarea,select{font-family:'Inter',sans-serif;}
 /* ── MODALES ── */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:999;display:none;align-items:center;justify-content:center;padding:20px;}
 .modal-overlay.open{display:flex;}
+.ej-suggest-box{position:fixed;z-index:2000;background:#fff;border:1px solid var(--border);border-radius:var(--radius-sm);box-shadow:0 8px 24px rgba(0,0,0,.18);max-height:280px;overflow-y:auto;font-family:Inter,sans-serif;}
+.ej-suggest-cat{position:sticky;top:0;background:var(--navy);color:#fff;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:6px 10px;}
+.ej-suggest-sub{font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.03em;padding:6px 10px 2px;}
+.ej-suggest-item{padding:7px 12px;font-size:13px;color:var(--text);cursor:pointer;}
+.ej-suggest-item:hover,.ej-suggest-item.active{background:var(--orange-light);color:var(--orange);}
+.ej-suggest-empty{padding:14px 12px;font-size:12px;color:var(--text-3);text-align:center;}
+.auth-gate{position:fixed;inset:0;background:var(--navy);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;}
+.auth-gate-card{background:#fff;border-radius:14px;padding:32px 28px;max-width:340px;width:100%;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.3);}
+.auth-gate-logo{font-size:34px;margin-bottom:6px;}
+.auth-gate-card h2{font-size:16px;color:var(--navy);margin-bottom:6px;}
+.auth-gate-card p{font-size:13px;color:var(--text-2);margin-bottom:18px;}
+.auth-gate-card input{width:100%;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:11px 14px;font-size:15px;font-family:'Inter',sans-serif;outline:none;text-align:center;margin-bottom:10px;}
+.auth-gate-card input:focus{border-color:var(--orange);}
+.auth-gate-card button{width:100%;padding:11px;background:var(--orange);color:#fff;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;}
+.auth-gate-error{display:none;color:var(--red);font-size:12px;margin-bottom:10px;}
 .modal{background:#fff;border-radius:var(--radius);width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg);}
 .modal-header{padding:20px 20px 0;display:flex;justify-content:space-between;align-items:center;}
 .modal-header h2{font-size:18px;font-weight:700;}
@@ -248,6 +263,7 @@ input,textarea,select{font-family:'Inter',sans-serif;}
 .btn-secondary{padding:11px 20px;background:transparent;color:var(--text-2);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;cursor:pointer;}
 .btn-danger{padding:11px 20px;background:transparent;color:var(--red);border:1px solid rgba(192,57,43,.3);border-radius:var(--radius-sm);font-size:14px;cursor:pointer;}
 .modal-2col{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.modal-4col{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;}
 
 /* ── TURNOS ── */
 .turnos-shell{display:flex;flex-direction:column;height:100%;overflow:hidden;}
@@ -397,6 +413,7 @@ input,textarea,select{font-family:'Inter',sans-serif;}
   .resumen-grid .field{border-right:none;}
   .ses-fields{grid-template-columns:1fr;}
   .modal-2col{grid-template-columns:1fr;}
+  .modal-4col{grid-template-columns:1fr 1fr;}
   .days-chip .num{font-size:18px;}
   .tur-week-grid{grid-template-columns:40px repeat(7,1fr);}
   .ej-table-head,.ej-row{grid-template-columns:34px 2fr 46px 46px 56px 1fr auto;}
@@ -405,6 +422,17 @@ input,textarea,select{font-family:'Inter',sans-serif;}
 </style>
 </head>
 <body>
+
+<div id="authGate" class="auth-gate">
+  <form class="auth-gate-card" onsubmit="event.preventDefault();tryAuthLogin();">
+    <div class="auth-gate-logo">🔒</div>
+    <h2>Casartelli · MP 10722</h2>
+    <p>Ingresá la contraseña para acceder al consultorio.</p>
+    <input type="password" id="authPassInput" placeholder="Contraseña" autocomplete="off">
+    <div id="authError" class="auth-gate-error">Contraseña incorrecta. Probá de nuevo.</div>
+    <button type="submit">Entrar</button>
+  </form>
+</div>
 
 <script>
 const DEFAULT_CATS = [
@@ -416,6 +444,38 @@ const DEFAULT_CATS = [
 ];
 let currentCatFilter = 'all';
 let currentEstadoFilter = 'tratamiento';
+
+// ── Librería de ejercicios (sugerencias categorizadas, no restrictivo) ──────
+const EXERCISE_LIBRARY = {
+  'Miembro Inferior': {
+    'Dominante de cadera': ['Peso muerto','Peso muerto rumano','Peso muerto a una pierna','Hip thrust','Puente de glúteo','Buenos días'],
+    'Dominante de rodilla': ['Sentadilla','Sentadilla goblet','Sentadilla búlgara','Prensa','Zancada','Step up','Extensión de cuádriceps'],
+    'Flexores de rodilla': ['Curl femoral acostado','Curl femoral sentado','Nordic curl'],
+    'Aductores / Abductores': ['Aducción de cadera','Abducción de cadera','Sentadilla sumo'],
+    'Tobillo / Pantorrilla': ['Elevación de talones','Elevación de talones sentado','Elongación gastrocnemio/sóleo'],
+  },
+  'Miembro Superior': {
+    'Empuje horizontal': ['Press de banca','Press de banca con mancuernas','Flexión de brazos (push up)'],
+    'Empuje vertical': ['Press militar','Press de hombro con mancuernas','Push press'],
+    'Tracción horizontal': ['Remo con barra','Remo con mancuerna','Remo en polea'],
+    'Tracción vertical': ['Dominadas','Jalón al pecho (polea)'],
+    'Hombro / Manguito rotador': ['Rotación externa con banda','Rotación interna con banda','Elevación lateral','Face pull','Patrón Y-T-W con banda'],
+    'Codo / Antebrazo': ['Curl de bíceps','Extensión de tríceps','Curl de muñeca','Pronosupinación con mancuerna'],
+  },
+  'Core / Tronco': {
+    'Anti-extensión': ['Plancha abdominal','Dead bug'],
+    'Anti-rotación': ['Press de pallof','Leñador (woodchopper)'],
+    'Flexo-extensión': ['Crunch abdominal','Elevación de piernas','Hiperextensión lumbar'],
+  },
+  'Movilidad / Propiocepción': {
+    'Movilidad articular': ['Movilidad de cadera 90/90','Movilidad de tobillo a pared','Movilidad torácica'],
+    'Equilibrio / Propiocepción': ['Apoyo monopodal','Apoyo monopodal en superficie inestable','Sentadilla en bosu'],
+  },
+  'Cardio / Pliometría': {
+    'Cardiovascular': ['Bicicleta fija','Cinta / caminadora','Elíptica','Remo ergómetro'],
+    'Pliometría / Potencia': ['Salto al cajón (box jump)','Salto vertical (CMJ)','Salto horizontal','Drop jump','Skipping'],
+  },
+};
 let currentEpisodioIdx = 0;
 
 function getCats() { return DB.cats || DEFAULT_CATS; }
@@ -990,8 +1050,9 @@ function calcularScoresCuestionario(tipoId, respuestas) {
         <div id="ejerciciosList" style="border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius-sm) var(--radius-sm);overflow:hidden;margin-bottom:8px;"></div>
         <button type="button" onclick="addEjercicioRow()" style="width:100%;padding:8px;border:1.5px dashed var(--border);border-radius:var(--radius-sm);background:transparent;color:var(--text-2);font-size:13px;cursor:pointer;font-family:Inter,sans-serif;">+ Agregar ejercicio</button>
       </div>
-      <div class="modal-2col" style="grid-template-columns:1fr 1fr 1fr;">
-        <div class="modal-field"><label>Dolor (EVA 0-10)</label><input type="number" id="sDolor" min="0" max="10" placeholder="2"></div>
+      <div class="modal-4col">
+        <div class="modal-field"><label>EVA diaria (general)</label><input type="number" id="sDolorDiario" min="0" max="10" placeholder="3"></div>
+        <div class="modal-field"><label>EVA entrenamiento</label><input type="number" id="sDolor" min="0" max="10" placeholder="2"></div>
         <div class="modal-field"><label>RPE (esfuerzo 0-10)</label><input type="number" id="sRpe" min="0" max="10" placeholder="6"></div>
         <div class="modal-field"><label>Duración (min)</label><input type="number" id="sDuracion" min="0" placeholder="45"></div>
       </div>
@@ -1373,7 +1434,12 @@ function openExportPaciente() {
           lines.push(ej);
         });
       }
-      if(s.eva)      lines.push(`  EVA/RPE: ${s.eva}`);
+      const expDD=getDolorDiarioSesion(s), expDE=getDolorSesion(s), expRpe=getRpeSesion(s);
+      if(expDD!=null)   lines.push(`  EVA diaria: ${expDD}`);
+      if(expDE!=null)   lines.push(`  EVA entrenamiento: ${expDE}`);
+      if(expRpe!=null)  lines.push(`  RPE: ${expRpe}`);
+      if(s.duracion)     lines.push(`  Duración: ${s.duracion} min`);
+      if(s.eva)      lines.push(`  EVA/RPE (texto libre): ${s.eva}`);
       if(s.objetivo) lines.push(`  Observaciones: ${s.objetivo}`);
       if(s.plan)     lines.push(`  Plan próxima: ${s.plan}`);
     });
@@ -2164,7 +2230,7 @@ function buildEjTableEditable(sesId, ejercicios) {
     <div class="ej-row ${e.bloque?'ej-grouped':''}" id="ejrow_${sesId}_${i}">
       <input class="ej-input bloque" type="text" value="${esc(e.bloque||'')}" placeholder="—" maxlength="2" title="Superserie"
         oninput="updateEjField('${sesId}',${i},'bloque',this.value)">
-      <input class="ej-input" type="text" value="${esc(e.nombre||'')}" placeholder="Ejercicio"
+      <input class="ej-input ej-name-input" type="text" value="${esc(e.nombre||'')}" placeholder="Ejercicio" autocomplete="off"
         oninput="updateEjField('${sesId}',${i},'nombre',this.value)">
       <input class="ej-input center" type="text" value="${esc(e.series||'')}" placeholder="—"
         oninput="updateEjField('${sesId}',${i},'series',this.value)">
@@ -2232,8 +2298,8 @@ function renderSesCard(s,num,fechaInicio){
   const ejercicios=s.ejercicios||[];
   const labels=computeBloqueLabels(ejercicios);
   const preview=ejercicios.length?ejercicios.map((e,i)=>(labels[i]?`[${labels[i]}] `:'')+e.nombre+(e.series?` ${e.series}×${e.reps}`:'')).join('  ·  '):(s.intervencion||'—');
-  const dolor=getDolorSesion(s), rpe=getRpeSesion(s);
-  const chip=[dolor!=null?`EVA ${dolor}`:'',rpe!=null?`RPE ${rpe}`:''].filter(Boolean).join(' · ')||(s.eva?esc(s.eva):'');
+  const dolorDiario=getDolorDiarioSesion(s), dolor=getDolorSesion(s), rpe=getRpeSesion(s);
+  const chip=[dolorDiario!=null?`EVA-d ${dolorDiario}`:'',dolor!=null?`EVA-e ${dolor}`:'',rpe!=null?`RPE ${rpe}`:''].filter(Boolean).join(' · ')||(s.eva?esc(s.eva):'');
 
   return `
     <div class="ses-card" id="sc_${s.id}">
@@ -2254,7 +2320,8 @@ function renderSesCard(s,num,fechaInicio){
             <label>Ejercicios</label>
             ${buildEjTableEditable(s.id, ejercicios)}
           </div>
-          <div class="ses-field"><label>Dolor (EVA 0-10)</label><input type="number" min="0" max="10" value="${esc(s.dolor!=null?s.dolor:'')}" oninput="updateSes('${s.id}','dolor',this.value)"></div>
+          <div class="ses-field"><label>EVA diaria (general)</label><input type="number" min="0" max="10" value="${esc(s.dolorDiario!=null?s.dolorDiario:'')}" oninput="updateSes('${s.id}','dolorDiario',this.value)"></div>
+          <div class="ses-field"><label>EVA entrenamiento</label><input type="number" min="0" max="10" value="${esc(s.dolor!=null?s.dolor:'')}" oninput="updateSes('${s.id}','dolor',this.value)"></div>
           <div class="ses-field"><label>RPE (esfuerzo 0-10)</label><input type="number" min="0" max="10" value="${esc(s.rpe!=null?s.rpe:'')}" oninput="updateSes('${s.id}','rpe',this.value)"></div>
           <div class="ses-field"><label>Duración (min)</label><input type="number" min="0" value="${esc(s.duracion!=null?s.duracion:'')}" oninput="updateSes('${s.id}','duracion',this.value)"></div>
           <div class="ses-field full"><label>Lo que observé</label><textarea oninput="updateSes('${s.id}','objetivo',this.value)">${esc(s.objetivo||'')}</textarea></div>
@@ -2274,6 +2341,84 @@ function updateSes(sesId,key,val){const p=getPatient(currentPatientId);const ep=
 function deleteSes(sesId){if(!confirm('¿Eliminar esta sesión?'))return;const p=getPatient(currentPatientId);const ep=getEpData(p);ep.sesiones=(ep.sesiones||[]).filter(s=>s.id!==sesId);saveDB();renderTab();}
 
 // ── Ejercicios en modal nueva sesión (con columna Notas) ─────────────────────
+// ── Autocompletado categorizado de ejercicios (sugiere, no restringe) ───────
+let ejSuggestInput=null, ejSuggestBox=null;
+
+function norm(s){ return (s||'').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+
+function buildEjSuggestHTML(filterText){
+  const f=norm(filterText);
+  let html=''; let any=false;
+  Object.keys(EXERCISE_LIBRARY).forEach(cat=>{
+    const subcats=EXERCISE_LIBRARY[cat];
+    let catHTML='';
+    Object.keys(subcats).forEach(sub=>{
+      const items=subcats[sub].filter(name=>!f||norm(name).includes(f));
+      if(!items.length) return;
+      catHTML+=`<div class="ej-suggest-sub">${esc(sub)}</div>`;
+      items.forEach(name=>{ catHTML+=`<div class="ej-suggest-item" data-name="${esc(name)}">${esc(name)}</div>`; any=true; });
+    });
+    if(catHTML) html+=`<div class="ej-suggest-cat">${esc(cat)}</div>${catHTML}`;
+  });
+  if(!any) html=`<div class="ej-suggest-empty">Sin coincidencias en la librería — podés escribir tu propio ejercicio.</div>`;
+  return html;
+}
+
+function positionEjSuggest(input){
+  const r=input.getBoundingClientRect();
+  let left=r.left, width=Math.max(r.width,220);
+  if(left+width>window.innerWidth-8) left=Math.max(window.innerWidth-8-width,8);
+  ejSuggestBox.style.left=left+'px';
+  ejSuggestBox.style.width=width+'px';
+  let top=r.bottom+4;
+  if(top+280>window.innerHeight){ top=Math.max(r.top-284,8); }
+  ejSuggestBox.style.top=top+'px';
+}
+
+function showEjSuggest(input){
+  ejSuggestInput=input;
+  if(!ejSuggestBox){
+    ejSuggestBox=document.createElement('div');
+    ejSuggestBox.className='ej-suggest-box';
+    document.body.appendChild(ejSuggestBox);
+    ejSuggestBox.addEventListener('mousedown', e=>{
+      const item=e.target.closest('.ej-suggest-item');
+      if(!item) return;
+      e.preventDefault();
+      pickEjSuggest(item.getAttribute('data-name'));
+    });
+  }
+  ejSuggestBox.innerHTML=buildEjSuggestHTML(input.value);
+  ejSuggestBox.style.display='block';
+  positionEjSuggest(input);
+}
+
+function refreshEjSuggest(input){
+  if(!ejSuggestBox||ejSuggestInput!==input) return;
+  ejSuggestBox.innerHTML=buildEjSuggestHTML(input.value);
+  positionEjSuggest(input);
+}
+
+function hideEjSuggest(){
+  if(ejSuggestBox) ejSuggestBox.style.display='none';
+  ejSuggestInput=null;
+}
+
+function pickEjSuggest(name){
+  if(!ejSuggestInput) return;
+  ejSuggestInput.value=name;
+  ejSuggestInput.dispatchEvent(new Event('input',{bubbles:true}));
+  hideEjSuggest();
+  ejSuggestInput.focus();
+}
+
+document.addEventListener('focusin', e=>{ if(e.target.matches&&e.target.matches('.ej-name-input')) showEjSuggest(e.target); });
+document.addEventListener('input', e=>{ if(e.target.matches&&e.target.matches('.ej-name-input')) refreshEjSuggest(e.target); });
+document.addEventListener('focusout', e=>{
+  if(!e.target.matches||!e.target.matches('.ej-name-input')) return;
+  setTimeout(()=>{ if(document.activeElement!==ejSuggestInput) hideEjSuggest(); },120);
+});
+
 function addEjercicioRow(nombre='',series='',reps='',kg='',nota='',bloque=''){
   const container=document.getElementById('ejerciciosList');const id='ej_'+uid();const div=document.createElement('div');
   div.id=id;
@@ -2281,7 +2426,7 @@ function addEjercicioRow(nombre='',series='',reps='',kg='',nota='',bloque=''){
   div.innerHTML=`
     <input type="text" value="${esc(bloque)}" placeholder="A" maxlength="2" title="Superserie: poné la misma letra en los ejercicios que van juntos"
       style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 4px;font-size:13px;font-family:Inter,sans-serif;outline:none;text-align:center;font-weight:700;text-transform:uppercase;">
-    <input type="text" value="${esc(nombre)}" placeholder="Ejercicio / intervención" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 9px;font-size:13px;font-family:Inter,sans-serif;outline:none;">
+    <input type="text" class="ej-name-input" value="${esc(nombre)}" placeholder="Ejercicio / intervención" autocomplete="off" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 9px;font-size:13px;font-family:Inter,sans-serif;outline:none;">
     <input type="text" value="${esc(series)}" placeholder="—" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 6px;font-size:13px;font-family:Inter,sans-serif;outline:none;text-align:center;">
     <input type="text" value="${esc(reps)}" placeholder="—" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 6px;font-size:13px;font-family:Inter,sans-serif;outline:none;text-align:center;">
     <input type="text" value="${esc(kg)}" placeholder="—" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 6px;font-size:13px;font-family:Inter,sans-serif;outline:none;text-align:center;">
@@ -2298,7 +2443,7 @@ function getEjercicios(){
 }
 function openNewSesion(){
   document.getElementById('sFecha').value=new Date().toISOString().slice(0,10);
-  ['sFase','sSubjetivo','sDolor','sRpe','sDuracion','sObjetivo','sPlan'].forEach(id=>document.getElementById(id).value='');
+  ['sFase','sSubjetivo','sDolorDiario','sDolor','sRpe','sDuracion','sObjetivo','sPlan'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('ejerciciosList').innerHTML='';addEjercicioRow();
   document.getElementById('modalSesion').classList.add('open');
 }
@@ -2395,7 +2540,7 @@ function saveSesion(){
   const fecha=document.getElementById('sFecha').value;
   if(!fecha){alert('La fecha es obligatoria.');return;}
   const p=getPatient(currentPatientId);const ep=getEpData(p);if(!ep.sesiones)ep.sesiones=[];
-  ep.sesiones.push({id:uid(),fecha,fase:document.getElementById('sFase').value,subjetivo:document.getElementById('sSubjetivo').value,ejercicios:getEjercicios(),dolor:document.getElementById('sDolor').value,rpe:document.getElementById('sRpe').value,duracion:document.getElementById('sDuracion').value,objetivo:document.getElementById('sObjetivo').value,plan:document.getElementById('sPlan').value});
+  ep.sesiones.push({id:uid(),fecha,fase:document.getElementById('sFase').value,subjetivo:document.getElementById('sSubjetivo').value,ejercicios:getEjercicios(),dolorDiario:document.getElementById('sDolorDiario').value,dolor:document.getElementById('sDolor').value,rpe:document.getElementById('sRpe').value,duracion:document.getElementById('sDuracion').value,objetivo:document.getElementById('sObjetivo').value,plan:document.getElementById('sPlan').value});
   saveDB();closeModalSesion();renderTab();
 }
 
@@ -2453,6 +2598,11 @@ function getDolorSesion(s){
   if(s.eva){ const m=s.eva.match(/(\d+(\.\d+)?)/); if(m) return parseFloat(m[1]); }
   return null;
 }
+// Dolor diario (EVA general del día, independiente del entrenamiento)
+function getDolorDiarioSesion(s){
+  if(s.dolorDiario!==undefined && s.dolorDiario!==null && s.dolorDiario!=='') { const n=parseFloat(s.dolorDiario); return isNaN(n)?null:n; }
+  return null;
+}
 function getRpeSesion(s){
   if(s.rpe!==undefined && s.rpe!==null && s.rpe!=='') { const n=parseFloat(s.rpe); return isNaN(n)?null:n; }
   if(s.eva){ const m=s.eva.match(/RPE\s*(\d+(\.\d+)?)/i); if(m) return parseFloat(m[1]); }
@@ -2474,38 +2624,50 @@ function calcVolumenSesion(ejercicios){
   return conDatos?Math.round(vol):null;
 }
 
-// Mini gráfico de línea en SVG, sin dependencias externas
-function buildLineChartSVG(data, opts={}){
-  const valid=data.filter(d=>d.value!=null && !isNaN(d.value));
-  if(valid.length<2) return `<div class="home-empty-mini">Necesitás al menos 2 registros con datos para graficar.</div>`;
+// Mini gráfico de barras en SVG, sin dependencias externas. Soporta múltiples series (barras agrupadas)
+function buildBarChartSVG(seriesArr, opts={}){
+  const labels=(seriesArr[0]&&seriesArr[0].data||[]).map(d=>d.label);
+  const n=labels.length;
+  const allVals=seriesArr.flatMap(s=>s.data.map(d=>d.value)).filter(v=>v!=null && !isNaN(v));
+  if(n<1 || allVals.length<1) return `<div class="home-empty-mini">${opts.emptyMsg||'Necesitás al menos 1 registro con datos para graficar.'}</div>`;
   const w=560,h=170,padL=34,padR=14,padT=14,padB=22;
-  const vals=valid.map(d=>d.value);
-  const min=opts.min!=null?opts.min:Math.min(...vals);
-  const max=opts.max!=null?opts.max:Math.max(...vals);
+  const min=opts.min!=null?opts.min:Math.min(0,...allVals);
+  const max=opts.max!=null?opts.max:Math.max(...allVals);
   const range=(max-min)||1;
-  const n=data.length;
-  const stepX=n>1?(w-padL-padR)/(n-1):0;
-  const color=opts.color||'var(--orange)';
-  const pts=[]; const dots=[];
-  data.forEach((d,i)=>{
-    if(d.value==null||isNaN(d.value)) return;
-    const x=padL+i*stepX;
-    const y=h-padB-((d.value-min)/range)*(h-padT-padB);
-    pts.push(`${x.toFixed(1)},${y.toFixed(1)}`);
-    dots.push(`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.5" fill="${color}"><title>${esc(d.label)}: ${d.value}</title></circle>`);
+  const plotH=h-padT-padB;
+  const groupW=(w-padL-padR)/n;
+  const m=seriesArr.length;
+  const groupPad=groupW*0.16;
+  const barGap=m>1?2:0;
+  const barW=Math.max((groupW-groupPad*2-barGap*(m-1))/m,2);
+
+  let bars='';
+  labels.forEach((lab,i)=>{
+    const gx=padL+i*groupW+groupPad;
+    seriesArr.forEach((s,j)=>{
+      const d=s.data[i];
+      if(!d||d.value==null||isNaN(d.value)) return;
+      const x=gx+j*(barW+barGap);
+      const y=h-padB-((d.value-min)/range)*plotH;
+      const barH=Math.max((h-padB)-y,0);
+      bars+=`<rect x="${x.toFixed(1)}" y="${Math.min(y,h-padB).toFixed(1)}" width="${barW.toFixed(1)}" height="${barH.toFixed(1)}" rx="2" fill="${s.color}"><title>${esc(s.name?s.name+': ':'')}${esc(lab)}: ${d.value}</title></rect>`;
+    });
   });
-  const path=pts.length>1?`<polyline points="${pts.join(' ')}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`:'';
-  const gridYs=[0,0.5,1].map(f=>h-padB-f*(h-padT-padB));
+
+  const gridYs=[0,0.5,1].map(f=>h-padB-f*plotH);
   const grid=gridYs.map(y=>`<line x1="${padL}" y1="${y.toFixed(1)}" x2="${w-padR}" y2="${y.toFixed(1)}" stroke="var(--border)" stroke-width="1"/>`).join('');
   const showEvery=n>8?Math.ceil(n/8):1;
-  const labelsX=data.map((d,i)=>(i%showEvery===0||i===n-1)?`<text x="${(padL+i*stepX).toFixed(1)}" y="${h-6}" font-size="9" text-anchor="middle" fill="var(--text-3)" font-family="Inter,sans-serif">${esc(d.label)}</text>`:'').join('');
+  const labelsX=labels.map((lab,i)=>(i%showEvery===0||i===n-1)?`<text x="${(padL+i*groupW+groupW/2).toFixed(1)}" y="${h-6}" font-size="9" text-anchor="middle" fill="var(--text-3)" font-family="Inter,sans-serif">${esc(lab)}</text>`:'').join('');
   return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto;display:block;">
     ${grid}
     <text x="2" y="${padT+4}" font-size="9" fill="var(--text-3)" font-family="Inter,sans-serif">${max}</text>
     <text x="2" y="${h-padB+4}" font-size="9" fill="var(--text-3)" font-family="Inter,sans-serif">${min}</text>
-    ${path}${dots.join('')}
+    ${bars}
     ${labelsX}
   </svg>`;
+}
+function buildChartLegend(seriesArr){
+  return `<div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:8px;">${seriesArr.map(s=>`<div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-2);"><span style="width:9px;height:9px;border-radius:2px;background:${s.color};display:inline-block;"></span>${esc(s.name)}</div>`).join('')}</div>`;
 }
 
 function renderEvolucion(panel){
@@ -2513,9 +2675,12 @@ function renderEvolucion(panel){
   const sesiones=(ep.sesiones||[]).slice().sort((a,b)=>(a.fecha||'').localeCompare(b.fecha||''));
   const cuestionarios=(ep.cuestionarios||[]).slice().sort((a,b)=>(a.fecha||'').localeCompare(b.fecha||''));
 
-  const dolorData = sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:getDolorSesion(s)}));
+  const dolorDiariaData = sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:getDolorDiarioSesion(s)}));
+  const dolorEntrenoData= sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:getDolorSesion(s)}));
   const ciData    = sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:getCargaInterna(s)}));
   const ceData    = sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:calcVolumenSesion(s.ejercicios||[])}));
+
+  const hayDolor = dolorDiariaData.some(d=>d.value!=null) || dolorEntrenoData.some(d=>d.value!=null);
 
   const promGroups={};
   cuestionarios.forEach(c=>{
@@ -2529,21 +2694,25 @@ function renderEvolucion(panel){
   panel.innerHTML = `
     <div class="home-grid">
       <div class="home-card">
-        <div class="home-card-title">🩹 Dolor (EVA 0-10) por sesión</div>
-        ${sesiones.length?buildLineChartSVG(dolorData,{color:'var(--red)',min:0,max:10}):'<div class="home-empty-mini">Todavía no hay sesiones registradas.</div>'}
+        <div class="home-card-title">🩹 EVA — dolor diario vs. entrenamiento</div>
+        ${hayDolor?buildChartLegend([{name:'EVA diaria',color:'var(--blue-chip)'},{name:'EVA entrenamiento',color:'var(--red)'}]):''}
+        ${buildBarChartSVG([
+          {name:'EVA diaria',color:'var(--blue-chip)',data:dolorDiariaData},
+          {name:'EVA entrenamiento',color:'var(--red)',data:dolorEntrenoData}
+        ],{min:0,max:10,emptyMsg:'Todavía no hay sesiones registradas.'})}
       </div>
       <div class="home-card">
         <div class="home-card-title">🔥 Carga interna (RPE × duración)</div>
-        ${sesiones.length?buildLineChartSVG(ciData,{color:'var(--orange)'}):'<div class="home-empty-mini">Cargá RPE y duración en las sesiones para ver este gráfico.</div>'}
+        ${buildBarChartSVG([{name:'Carga interna',color:'var(--orange)',data:ciData}],{emptyMsg:'Cargá RPE y duración en las sesiones para ver este gráfico.'})}
       </div>
       <div class="home-card">
         <div class="home-card-title">🏋 Carga externa (volumen series×reps×kg)</div>
-        ${sesiones.length?buildLineChartSVG(ceData,{color:'var(--blue-chip)'}):'<div class="home-empty-mini">Cargá series/reps/kg en los ejercicios para ver este gráfico.</div>'}
+        ${buildBarChartSVG([{name:'Carga externa',color:'var(--blue-chip)',data:ceData}],{emptyMsg:'Cargá series/reps/kg en los ejercicios para ver este gráfico.'})}
       </div>
       ${promKeys.length? promKeys.map(tipoId=>`
         <div class="home-card">
           <div class="home-card-title">📋 ${esc(QUESTIONNAIRES[tipoId]?.nombre||tipoId)} — score promedio (0-100)</div>
-          ${buildLineChartSVG(promGroups[tipoId],{color:'var(--green)',min:0,max:100})}
+          ${buildBarChartSVG([{name:'Score',color:'var(--green)',data:promGroups[tipoId]}],{min:0,max:100})}
         </div>`).join('') : `
       <div class="home-card">
         <div class="home-card-title">📋 PROM — score promedio</div>
@@ -2822,7 +2991,37 @@ function resetMainPanel(title,sub){
 function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sidebarOverlay').classList.toggle('open');}
 function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sidebarOverlay').classList.remove('open');}
 
+// ── ACCESO CON CONTRASEÑA (una vez por dispositivo) ──────────────────────────
+// Para cambiar la contraseña: reemplazá el texto entre comillas de la línea siguiente.
+const APP_PASSWORD = 'Casartelli2026';
+const AUTH_KEY = 'consultorio_auth_ok_v1';
+
+function tryAuthLogin(){
+  const input=document.getElementById('authPassInput');
+  const err=document.getElementById('authError');
+  if(input.value===APP_PASSWORD){
+    localStorage.setItem(AUTH_KEY,'1');
+    document.getElementById('authGate').style.display='none';
+    startApp();
+  } else {
+    err.style.display='block';
+    input.value='';
+    input.focus();
+  }
+}
+
+function checkAuthAndStart(){
+  if(localStorage.getItem(AUTH_KEY)==='1'){
+    document.getElementById('authGate').style.display='none';
+    startApp();
+  } else {
+    document.getElementById('authGate').style.display='flex';
+    setTimeout(()=>document.getElementById('authPassInput').focus(),100);
+  }
+}
+
 // ── INIT ──────────────────────────────────────────────────────────────────────
+function startApp(){
 document.getElementById('panel').innerHTML=`<div class="empty-state"><svg width="40" height="40" viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="16" stroke="#E2E5EA" stroke-width="4"/><path d="M20 4a16 16 0 0 1 16 16" stroke="#1B2A4A" stroke-width="4" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 20 20" to="360 20 20" dur=".8s" repeatCount="indefinite"/></path></svg><p style="color:var(--text-3);font-size:14px;margin-top:12px;">Conectando...</p></div>`;
 
 turnosRef.on('value', snap=>{
@@ -2848,6 +3047,9 @@ dbRef.once('value').then(snapshot=>{
   console.error(err);
   document.getElementById('panel').innerHTML=`<div class="empty-state"><h3>Error de conexión</h3><p>Verificá tu conexión e intentá recargar.</p></div>`;
 });
+}
+
+checkAuthAndStart();
 </script>
 </body>
 </html>
