@@ -234,7 +234,11 @@ input,textarea,select{font-family:'Inter',sans-serif;}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:999;display:none;align-items:center;justify-content:center;padding:20px;}
 .modal-overlay.open{display:flex;}
 .ej-suggest-box{position:fixed;z-index:2000;background:#fff;border:1px solid var(--border);border-radius:var(--radius-sm);box-shadow:0 8px 24px rgba(0,0,0,.18);max-height:280px;overflow-y:auto;font-family:Inter,sans-serif;}
-.ej-suggest-cat{position:sticky;top:0;background:var(--navy);color:#fff;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:6px 10px;}
+.ej-suggest-cat{display:flex;align-items:center;justify-content:space-between;gap:6px;background:var(--navy);color:#fff;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:8px 10px;cursor:pointer;}
+.ej-suggest-cat:hover{background:var(--navy-light);}
+.ej-suggest-catlabel{position:sticky;top:0;background:var(--navy);color:#fff;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:6px 10px;}
+.ej-suggest-count{opacity:.6;font-weight:500;margin-left:auto;margin-right:4px;}
+.ej-suggest-chevron{font-size:9px;opacity:.8;}
 .ej-suggest-sub{font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.03em;padding:6px 10px 2px;}
 .ej-suggest-item{padding:7px 12px;font-size:13px;color:var(--text);cursor:pointer;}
 .ej-suggest-item:hover,.ej-suggest-item.active{background:var(--orange-light);color:var(--orange);}
@@ -1579,6 +1583,10 @@ function renderPatient(){
   const ac=document.getElementById('alertaChip');
   if(p.alerta){ac.style.display='block';ac.textContent='⚡ '+p.alerta;}else{ac.style.display='none';}
   document.getElementById('tabs').style.display='flex';
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    const tabs=['resumen','sesiones','evaluaciones','cuestionarios','evolucion','fotos','turnos'];
+    t.classList.toggle('active', tabs[i]===currentTab);
+  });
   const epBar=document.getElementById('epBar');
   const eps=p.episodios||[];
   if(eps.length>0){
@@ -1593,8 +1601,9 @@ function renderPatient(){
 
 function switchTab(tab){
   currentTab=tab;
+  const tabs=['resumen','sesiones','evaluaciones','cuestionarios','evolucion','fotos','turnos'];
   document.querySelectorAll('.tab').forEach((t,i)=>{
-    const tabs=['resumen','sesiones','evaluaciones','cuestionarios','evolucion','fotos','turnos'];
+    t.classList.toggle('active', tabs[i]===tab);
   });
   renderTab();
 }
@@ -2342,26 +2351,82 @@ function deleteSes(sesId){if(!confirm('¿Eliminar esta sesión?'))return;const p
 
 // ── Ejercicios en modal nueva sesión (con columna Notas) ─────────────────────
 // ── Autocompletado categorizado de ejercicios (sugiere, no restringe) ───────
-let ejSuggestInput=null, ejSuggestBox=null;
+let ejSuggestInput=null, ejSuggestBox=null, ejSuggestExpandedCat=null;
 
 function norm(s){ return (s||'').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
 
-function buildEjSuggestHTML(filterText){
-  const f=norm(filterText);
+// ¿El ejercicio ya está en la librería fija o en los aprendidos?
+function isEjercicioConocido(name){
+  const n=norm(name);
+  if(!n) return true;
+  for(const cat in EXERCISE_LIBRARY){
+    for(const sub in EXERCISE_LIBRARY[cat]){
+      if(EXERCISE_LIBRARY[cat][sub].some(x=>norm(x)===n)) return true;
+    }
+  }
+  return (DB.customExercises||[]).some(x=>norm(x)===n);
+}
+// Aprende un ejercicio nuevo escrito a mano (se guarda en Firebase, queda para todos los dispositivos)
+function learnExerciseName(name){
+  const trimmed=(name||'').trim();
+  if(trimmed.length<3) return;
+  if(isEjercicioConocido(trimmed)) return;
+  if(!DB.customExercises) DB.customExercises=[];
+  DB.customExercises.push(trimmed);
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer=setTimeout(saveDB,800);
+}
+
+// Modo navegación (campo vacío): categorías colapsadas, se despliegan al tocarlas
+function buildEjSuggestCatBlock(catName, subcatsObj, isCustom){
+  const total=Object.values(subcatsObj).reduce((a,arr)=>a+arr.length,0);
+  if(isCustom && total===0) return '';
+  const isOpen=ejSuggestExpandedCat===catName;
+  let inner='';
+  if(isOpen){
+    Object.keys(subcatsObj).forEach(sub=>{
+      const items=subcatsObj[sub];
+      if(!items.length) return;
+      if(sub) inner+=`<div class="ej-suggest-sub">${esc(sub)}</div>`;
+      items.forEach(name=>{ inner+=`<div class="ej-suggest-item" data-name="${esc(name)}">${esc(name)}</div>`; });
+    });
+  }
+  return `<div class="ej-suggest-cat" data-catname="${esc(catName)}"><span>${esc(catName)}</span><span class="ej-suggest-count">${total}</span><span class="ej-suggest-chevron">${isOpen?'▾':'▸'}</span></div>${inner}`;
+}
+function buildEjSuggestBrowseHTML(){
+  let html='';
+  const custom=(DB.customExercises||[]).slice().sort((a,b)=>a.localeCompare(b,'es'));
+  html+=buildEjSuggestCatBlock('★ Tus ejercicios', {'':custom}, true);
+  Object.keys(EXERCISE_LIBRARY).forEach(cat=>{ html+=buildEjSuggestCatBlock(cat, EXERCISE_LIBRARY[cat], false); });
+  return html;
+}
+// Modo búsqueda (con texto escrito): resultados planos, sin acordeón
+function buildEjSuggestSearchHTML(f){
   let html=''; let any=false;
+  const customMatches=(DB.customExercises||[]).filter(name=>norm(name).includes(f));
+  if(customMatches.length){
+    html+=`<div class="ej-suggest-catlabel">★ Tus ejercicios</div>`;
+    customMatches.forEach(name=>{ html+=`<div class="ej-suggest-item" data-name="${esc(name)}">${esc(name)}</div>`; any=true; });
+  }
   Object.keys(EXERCISE_LIBRARY).forEach(cat=>{
     const subcats=EXERCISE_LIBRARY[cat];
     let catHTML='';
     Object.keys(subcats).forEach(sub=>{
-      const items=subcats[sub].filter(name=>!f||norm(name).includes(f));
+      const items=subcats[sub].filter(name=>norm(name).includes(f));
       if(!items.length) return;
       catHTML+=`<div class="ej-suggest-sub">${esc(sub)}</div>`;
       items.forEach(name=>{ catHTML+=`<div class="ej-suggest-item" data-name="${esc(name)}">${esc(name)}</div>`; any=true; });
     });
-    if(catHTML) html+=`<div class="ej-suggest-cat">${esc(cat)}</div>${catHTML}`;
+    if(catHTML) html+=`<div class="ej-suggest-catlabel">${esc(cat)}</div>${catHTML}`;
   });
-  if(!any) html=`<div class="ej-suggest-empty">Sin coincidencias en la librería — podés escribir tu propio ejercicio.</div>`;
+  if(!any) html=`<div class="ej-suggest-empty">Sin coincidencias — podés escribir tu propio ejercicio y queda guardado para la próxima.</div>`;
   return html;
+}
+function buildEjSuggestHTML(filterText){
+  const f=norm(filterText);
+  if(f) return buildEjSuggestSearchHTML(f);
+  const browse=buildEjSuggestBrowseHTML();
+  return browse || `<div class="ej-suggest-empty">Empezá a escribir tu ejercicio.</div>`;
 }
 
 function positionEjSuggest(input){
@@ -2383,9 +2448,14 @@ function showEjSuggest(input){
     document.body.appendChild(ejSuggestBox);
     ejSuggestBox.addEventListener('mousedown', e=>{
       const item=e.target.closest('.ej-suggest-item');
-      if(!item) return;
-      e.preventDefault();
-      pickEjSuggest(item.getAttribute('data-name'));
+      if(item){ e.preventDefault(); pickEjSuggest(item.getAttribute('data-name')); return; }
+      const catEl=e.target.closest('.ej-suggest-cat');
+      if(catEl){
+        e.preventDefault();
+        const name=catEl.getAttribute('data-catname');
+        ejSuggestExpandedCat=(ejSuggestExpandedCat===name)?null:name;
+        if(ejSuggestInput) refreshEjSuggest(ejSuggestInput);
+      }
     });
   }
   ejSuggestBox.innerHTML=buildEjSuggestHTML(input.value);
@@ -2416,6 +2486,7 @@ document.addEventListener('focusin', e=>{ if(e.target.matches&&e.target.matches(
 document.addEventListener('input', e=>{ if(e.target.matches&&e.target.matches('.ej-name-input')) refreshEjSuggest(e.target); });
 document.addEventListener('focusout', e=>{
   if(!e.target.matches||!e.target.matches('.ej-name-input')) return;
+  learnExerciseName(e.target.value);
   setTimeout(()=>{ if(document.activeElement!==ejSuggestInput) hideEjSuggest(); },120);
 });
 
@@ -3035,6 +3106,7 @@ dbRef.once('value').then(snapshot=>{
   if(data)DB=data;
   if(!DB.patients)DB.patients=[];
   if(!DB.cuestionariosDisabled) DB.cuestionariosDisabled=['FAOS'];
+  if(!DB.customExercises) DB.customExercises=[];
 
   if(!DB.patients.find(p=>p.nombre&&p.nombre.includes('Kruszewski'))){
     DB.patients.unshift({id:uid(),nombre:'Kruszewski',edad:'67',contacto:'1154964003',institucion:'Abril',deporte:'Gym · Tenis · Stretching',cirujano:'',dx:'Síndrome meniscal',estructura:'Menisco interno y externo · Derecho',fechaInicio:'2026-06-01',estado:'Fase 1',cirugia:'',antecedentes:'Rotura degenerativa cuerno posterior y cuerpo del menisco interno (trazo oblicuo). Rotura degenerativa cuerno anterior y cuerpo del menisco externo. Artrosis.',objetivos:'Volver a hacer deporte y evitar dolor',medicacion:'',contra:'',alerta:'Artrosis, varias veces se inyectó plasma',notas:'',categoria:'privado',sesiones:[{id:uid(),fecha:'2026-06-09',fase:'Fase 1',subjetivo:'Menos dolor cada día, leve dolor al caminar y al subir y bajar escaleras',ejercicios:[{nombre:'SLR',series:'3',reps:'8',kg:'BW',nota:''},{nombre:'Puente glúteo',series:'3',reps:'8',kg:'BW',nota:''},{nombre:'Abducción y aducción',series:'3',reps:'8',kg:'BW',nota:''},{nombre:'Sentadillas',series:'3',reps:'6',kg:'BW',nota:''}],eva:'4',objetivo:'Extensión y flexión FINAL limitada con dolor, sentadillas bien realizadas',plan:'Agregar banda elástica y peso para próximas sesiones'}],evaluaciones:[],estudios:[],cuestionarios:[],movilidad:{flex:{estado:'limitada',grados:'dolor en FINAL del rango'},ext:{estado:'limitada',grados:'dolor en FINAL del rango'}}});
