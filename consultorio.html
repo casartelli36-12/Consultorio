@@ -155,14 +155,18 @@ input,textarea,select{font-family:'Inter',sans-serif;}
 .ses-field input:focus,.ses-field textarea:focus{border-color:var(--navy);}
 .ses-field textarea{min-height:70px;line-height:1.5;}
 .ses-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px;}
+.btn-pdf-ses{padding:8px 14px;background:var(--blue-chip-light);color:var(--blue-chip);border:1px solid rgba(26,78,140,.2);border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;}
 .btn-save-ses{padding:8px 18px;background:var(--navy);color:#fff;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;}
 .btn-del-ses{padding:8px 14px;background:transparent;color:var(--text-3);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;cursor:pointer;}
 .ses-empty{text-align:center;padding:40px 20px;color:var(--text-3);font-size:14px;}
 
 /* Tabla ejercicios editable en sesiones */
 .ej-table-wrap{border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;margin-bottom:8px;}
-.ej-table-head{display:grid;grid-template-columns:2fr 52px 52px 62px 1fr auto;gap:0;background:var(--surface);padding:7px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3);}
-.ej-row{display:grid;grid-template-columns:2fr 52px 52px 62px 1fr auto;gap:4px;padding:6px 8px;border-top:1px solid var(--border);align-items:center;}
+.ej-table-head{display:grid;grid-template-columns:40px 2fr 52px 52px 62px 1fr auto;gap:0;background:var(--surface);padding:7px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3);}
+.ej-row{display:grid;grid-template-columns:40px 2fr 52px 52px 62px 1fr auto;gap:4px;padding:6px 8px;border-top:1px solid var(--border);align-items:center;}
+.ej-row.ej-grouped{background:var(--orange-light);}
+.ej-input.bloque{text-align:center;font-weight:700;text-transform:uppercase;}
+.ej-badge-mini{display:inline-block;background:var(--orange);color:#fff;font-size:9px;font-weight:700;border-radius:4px;padding:1px 5px;margin-right:5px;vertical-align:middle;}
 .ej-row:nth-child(even){background:var(--surface);}
 .ej-input{border:1px solid transparent;border-radius:5px;padding:5px 7px;font-size:13px;font-family:Inter,sans-serif;color:var(--text);background:transparent;outline:none;width:100%;transition:border-color .15s,background .15s;}
 .ej-input:focus{border-color:var(--navy);background:#fff;}
@@ -395,7 +399,7 @@ input,textarea,select{font-family:'Inter',sans-serif;}
   .modal-2col{grid-template-columns:1fr;}
   .days-chip .num{font-size:18px;}
   .tur-week-grid{grid-template-columns:40px repeat(7,1fr);}
-  .ej-table-head,.ej-row{grid-template-columns:2fr 46px 46px 56px 1fr auto;}
+  .ej-table-head,.ej-row{grid-template-columns:34px 2fr 46px 46px 56px 1fr auto;}
   .cuest-type-pick{grid-template-columns:1fr;}
 }
 </style>
@@ -901,6 +905,7 @@ function calcularScoresCuestionario(tipoId, respuestas) {
       <div class="tab" onclick="switchTab('sesiones')">Sesiones</div>
       <div class="tab" onclick="switchTab('evaluaciones')">Evaluaciones</div>
       <div class="tab" onclick="switchTab('cuestionarios')">Cuestionarios</div>
+      <div class="tab" onclick="switchTab('evolucion')">📈 Evolución</div>
       <div class="tab" onclick="switchTab('fotos')">Fotos</div>
       <div class="tab" onclick="switchTab('turnos')">📅 Turnos</div>
     </div>
@@ -979,13 +984,17 @@ function calcularScoresCuestionario(tipoId, respuestas) {
           </div>
         </div>
         <!-- Header columnas modal nueva sesión -->
-        <div style="display:grid;grid-template-columns:2fr 52px 52px 62px 1fr auto;gap:4px;padding:5px 8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm) var(--radius-sm) 0 0;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3);">
-          <span>Ejercicio</span><span style="text-align:center">Series</span><span style="text-align:center">Reps/t</span><span style="text-align:center">Kg/BW</span><span>Notas</span><span></span>
+        <div style="display:grid;grid-template-columns:40px 2fr 52px 52px 62px 1fr auto;gap:4px;padding:5px 8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm) var(--radius-sm) 0 0;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3);">
+          <span style="text-align:center">Sup.</span><span>Ejercicio</span><span style="text-align:center">Series</span><span style="text-align:center">Reps/t</span><span style="text-align:center">Kg/BW</span><span>Notas</span><span></span>
         </div>
         <div id="ejerciciosList" style="border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius-sm) var(--radius-sm);overflow:hidden;margin-bottom:8px;"></div>
         <button type="button" onclick="addEjercicioRow()" style="width:100%;padding:8px;border:1.5px dashed var(--border);border-radius:var(--radius-sm);background:transparent;color:var(--text-2);font-size:13px;cursor:pointer;font-family:Inter,sans-serif;">+ Agregar ejercicio</button>
       </div>
-      <div class="modal-field"><label>EVA / RPE</label><input type="text" id="sEva" placeholder="EVA 1 · RPE 7"></div>
+      <div class="modal-2col" style="grid-template-columns:1fr 1fr 1fr;">
+        <div class="modal-field"><label>Dolor (EVA 0-10)</label><input type="number" id="sDolor" min="0" max="10" placeholder="2"></div>
+        <div class="modal-field"><label>RPE (esfuerzo 0-10)</label><input type="number" id="sRpe" min="0" max="10" placeholder="6"></div>
+        <div class="modal-field"><label>Duración (min)</label><input type="number" id="sDuracion" min="0" placeholder="45"></div>
+      </div>
       <div class="modal-field"><label>Lo que observé</label><textarea id="sObjetivo" placeholder="ROM completo…"></textarea></div>
       <div class="modal-field"><label>Plan próxima sesión</label><input type="text" id="sPlan" placeholder="Subir carga nordic…"></div>
     </div>
@@ -1519,8 +1528,7 @@ function renderPatient(){
 function switchTab(tab){
   currentTab=tab;
   document.querySelectorAll('.tab').forEach((t,i)=>{
-    const tabs=['resumen','sesiones','evaluaciones','cuestionarios','fotos','turnos'];
-    t.classList.toggle('active',tabs[i]===tab);
+    const tabs=['resumen','sesiones','evaluaciones','cuestionarios','evolucion','fotos','turnos'];
   });
   renderTab();
 }
@@ -1534,6 +1542,7 @@ function renderTab(){
   else if(currentTab==='sesiones')     renderSesiones(panel);
   else if(currentTab==='evaluaciones') renderEvaluaciones(panel);
   else if(currentTab==='cuestionarios')renderCuestionarios(panel);
+  else if(currentTab==='evolucion')    renderEvolucion(panel);
   else if(currentTab==='fotos')        renderFotos(panel);
   else if(currentTab==='turnos')       renderTurnos(panel);
 }
@@ -2140,9 +2149,21 @@ function renderSesiones(panel){
 }
 
 // ── Tabla de ejercicios editable en sesiones existentes ──────────────────────
+function computeBloqueLabels(ejercicios){
+  const counts={};
+  return (ejercicios||[]).map(e=>{
+    const b=(e.bloque||'').trim().toUpperCase();
+    if(!b) return '';
+    counts[b]=(counts[b]||0)+1;
+    return b+counts[b];
+  });
+}
 function buildEjTableEditable(sesId, ejercicios) {
+  const labels = computeBloqueLabels(ejercicios);
   const rows = ejercicios.map((e,i) => `
-    <div class="ej-row" id="ejrow_${sesId}_${i}">
+    <div class="ej-row ${e.bloque?'ej-grouped':''}" id="ejrow_${sesId}_${i}">
+      <input class="ej-input bloque" type="text" value="${esc(e.bloque||'')}" placeholder="—" maxlength="2" title="Superserie"
+        oninput="updateEjField('${sesId}',${i},'bloque',this.value)">
       <input class="ej-input" type="text" value="${esc(e.nombre||'')}" placeholder="Ejercicio"
         oninput="updateEjField('${sesId}',${i},'nombre',this.value)">
       <input class="ej-input center" type="text" value="${esc(e.series||'')}" placeholder="—"
@@ -2158,6 +2179,7 @@ function buildEjTableEditable(sesId, ejercicios) {
 
   return `<div class="ej-table-wrap" id="ejtable_${sesId}">
     <div class="ej-table-head">
+      <span style="text-align:center">Sup.</span>
       <span>Ejercicio</span>
       <span style="text-align:center">Series</span>
       <span style="text-align:center">Reps/t</span>
@@ -2186,7 +2208,7 @@ function addEjToSes(sesId) {
   const ses = (ep.sesiones||[]).find(s=>s.id===sesId);
   if(!ses) return;
   if(!ses.ejercicios) ses.ejercicios = [];
-  ses.ejercicios.push({nombre:'',series:'',reps:'',kg:'',nota:''});
+  ses.ejercicios.push({nombre:'',series:'',reps:'',kg:'',nota:'',bloque:''});
   saveDB();
   // Rebuild solo la tabla, no toda la sesión (evitar perder foco en otros campos)
   const tableEl = document.getElementById('ejtable_'+sesId);
@@ -2208,7 +2230,10 @@ function removeEjFromSes(sesId, idx) {
 function renderSesCard(s,num,fechaInicio){
   const dias=(s.fecha&&fechaInicio)?Math.floor((new Date(s.fecha)-new Date(fechaInicio))/86400000):null;
   const ejercicios=s.ejercicios||[];
-  const preview=ejercicios.length?ejercicios.map(e=>e.nombre+(e.series?` ${e.series}×${e.reps}`:'')).join('  ·  '):(s.intervencion||'—');
+  const labels=computeBloqueLabels(ejercicios);
+  const preview=ejercicios.length?ejercicios.map((e,i)=>(labels[i]?`[${labels[i]}] `:'')+e.nombre+(e.series?` ${e.series}×${e.reps}`:'')).join('  ·  '):(s.intervencion||'—');
+  const dolor=getDolorSesion(s), rpe=getRpeSesion(s);
+  const chip=[dolor!=null?`EVA ${dolor}`:'',rpe!=null?`RPE ${rpe}`:''].filter(Boolean).join(' · ')||(s.eva?esc(s.eva):'');
 
   return `
     <div class="ses-card" id="sc_${s.id}">
@@ -2217,7 +2242,7 @@ function renderSesCard(s,num,fechaInicio){
         <div class="ses-fecha">${formatFecha(s.fecha)}</div>
         ${s.fase?`<span style="font-size:11px;color:var(--text-2);background:var(--surface);padding:3px 8px;border-radius:20px;">${esc(s.fase)}</span>`:''}
         ${dias!==null?`<div class="ses-dias">día ${dias}</div>`:''}
-        ${s.eva?`<div class="ses-eva">${esc(s.eva)}</div>`:''}
+        ${chip?`<div class="ses-eva">${chip}</div>`:''}
       </div>
       <div class="ses-preview" onclick="toggleSes('${s.id}')">${esc(preview.slice(0,90)+(preview.length>90?'…':''))}</div>
       <div class="ses-body" id="sb_${s.id}">
@@ -2229,11 +2254,14 @@ function renderSesCard(s,num,fechaInicio){
             <label>Ejercicios</label>
             ${buildEjTableEditable(s.id, ejercicios)}
           </div>
-          <div class="ses-field"><label>EVA / RPE</label><input type="text" value="${esc(s.eva||'')}" oninput="updateSes('${s.id}','eva',this.value)"></div>
+          <div class="ses-field"><label>Dolor (EVA 0-10)</label><input type="number" min="0" max="10" value="${esc(s.dolor!=null?s.dolor:'')}" oninput="updateSes('${s.id}','dolor',this.value)"></div>
+          <div class="ses-field"><label>RPE (esfuerzo 0-10)</label><input type="number" min="0" max="10" value="${esc(s.rpe!=null?s.rpe:'')}" oninput="updateSes('${s.id}','rpe',this.value)"></div>
+          <div class="ses-field"><label>Duración (min)</label><input type="number" min="0" value="${esc(s.duracion!=null?s.duracion:'')}" oninput="updateSes('${s.id}','duracion',this.value)"></div>
           <div class="ses-field full"><label>Lo que observé</label><textarea oninput="updateSes('${s.id}','objetivo',this.value)">${esc(s.objetivo||'')}</textarea></div>
           <div class="ses-field full"><label>Plan próxima sesión</label><input type="text" value="${esc(s.plan||'')}" oninput="updateSes('${s.id}','plan',this.value)"></div>
         </div>
         <div class="ses-actions">
+          <button class="btn-pdf-ses" onclick="exportRutinaPDF('${s.id}')">📄 Exportar rutina</button>
           <button class="btn-del-ses" onclick="deleteSes('${s.id}')">Eliminar</button>
           <button class="btn-save-ses" onclick="saveDB();showSaveIndicator()">Guardar ✓</button>
         </div>
@@ -2246,11 +2274,13 @@ function updateSes(sesId,key,val){const p=getPatient(currentPatientId);const ep=
 function deleteSes(sesId){if(!confirm('¿Eliminar esta sesión?'))return;const p=getPatient(currentPatientId);const ep=getEpData(p);ep.sesiones=(ep.sesiones||[]).filter(s=>s.id!==sesId);saveDB();renderTab();}
 
 // ── Ejercicios en modal nueva sesión (con columna Notas) ─────────────────────
-function addEjercicioRow(nombre='',series='',reps='',kg='',nota=''){
+function addEjercicioRow(nombre='',series='',reps='',kg='',nota='',bloque=''){
   const container=document.getElementById('ejerciciosList');const id='ej_'+uid();const div=document.createElement('div');
   div.id=id;
-  div.style.cssText='display:grid;grid-template-columns:2fr 52px 52px 62px 1fr auto;gap:4px;align-items:center;padding:4px 6px;border-top:1px solid var(--border);background:#fff;';
+  div.style.cssText='display:grid;grid-template-columns:40px 2fr 52px 52px 62px 1fr auto;gap:4px;align-items:center;padding:4px 6px;border-top:1px solid var(--border);background:#fff;';
   div.innerHTML=`
+    <input type="text" value="${esc(bloque)}" placeholder="A" maxlength="2" title="Superserie: poné la misma letra en los ejercicios que van juntos"
+      style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 4px;font-size:13px;font-family:Inter,sans-serif;outline:none;text-align:center;font-weight:700;text-transform:uppercase;">
     <input type="text" value="${esc(nombre)}" placeholder="Ejercicio / intervención" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 9px;font-size:13px;font-family:Inter,sans-serif;outline:none;">
     <input type="text" value="${esc(series)}" placeholder="—" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 6px;font-size:13px;font-family:Inter,sans-serif;outline:none;text-align:center;">
     <input type="text" value="${esc(reps)}" placeholder="—" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 6px;font-size:13px;font-family:Inter,sans-serif;outline:none;text-align:center;">
@@ -2263,12 +2293,12 @@ function addEjercicioRow(nombre='',series='',reps='',kg='',nota=''){
 function getEjercicios(){
   return Array.from(document.querySelectorAll('#ejerciciosList > div')).map(row=>{
     const inputs=row.querySelectorAll('input');
-    return{nombre:inputs[0].value,series:inputs[1].value,reps:inputs[2].value,kg:inputs[3].value,nota:inputs[4].value};
+    return{bloque:inputs[0].value,nombre:inputs[1].value,series:inputs[2].value,reps:inputs[3].value,kg:inputs[4].value,nota:inputs[5].value};
   }).filter(e=>e.nombre.trim());
 }
 function openNewSesion(){
   document.getElementById('sFecha').value=new Date().toISOString().slice(0,10);
-  ['sFase','sSubjetivo','sEva','sObjetivo','sPlan'].forEach(id=>document.getElementById(id).value='');
+  ['sFase','sSubjetivo','sDolor','sRpe','sDuracion','sObjetivo','sPlan'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('ejerciciosList').innerHTML='';addEjercicioRow();
   document.getElementById('modalSesion').classList.add('open');
 }
@@ -2286,7 +2316,7 @@ function copiarUltimaSesion(){
   const faseEl=document.getElementById('sFase');
   if(!faseEl.value && ultima.fase) faseEl.value=ultima.fase;
   document.getElementById('ejerciciosList').innerHTML='';
-  ejercicios.forEach(e=>addEjercicioRow(e.nombre,e.series,e.reps,e.kg,e.nota||''));
+  ejercicios.forEach(e=>addEjercicioRow(e.nombre,e.series,e.reps,e.kg,e.nota||'',e.bloque||''));
   showToast('Ejercicios copiados ✓');
 }
 
@@ -2314,7 +2344,7 @@ function aplicarPlantilla(id){
   const pl=getPlantillas().find(p=>p.id===id);
   if(!pl) return;
   document.getElementById('ejerciciosList').innerHTML='';
-  pl.ejercicios.forEach(e=>addEjercicioRow(e.nombre,e.series,e.reps,e.kg,e.nota||''));
+  pl.ejercicios.forEach(e=>addEjercicioRow(e.nombre,e.series,e.reps,e.kg,e.nota||'',e.bloque||''));
   closeModalPlantillas();
   showToast(`Plantilla "${pl.nombre}" aplicada ✓`);
 }
@@ -2365,7 +2395,7 @@ function saveSesion(){
   const fecha=document.getElementById('sFecha').value;
   if(!fecha){alert('La fecha es obligatoria.');return;}
   const p=getPatient(currentPatientId);const ep=getEpData(p);if(!ep.sesiones)ep.sesiones=[];
-  ep.sesiones.push({id:uid(),fecha,fase:document.getElementById('sFase').value,subjetivo:document.getElementById('sSubjetivo').value,ejercicios:getEjercicios(),eva:document.getElementById('sEva').value,objetivo:document.getElementById('sObjetivo').value,plan:document.getElementById('sPlan').value});
+  ep.sesiones.push({id:uid(),fecha,fase:document.getElementById('sFase').value,subjetivo:document.getElementById('sSubjetivo').value,ejercicios:getEjercicios(),dolor:document.getElementById('sDolor').value,rpe:document.getElementById('sRpe').value,duracion:document.getElementById('sDuracion').value,objetivo:document.getElementById('sObjetivo').value,plan:document.getElementById('sPlan').value});
   saveDB();closeModalSesion();renderTab();
 }
 
@@ -2413,6 +2443,186 @@ function saveEval(){
   saveDB();closeModalEval();renderTab();
 }
 function deleteEval(evalId){if(!confirm('¿Eliminar esta evaluación?'))return;const p=getPatient(currentPatientId);const ep=getEpData(p);ep.evaluaciones=(ep.evaluaciones||[]).filter(e=>e.id!==evalId);saveDB();renderTab();}
+
+// ══════════════════ EVOLUCIÓN (gráficos: dolor, carga, PROM) ════════════════
+function formatFechaCorta(s){ if(!s) return '—'; const [,m,d]=s.split('-'); return `${d}/${m}`; }
+
+// Dolor (EVA): usa el campo numérico nuevo; si no existe, intenta parsear el texto libre viejo (ej "EVA 4 · RPE 7")
+function getDolorSesion(s){
+  if(s.dolor!==undefined && s.dolor!==null && s.dolor!=='') { const n=parseFloat(s.dolor); return isNaN(n)?null:n; }
+  if(s.eva){ const m=s.eva.match(/(\d+(\.\d+)?)/); if(m) return parseFloat(m[1]); }
+  return null;
+}
+function getRpeSesion(s){
+  if(s.rpe!==undefined && s.rpe!==null && s.rpe!=='') { const n=parseFloat(s.rpe); return isNaN(n)?null:n; }
+  if(s.eva){ const m=s.eva.match(/RPE\s*(\d+(\.\d+)?)/i); if(m) return parseFloat(m[1]); }
+  return null;
+}
+// Carga interna (método RPE de sesión, Foster): RPE × duración en minutos
+function getCargaInterna(s){
+  const rpe=getRpeSesion(s); const dur=parseFloat(s.duracion);
+  if(rpe==null || isNaN(dur)) return null;
+  return Math.round(rpe*dur);
+}
+// Carga externa (índice de volumen): suma de series×reps×kg (si no hay kg numérico, cuenta como peso corporal = 1)
+function calcVolumenSesion(ejercicios){
+  let vol=0, conDatos=false;
+  (ejercicios||[]).forEach(e=>{
+    const s=parseFloat(e.series), r=parseFloat(e.reps), k=parseFloat(e.kg);
+    if(!isNaN(s)&&!isNaN(r)){ vol += s*r*(!isNaN(k)?k:1); conDatos=true; }
+  });
+  return conDatos?Math.round(vol):null;
+}
+
+// Mini gráfico de línea en SVG, sin dependencias externas
+function buildLineChartSVG(data, opts={}){
+  const valid=data.filter(d=>d.value!=null && !isNaN(d.value));
+  if(valid.length<2) return `<div class="home-empty-mini">Necesitás al menos 2 registros con datos para graficar.</div>`;
+  const w=560,h=170,padL=34,padR=14,padT=14,padB=22;
+  const vals=valid.map(d=>d.value);
+  const min=opts.min!=null?opts.min:Math.min(...vals);
+  const max=opts.max!=null?opts.max:Math.max(...vals);
+  const range=(max-min)||1;
+  const n=data.length;
+  const stepX=n>1?(w-padL-padR)/(n-1):0;
+  const color=opts.color||'var(--orange)';
+  const pts=[]; const dots=[];
+  data.forEach((d,i)=>{
+    if(d.value==null||isNaN(d.value)) return;
+    const x=padL+i*stepX;
+    const y=h-padB-((d.value-min)/range)*(h-padT-padB);
+    pts.push(`${x.toFixed(1)},${y.toFixed(1)}`);
+    dots.push(`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.5" fill="${color}"><title>${esc(d.label)}: ${d.value}</title></circle>`);
+  });
+  const path=pts.length>1?`<polyline points="${pts.join(' ')}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`:'';
+  const gridYs=[0,0.5,1].map(f=>h-padB-f*(h-padT-padB));
+  const grid=gridYs.map(y=>`<line x1="${padL}" y1="${y.toFixed(1)}" x2="${w-padR}" y2="${y.toFixed(1)}" stroke="var(--border)" stroke-width="1"/>`).join('');
+  const showEvery=n>8?Math.ceil(n/8):1;
+  const labelsX=data.map((d,i)=>(i%showEvery===0||i===n-1)?`<text x="${(padL+i*stepX).toFixed(1)}" y="${h-6}" font-size="9" text-anchor="middle" fill="var(--text-3)" font-family="Inter,sans-serif">${esc(d.label)}</text>`:'').join('');
+  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto;display:block;">
+    ${grid}
+    <text x="2" y="${padT+4}" font-size="9" fill="var(--text-3)" font-family="Inter,sans-serif">${max}</text>
+    <text x="2" y="${h-padB+4}" font-size="9" fill="var(--text-3)" font-family="Inter,sans-serif">${min}</text>
+    ${path}${dots.join('')}
+    ${labelsX}
+  </svg>`;
+}
+
+function renderEvolucion(panel){
+  const p=getPatient(currentPatientId); const ep=getEpData(p);
+  const sesiones=(ep.sesiones||[]).slice().sort((a,b)=>(a.fecha||'').localeCompare(b.fecha||''));
+  const cuestionarios=(ep.cuestionarios||[]).slice().sort((a,b)=>(a.fecha||'').localeCompare(b.fecha||''));
+
+  const dolorData = sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:getDolorSesion(s)}));
+  const ciData    = sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:getCargaInterna(s)}));
+  const ceData    = sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:calcVolumenSesion(s.ejercicios||[])}));
+
+  const promGroups={};
+  cuestionarios.forEach(c=>{
+    if(!promGroups[c.tipoId]) promGroups[c.tipoId]=[];
+    const vals=Object.values(c.scores||{}).filter(v=>v!=null && !isNaN(v));
+    const avg=vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):null;
+    promGroups[c.tipoId].push({label:formatFechaCorta(c.fecha), value:avg});
+  });
+  const promKeys=Object.keys(promGroups);
+
+  panel.innerHTML = `
+    <div class="home-grid">
+      <div class="home-card">
+        <div class="home-card-title">🩹 Dolor (EVA 0-10) por sesión</div>
+        ${sesiones.length?buildLineChartSVG(dolorData,{color:'var(--red)',min:0,max:10}):'<div class="home-empty-mini">Todavía no hay sesiones registradas.</div>'}
+      </div>
+      <div class="home-card">
+        <div class="home-card-title">🔥 Carga interna (RPE × duración)</div>
+        ${sesiones.length?buildLineChartSVG(ciData,{color:'var(--orange)'}):'<div class="home-empty-mini">Cargá RPE y duración en las sesiones para ver este gráfico.</div>'}
+      </div>
+      <div class="home-card">
+        <div class="home-card-title">🏋 Carga externa (volumen series×reps×kg)</div>
+        ${sesiones.length?buildLineChartSVG(ceData,{color:'var(--blue-chip)'}):'<div class="home-empty-mini">Cargá series/reps/kg en los ejercicios para ver este gráfico.</div>'}
+      </div>
+      ${promKeys.length? promKeys.map(tipoId=>`
+        <div class="home-card">
+          <div class="home-card-title">📋 ${esc(QUESTIONNAIRES[tipoId]?.nombre||tipoId)} — score promedio (0-100)</div>
+          ${buildLineChartSVG(promGroups[tipoId],{color:'var(--green)',min:0,max:100})}
+        </div>`).join('') : `
+      <div class="home-card">
+        <div class="home-card-title">📋 PROM — score promedio</div>
+        <div class="home-empty-mini">No hay cuestionarios completados todavía.</div>
+      </div>`}
+    </div>`;
+}
+
+// ══════════════════ EXPORTAR RUTINA A PDF (vía diálogo de impresión) ════════
+function rtExRow(e,label){
+  return `<div class="rt-ex">
+    <div class="rt-ex-name">${label?`<span class="rt-ex-badge">${esc(label)}</span>`:''}${esc(e.nombre||'')}</div>
+    <div class="rt-ex-meta">${[e.series?`${esc(e.series)} series`:'',e.reps?`${esc(e.reps)} reps`:'',e.kg?`${esc(e.kg)}`:''].filter(Boolean).join(' · ')}</div>
+    ${e.nota?`<div class="rt-ex-nota">${esc(e.nota)}</div>`:''}
+  </div>`;
+}
+function exportRutinaPDF(sesId){
+  const p=getPatient(currentPatientId); if(!p) return;
+  const ep=getEpData(p);
+  const s=(ep.sesiones||[]).find(x=>x.id===sesId);
+  if(!s) return;
+  const ejercicios=s.ejercicios||[];
+  const labels=computeBloqueLabels(ejercicios);
+
+  let rowsHtml='';
+  let i=0;
+  while(i<ejercicios.length){
+    const b=(ejercicios[i].bloque||'').trim().toUpperCase();
+    if(b){
+      let group=[]; let j=i;
+      while(j<ejercicios.length && (ejercicios[j].bloque||'').trim().toUpperCase()===b){
+        group.push(rtExRow(ejercicios[j],labels[j])); j++;
+      }
+      rowsHtml += `<div class="rt-block"><div class="rt-block-tag">Superserie ${esc(b)}</div>${group.join('')}</div>`;
+      i=j;
+    } else {
+      rowsHtml += rtExRow(ejercicios[i],'');
+      i++;
+    }
+  }
+
+  const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+<title>Rutina · ${esc(p.nombre)}</title>
+<style>
+  *{box-sizing:border-box;}
+  body{font-family:Arial,Helvetica,sans-serif;color:#1A1A2E;padding:32px;max-width:680px;margin:0 auto;}
+  .rt-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #1B2A4A;padding-bottom:14px;margin-bottom:20px;}
+  .rt-header h1{font-size:18px;color:#1B2A4A;margin:0 0 2px;}
+  .rt-header p{font-size:12px;color:#5A6373;margin:0;}
+  .rt-meta{font-size:12px;color:#5A6373;text-align:right;}
+  .rt-patient{font-size:16px;font-weight:700;margin-bottom:2px;}
+  .rt-sub{font-size:13px;color:#5A6373;margin-bottom:18px;}
+  .rt-block{border:1px solid #E2E5EA;border-radius:8px;margin-bottom:10px;padding:10px 14px;background:#F7F8FA;}
+  .rt-block-tag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#E87722;margin-bottom:6px;}
+  .rt-ex{padding:8px 0;border-bottom:1px solid #E2E5EA;}
+  .rt-block .rt-ex:last-child{border-bottom:none;}
+  .rt-ex-name{font-size:14px;font-weight:600;}
+  .rt-ex-badge{display:inline-block;background:#E87722;color:#fff;font-size:10px;font-weight:700;border-radius:4px;padding:1px 6px;margin-right:6px;}
+  .rt-ex-meta{font-size:12px;color:#5A6373;margin-top:2px;}
+  .rt-ex-nota{font-size:12px;color:#1A4E8C;margin-top:3px;font-style:italic;}
+  .rt-footer{margin-top:24px;font-size:11px;color:#5A6373;border-top:1px solid #E2E5EA;padding-top:10px;}
+  @media print{ body{padding:10px;} }
+</style></head><body>
+  <div class="rt-header">
+    <div><h1>Casartelli · MP 10722</h1><p>Consultorio kinesiológico</p></div>
+    <div class="rt-meta">${formatFecha(s.fecha)}${s.fase?`<br>${esc(s.fase)}`:''}</div>
+  </div>
+  <div class="rt-patient">${esc(p.nombre)}</div>
+  <div class="rt-sub">Rutina de ejercicios${s.subjetivo?` — ${esc(s.subjetivo)}`:''}</div>
+  ${rowsHtml || '<p style="color:#9AA0AD;">Sin ejercicios cargados en esta sesión.</p>'}
+  ${s.plan?`<div class="rt-footer"><strong>Próxima sesión:</strong> ${esc(s.plan)}</div>`:''}
+</body></html>`;
+
+  const win=window.open('','_blank');
+  if(!win){ alert('El navegador bloqueó la ventana. Habilitá pop-ups para exportar la rutina.'); return; }
+  win.document.write(html);
+  win.document.close();
+  setTimeout(()=>{ try{ win.focus(); win.print(); }catch(e){} }, 350);
+}
 
 // ── CRUD PACIENTES ────────────────────────────────────────────────────────────
 function populateCatSelect(sel=''){
@@ -2571,7 +2781,7 @@ function goToTurnosToday(){
   }
   switchTab('turnos');
   document.querySelectorAll('.tab').forEach((t,i)=>{
-    const tabs=['resumen','sesiones','evaluaciones','cuestionarios','fotos','turnos'];
+    const tabs=['resumen','sesiones','evaluaciones','cuestionarios','evolucion','fotos','turnos'];
     t.classList.toggle('active',tabs[i]==='turnos');
   });
 }
