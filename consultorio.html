@@ -174,8 +174,8 @@ input,textarea,select{font-family:'Inter',sans-serif;}
 
 /* Tabla ejercicios editable en sesiones */
 .ej-table-wrap{border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;margin-bottom:8px;}
-.ej-table-head{display:grid;grid-template-columns:40px 2fr 52px 52px 62px 1fr auto;gap:0;background:var(--surface);padding:7px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3);}
-.ej-row{display:grid;grid-template-columns:40px 2fr 52px 52px 62px 1fr auto;gap:4px;padding:6px 8px;border-top:1px solid var(--border);align-items:center;}
+.ej-table-head{display:grid;grid-template-columns:40px 2fr 52px 52px 62px 1fr 64px;gap:0;background:var(--surface);padding:7px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3);}
+.ej-row{display:grid;grid-template-columns:40px 2fr 52px 52px 62px 1fr 64px;gap:4px;padding:6px 8px;border-top:1px solid var(--border);align-items:center;}
 .ej-row.ej-grouped{background:var(--orange-light);}
 .ej-input.bloque{text-align:center;font-weight:700;text-transform:uppercase;}
 .ej-badge-mini{display:inline-block;background:var(--orange);color:#fff;font-size:9px;font-weight:700;border-radius:4px;padding:1px 5px;margin-right:5px;vertical-align:middle;}
@@ -453,7 +453,7 @@ input,textarea,select{font-family:'Inter',sans-serif;}
   .modal-4col{grid-template-columns:1fr 1fr;}
   .days-chip .num{font-size:18px;}
   .tur-week-grid{grid-template-columns:40px repeat(7,1fr);}
-  .ej-table-head,.ej-row{grid-template-columns:34px 2fr 46px 46px 56px 1fr auto;}
+  .ej-table-head,.ej-row{grid-template-columns:34px 2fr 46px 46px 56px 1fr 64px;}
   .cuest-type-pick{grid-template-columns:1fr;}
 }
 </style>
@@ -1344,7 +1344,7 @@ function calcularScoresCuestionario(tipoId, respuestas) {
           </div>
         </div>
         <!-- Header columnas modal nueva sesión -->
-        <div style="display:grid;grid-template-columns:40px 2fr 52px 52px 62px 1fr auto;gap:4px;padding:5px 8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm) var(--radius-sm) 0 0;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3);">
+        <div style="display:grid;grid-template-columns:40px 2fr 52px 52px 62px 1fr 64px;gap:4px;padding:5px 8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm) var(--radius-sm) 0 0;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3);">
           <span style="text-align:center">Sup.</span><span>Ejercicio</span><span style="text-align:center">Series</span><span style="text-align:center">Reps/t</span><span style="text-align:center">Kg/BW</span><span>Notas</span><span></span>
         </div>
         <div id="ejerciciosList" style="border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius-sm) var(--radius-sm);overflow:hidden;margin-bottom:8px;"></div>
@@ -3077,7 +3077,7 @@ document.addEventListener('focusout', e=>{
 function addEjercicioRow(nombre='',series='',reps='',kg='',nota='',bloque=''){
   const container=document.getElementById('ejerciciosList');const id='ej_'+uid();const div=document.createElement('div');
   div.id=id;
-  div.style.cssText='display:grid;grid-template-columns:40px 2fr 52px 52px 62px 1fr auto;gap:4px;align-items:center;padding:4px 6px;border-top:1px solid var(--border);background:#fff;';
+  div.style.cssText='display:grid;grid-template-columns:40px 2fr 52px 52px 62px 1fr 64px;gap:4px;align-items:center;padding:4px 6px;border-top:1px solid var(--border);background:#fff;';
   div.innerHTML=`
     <input type="text" value="${esc(bloque)}" placeholder="A" maxlength="2" title="Superserie: poné la misma letra en los ejercicios que van juntos"
       style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 4px;font-size:13px;font-family:Inter,sans-serif;outline:none;text-align:center;font-weight:700;text-transform:uppercase;">
