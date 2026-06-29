@@ -3698,11 +3698,11 @@ function buildEjGroupsHTML(ejercicios){
 function buildEjGroupsHTMLPorCategoria(ejercicios){
   let html='';
   CATEGORIAS_EJ.forEach(cat=>{
-    const items=ejercicios.filter(e=>(e.categoria||'')===cat.id);
+    const items=ejercicios.filter(e=>(e.categoria||'')===cat.id && (e.nombre||'').trim());
     if(!items.length) return;
     html += `<div class="rt-cat-title">${esc(cat.label)}</div>${buildEjGroupsHTML(items)}`;
   });
-  const sinCat=ejercicios.filter(e=>!e.categoria);
+  const sinCat=ejercicios.filter(e=>!e.categoria && (e.nombre||'').trim());
   if(sinCat.length){
     html += `<div class="rt-cat-title">Otros ejercicios</div>${buildEjGroupsHTML(sinCat)}`;
   }
@@ -3727,28 +3727,29 @@ function exportPlanPDF(planId){
 <title>Plan · ${esc(p.nombre)}</title>
 <style>
   *{box-sizing:border-box;}
-  body{font-family:Arial,Helvetica,sans-serif;color:#1A1A2E;padding:32px;max-width:680px;margin:0 auto;}
-  .rt-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #1B2A4A;padding-bottom:14px;margin-bottom:20px;}
-  .rt-header h1{font-size:18px;color:#1B2A4A;margin:0 0 2px;}
-  .rt-header p{font-size:12px;color:#5A6373;margin:0;}
-  .rt-meta{font-size:12px;color:#5A6373;text-align:right;}
-  .rt-patient{font-size:16px;font-weight:700;margin-bottom:2px;}
-  .rt-sub{font-size:13px;color:#5A6373;margin-bottom:18px;}
-  .rt-dia{margin-bottom:22px;}
-  .rt-dia-tag{display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#1A4E8C;background:#EAF1FB;padding:2px 8px;border-radius:20px;margin-bottom:4px;}
-  .rt-dia-title{font-size:15px;margin:0 0 8px;color:#1B2A4A;}
-  .rt-cat-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#1A4E8C;margin:12px 0 6px;}
+  @page{ margin:8mm; }
+  body{font-family:Arial,Helvetica,sans-serif;color:#1A1A2E;padding:14px;max-width:680px;margin:0 auto;line-height:1.25;}
+  .rt-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #1B2A4A;padding-bottom:8px;margin-bottom:10px;}
+  .rt-header h1{font-size:15px;color:#1B2A4A;margin:0 0 2px;}
+  .rt-header p{font-size:10px;color:#5A6373;margin:0;}
+  .rt-meta{font-size:10px;color:#5A6373;text-align:right;}
+  .rt-patient{font-size:14px;font-weight:700;margin-bottom:1px;}
+  .rt-sub{font-size:11px;color:#5A6373;margin-bottom:8px;}
+  .rt-dia{margin-bottom:8px;}
+  .rt-dia-tag{display:inline-block;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#1A4E8C;background:#EAF1FB;padding:1px 6px;border-radius:20px;margin-bottom:2px;}
+  .rt-dia-title{font-size:13px;margin:0 0 4px;color:#1B2A4A;}
+  .rt-cat-title{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#1A4E8C;margin:6px 0 3px;}
   .rt-cat-title:first-of-type{margin-top:0;}
-  .rt-block{border:1px solid #E2E5EA;border-radius:8px;margin-bottom:10px;padding:10px 14px;background:#F7F8FA;}
-  .rt-block-tag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#E87722;margin-bottom:6px;}
-  .rt-ex{padding:8px 0;border-bottom:1px solid #E2E5EA;}
+  .rt-block{border:1px solid #E2E5EA;border-radius:6px;margin-bottom:5px;padding:5px 10px;background:#F7F8FA;}
+  .rt-block-tag{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#E87722;margin-bottom:3px;}
+  .rt-ex{padding:4px 0;border-bottom:1px solid #E2E5EA;}
   .rt-block .rt-ex:last-child{border-bottom:none;}
-  .rt-ex-name{font-size:14px;font-weight:600;}
-  .rt-ex-badge{display:inline-block;background:#E87722;color:#fff;font-size:10px;font-weight:700;border-radius:4px;padding:1px 6px;margin-right:6px;}
-  .rt-ex-meta{font-size:12px;color:#5A6373;margin-top:2px;}
-  .rt-ex-nota{font-size:12px;color:#1A4E8C;margin-top:3px;font-style:italic;}
-  .rt-footer{margin-top:24px;font-size:11px;color:#5A6373;border-top:1px solid #E2E5EA;padding-top:10px;}
-  @media print{ body{padding:10px;} .rt-dia{page-break-inside:avoid;} }
+  .rt-ex-name{font-size:12px;font-weight:600;}
+  .rt-ex-badge{display:inline-block;background:#E87722;color:#fff;font-size:9px;font-weight:700;border-radius:4px;padding:0px 5px;margin-right:5px;}
+  .rt-ex-meta{font-size:10.5px;color:#5A6373;margin-top:1px;}
+  .rt-ex-nota{font-size:10.5px;color:#1A4E8C;margin-top:2px;font-style:italic;}
+  .rt-footer{margin-top:10px;font-size:10px;color:#5A6373;border-top:1px solid #E2E5EA;padding-top:6px;}
+  @media print{ body{padding:0;} .rt-dia{page-break-inside:avoid;} }
 </style></head><body>
   <div class="rt-header">
     <div><h1>Casartelli · MP 10722</h1><p>Consultorio kinesiológico</p></div>
@@ -3972,23 +3973,24 @@ function exportRutinaPDF(sesId){
 <title>Rutina · ${esc(p.nombre)}</title>
 <style>
   *{box-sizing:border-box;}
-  body{font-family:Arial,Helvetica,sans-serif;color:#1A1A2E;padding:32px;max-width:680px;margin:0 auto;}
-  .rt-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #1B2A4A;padding-bottom:14px;margin-bottom:20px;}
-  .rt-header h1{font-size:18px;color:#1B2A4A;margin:0 0 2px;}
-  .rt-header p{font-size:12px;color:#5A6373;margin:0;}
-  .rt-meta{font-size:12px;color:#5A6373;text-align:right;}
-  .rt-patient{font-size:16px;font-weight:700;margin-bottom:2px;}
-  .rt-sub{font-size:13px;color:#5A6373;margin-bottom:18px;}
-  .rt-block{border:1px solid #E2E5EA;border-radius:8px;margin-bottom:10px;padding:10px 14px;background:#F7F8FA;}
-  .rt-block-tag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#E87722;margin-bottom:6px;}
-  .rt-ex{padding:8px 0;border-bottom:1px solid #E2E5EA;}
+  @page{ margin:8mm; }
+  body{font-family:Arial,Helvetica,sans-serif;color:#1A1A2E;padding:14px;max-width:680px;margin:0 auto;line-height:1.25;}
+  .rt-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #1B2A4A;padding-bottom:8px;margin-bottom:10px;}
+  .rt-header h1{font-size:15px;color:#1B2A4A;margin:0 0 2px;}
+  .rt-header p{font-size:10px;color:#5A6373;margin:0;}
+  .rt-meta{font-size:10px;color:#5A6373;text-align:right;}
+  .rt-patient{font-size:14px;font-weight:700;margin-bottom:1px;}
+  .rt-sub{font-size:11px;color:#5A6373;margin-bottom:8px;}
+  .rt-block{border:1px solid #E2E5EA;border-radius:6px;margin-bottom:5px;padding:5px 10px;background:#F7F8FA;}
+  .rt-block-tag{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#E87722;margin-bottom:3px;}
+  .rt-ex{padding:4px 0;border-bottom:1px solid #E2E5EA;}
   .rt-block .rt-ex:last-child{border-bottom:none;}
-  .rt-ex-name{font-size:14px;font-weight:600;}
-  .rt-ex-badge{display:inline-block;background:#E87722;color:#fff;font-size:10px;font-weight:700;border-radius:4px;padding:1px 6px;margin-right:6px;}
-  .rt-ex-meta{font-size:12px;color:#5A6373;margin-top:2px;}
-  .rt-ex-nota{font-size:12px;color:#1A4E8C;margin-top:3px;font-style:italic;}
-  .rt-footer{margin-top:24px;font-size:11px;color:#5A6373;border-top:1px solid #E2E5EA;padding-top:10px;}
-  @media print{ body{padding:10px;} }
+  .rt-ex-name{font-size:12px;font-weight:600;}
+  .rt-ex-badge{display:inline-block;background:#E87722;color:#fff;font-size:9px;font-weight:700;border-radius:4px;padding:0px 5px;margin-right:5px;}
+  .rt-ex-meta{font-size:10.5px;color:#5A6373;margin-top:1px;}
+  .rt-ex-nota{font-size:10.5px;color:#1A4E8C;margin-top:2px;font-style:italic;}
+  .rt-footer{margin-top:10px;font-size:10px;color:#5A6373;border-top:1px solid #E2E5EA;padding-top:6px;}
+  @media print{ body{padding:0;} }
 </style></head><body>
   <div class="rt-header">
     <div><h1>Casartelli · MP 10722</h1><p>Consultorio kinesiológico</p></div>
