@@ -2741,7 +2741,7 @@ function buildDxSuggestRegionBlock(region, items){
   const isOpen=dxSuggestExpandedRegion===region;
   let inner='';
   if(isOpen){
-    items.forEach(d=>{ inner+=`<div class="ej-suggest-item" data-name="${esc(d.nombre)}">${esc(d.nombre)} <span style="opacity:.55;font-size:11px;">· ${esc(d.tipo)}</span></div>`; });
+    items.forEach(d=>{ inner+=`<div class="ej-suggest-item" data-name="${esc(d.n)}">${esc(d.n)} <span style="opacity:.55;font-size:11px;">· ${esc(d.t)}</span></div>`; });
   }
   return `<div class="ej-suggest-cat" data-catname="${esc(region)}"><span>${esc(region)}</span><span class="ej-suggest-count">${items.length}</span><span class="ej-suggest-chevron">${isOpen?'▾':'▸'}</span></div>${inner}`;
 }
@@ -2753,10 +2753,10 @@ function buildDxSuggestBrowseHTML(){
 function buildDxSuggestSearchHTML(f){
   let html=''; let any=false;
   Object.keys(DX_TAXONOMY).forEach(region=>{
-    const items=DX_TAXONOMY[region].filter(d=>normDx(d.nombre).includes(f));
+    const items=DX_TAXONOMY[region].filter(d=>normDx(d.n).includes(f));
     if(!items.length) return;
     html+=`<div class="ej-suggest-catlabel">${esc(region)}</div>`;
-    items.forEach(d=>{ html+=`<div class="ej-suggest-item" data-name="${esc(d.nombre)}">${esc(d.nombre)} <span style="opacity:.55;font-size:11px;">· ${esc(d.tipo)}</span></div>`; any=true; });
+    items.forEach(d=>{ html+=`<div class="ej-suggest-item" data-name="${esc(d.n)}">${esc(d.n)} <span style="opacity:.55;font-size:11px;">· ${esc(d.t)}</span></div>`; any=true; });
   });
   if(!any) html=`<div class="ej-suggest-empty">Sin coincidencias en la lista. Elegí el más parecido o "Otro (ver antecedentes)".</div>`;
   return html;
