@@ -637,7 +637,6 @@ function getDxMeta(nombre){ return DX_LOOKUP[normDx(nombre)] || null; }
 const DX_DETAIL_TEMPLATES={
   injerto:{ title:'Detalles de la reconstrucción', fields:[
     {key:'injerto',label:'Injerto utilizado',type:'select',options:['HTH (hueso-tendón-hueso) autólogo','Isquiotibiales (ST/Gracilis) autólogo','Cuádriceps (BTB / tendón cuadricipital)','Aloinjerto','Otro / no especificado']},
-    {key:'fechaCirugia',label:'Fecha de cirugía',type:'date'},
   ]},
   gradoLigamentario:{ title:'Detalles de la lesión ligamentaria', fields:[
     {key:'grado',label:'Grado de lesión',type:'select',options:['Grado I (leve)','Grado II (moderado)','Grado III (rotura completa)']},
@@ -663,7 +662,6 @@ const DX_DETAIL_TEMPLATES={
   ]},
   tratamientoQx:{ title:'Detalles del tratamiento', fields:[
     {key:'tratamiento',label:'Tratamiento',type:'select',options:['Conservador (yeso / férula)','Quirúrgico (osteosíntesis / sutura)']},
-    {key:'material',label:'Material / técnica (si aplica)',type:'text'},
   ]},
   protesis:{ title:'Detalles de la prótesis', fields:[
     {key:'tipoProtesis',label:'Tipo de prótesis',type:'select',options:['Total','Parcial / unicompartimental','Revisión']},
