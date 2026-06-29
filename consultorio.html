@@ -169,6 +169,8 @@ input,textarea,select{font-family:'Inter',sans-serif;}
 .lugar-toggle{display:flex;gap:4px;}
 .lugar-btn{padding:6px 10px;border:1px solid var(--border);border-radius:20px;background:var(--bg);color:var(--text-2);font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap;}
 .lugar-btn.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+.ej-cat-section{margin-bottom:14px;}
+.ej-cat-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--orange);margin-bottom:6px;display:flex;align-items:center;gap:6px;}
 
 /* Tabla ejercicios editable en sesiones */
 .ej-table-wrap{border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;margin-bottom:8px;}
@@ -3430,9 +3432,22 @@ function renderDiaPlan(planId,d){
   </div>`;
 }
 
-function buildPlanEjTable(planId,diaId,ejercicios){
-  const labels=computeBloqueLabels(ejercicios);
-  const rows=ejercicios.map((e,i)=>`
+const CATEGORIAS_EJ=[
+  {id:'movilidad',label:'🔄 Movilidad'},
+  {id:'activacion',label:'⚡ Activación'},
+  {id:'fuerza',label:'💪 Fuerza'},
+  {id:'potencia',label:'🚀 Potencia / Pliometría'},
+  {id:'core',label:'🎯 Core / Estabilidad'},
+  {id:'cardio',label:'🏃 Cardio / Acondicionamiento'},
+  {id:'vuelta',label:'🧘 Vuelta a la calma / Estiramiento'},
+];
+
+function buildPlanEjSectionTable(planId,diaId,ejercicios,catId){
+  // Sublista indexada conservando el índice real dentro de dia.ejercicios (para editar/mover/borrar bien)
+  const sub=ejercicios.map((e,i)=>({e,i})).filter(x=>(x.e.categoria||'')===catId);
+  const rows=sub.map((x,localIdx)=>{
+    const e=x.e, i=x.i;
+    return `
     <div class="ej-row ${e.bloque?'ej-grouped':''}" id="pejrow_${planId}_${diaId}_${i}">
       <input class="ej-input bloque" type="text" value="${esc(e.bloque||'')}" placeholder="—" maxlength="2" title="Superserie"
         oninput="updatePlanEjField('${planId}','${diaId}',${i},'bloque',this.value)">
@@ -3447,18 +3462,36 @@ function buildPlanEjTable(planId,diaId,ejercicios){
       <input class="ej-input nota" type="text" value="${esc(e.nota||'')}" placeholder="notas…"
         oninput="updatePlanEjField('${planId}','${diaId}',${i},'nota',this.value)">
       <div class="ej-row-actions">
-        <button class="btn-ej-move" onclick="moveEjInPlanDia('${planId}','${diaId}',${i},-1)" ${i===0?'disabled':''} title="Subir">▲</button>
-        <button class="btn-ej-move" onclick="moveEjInPlanDia('${planId}','${diaId}',${i},1)" ${i===ejercicios.length-1?'disabled':''} title="Bajar">▼</button>
+        <button class="btn-ej-move" onclick="moveEjInPlanDia('${planId}','${diaId}',${i},-1)" ${localIdx===0?'disabled':''} title="Subir">▲</button>
+        <button class="btn-ej-move" onclick="moveEjInPlanDia('${planId}','${diaId}',${i},1)" ${localIdx===sub.length-1?'disabled':''} title="Bajar">▼</button>
         <button class="btn-ej-del" onclick="removeEjFromPlanDia('${planId}','${diaId}',${i})" title="Eliminar">×</button>
       </div>
-    </div>`).join('');
-  return `<div class="ej-table-wrap" id="pejtable_${planId}_${diaId}">
+    </div>`;
+  }).join('');
+  return `<div class="ej-table-wrap" id="pejtable_${planId}_${diaId}_${catId||'sincat'}">
     <div class="ej-table-head">
       <span style="text-align:center">Sup.</span><span>Ejercicio</span><span style="text-align:center">Series</span><span style="text-align:center">Reps/t</span><span style="text-align:center">Kg/BW</span><span>Notas</span><span></span>
     </div>
     ${rows}
-    <button class="btn-add-ej-row" onclick="addEjToPlanDia('${planId}','${diaId}')">+ Agregar ejercicio</button>
+    <button class="btn-add-ej-row" onclick="addEjToPlanDia('${planId}','${diaId}','${catId||''}')">+ Agregar ejercicio</button>
   </div>`;
+}
+
+function buildPlanEjTable(planId,diaId,ejercicios){
+  let html=CATEGORIAS_EJ.map(cat=>`
+    <div class="ej-cat-section">
+      <div class="ej-cat-title">${cat.label}</div>
+      ${buildPlanEjSectionTable(planId,diaId,ejercicios,cat.id)}
+    </div>`).join('');
+  // Ejercicios cargados antes de esta función (sin categoría asignada) — solo aparece si hay datos viejos
+  const sinCat=ejercicios.filter(e=>!e.categoria);
+  if(sinCat.length){
+    html+=`<div class="ej-cat-section">
+      <div class="ej-cat-title">Sin categoría</div>
+      ${buildPlanEjSectionTable(planId,diaId,ejercicios,'')}
+    </div>`;
+  }
+  return html;
 }
 
 function updatePlanEjField(planId,diaId,idx,field,val){
@@ -3467,25 +3500,26 @@ function updatePlanEjField(planId,diaId,idx,field,val){
   dia.ejercicios[idx][field]=val;
   clearTimeout(autoSaveTimer); autoSaveTimer=setTimeout(saveDB,800);
 }
-function addEjToPlanDia(planId,diaId){
+function addEjToPlanDia(planId,diaId,categoria){
   const {dia}=findPlanDia(planId,diaId); if(!dia) return;
   if(!dia.ejercicios) dia.ejercicios=[];
-  dia.ejercicios.push({nombre:'',series:'',reps:'',kg:'',nota:'',bloque:''});
+  dia.ejercicios.push({nombre:'',series:'',reps:'',kg:'',nota:'',bloque:'',categoria:categoria||''});
   saveDB();
-  const tableEl=document.getElementById('pejtable_'+planId+'_'+diaId);
-  if(tableEl) tableEl.outerHTML=buildPlanEjTable(planId,diaId,dia.ejercicios);
+  const tableEl=document.getElementById('pejtable_'+planId+'_'+diaId+'_'+(categoria||'sincat'));
+  if(tableEl) tableEl.outerHTML=buildPlanEjSectionTable(planId,diaId,dia.ejercicios,categoria||'');
   else renderTab();
 }
 function moveEjInPlanDia(planId,diaId,idx,dir){
   const {dia}=findPlanDia(planId,diaId); if(!dia||!dia.ejercicios) return;
   const arr=dia.ejercicios;
-  const newIdx=idx+dir;
-  if(newIdx<0||newIdx>=arr.length) return;
-  [arr[idx],arr[newIdx]]=[arr[newIdx],arr[idx]];
-  saveDB();
-  const tableEl=document.getElementById('pejtable_'+planId+'_'+diaId);
-  if(tableEl) tableEl.outerHTML=buildPlanEjTable(planId,diaId,arr);
-  else renderTab();
+  if(!arr[idx]) return;
+  const cat=arr[idx].categoria||'';
+  // Mueve dentro de la misma categoría (busca el vecino más cercano con la misma categoría)
+  let j=idx+dir;
+  while(j>=0 && j<arr.length && (arr[j].categoria||'')!==cat) j+=dir;
+  if(j<0||j>=arr.length) return;
+  [arr[idx],arr[j]]=[arr[j],arr[idx]];
+  saveDB(); renderTab();
 }
 function removeEjFromPlanDia(planId,diaId,idx){
   const {dia}=findPlanDia(planId,diaId); if(!dia||!dia.ejercicios) return;
@@ -3566,6 +3600,20 @@ function buildEjGroupsHTML(ejercicios){
   }
   return html;
 }
+// Igual que arriba pero separando primero por categoría clínica (Movilidad, Activación, Fuerza…) — uso en el PDF del plan
+function buildEjGroupsHTMLPorCategoria(ejercicios){
+  let html='';
+  CATEGORIAS_EJ.forEach(cat=>{
+    const items=ejercicios.filter(e=>(e.categoria||'')===cat.id);
+    if(!items.length) return;
+    html += `<div class="rt-cat-title">${esc(cat.label)}</div>${buildEjGroupsHTML(items)}`;
+  });
+  const sinCat=ejercicios.filter(e=>!e.categoria);
+  if(sinCat.length){
+    html += `<div class="rt-cat-title">Otros ejercicios</div>${buildEjGroupsHTML(sinCat)}`;
+  }
+  return html;
+}
 
 function exportPlanPDF(planId){
   const p=getPatient(currentPatientId); if(!p) return;
@@ -3573,7 +3621,7 @@ function exportPlanPDF(planId){
   const dias=pl.dias||[];
   const diasHtml=dias.map(d=>{
     const ej=d.ejercicios||[];
-    const grupo=ej.length?buildEjGroupsHTML(ej):'<p style="color:#9AA0AD;font-size:13px;">Sin ejercicios cargados.</p>';
+    const grupo=ej.length?buildEjGroupsHTMLPorCategoria(ej):'<p style="color:#9AA0AD;font-size:13px;">Sin ejercicios cargados.</p>';
     return `<div class="rt-dia">
       <div class="rt-dia-tag">${d.lugar==='domicilio'?'🏠 Domicilio':'🏥 Consultorio'}</div>
       <h3 class="rt-dia-title">${esc(d.nombre||'Día')}</h3>
@@ -3595,6 +3643,8 @@ function exportPlanPDF(planId){
   .rt-dia{margin-bottom:22px;}
   .rt-dia-tag{display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#1A4E8C;background:#EAF1FB;padding:2px 8px;border-radius:20px;margin-bottom:4px;}
   .rt-dia-title{font-size:15px;margin:0 0 8px;color:#1B2A4A;}
+  .rt-cat-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#1A4E8C;margin:12px 0 6px;}
+  .rt-cat-title:first-of-type{margin-top:0;}
   .rt-block{border:1px solid #E2E5EA;border-radius:8px;margin-bottom:10px;padding:10px 14px;background:#F7F8FA;}
   .rt-block-tag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#E87722;margin-bottom:6px;}
   .rt-ex{padding:8px 0;border-bottom:1px solid #E2E5EA;}
