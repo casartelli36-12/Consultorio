@@ -1264,7 +1264,6 @@ function calcularScoresCuestionario(tipoId, respuestas) {
       <div class="tab" onclick="switchTab('evaluaciones')">Evaluaciones</div>
       <div class="tab" onclick="switchTab('cuestionarios')">Cuestionarios</div>
       <div class="tab" onclick="switchTab('evolucion')">📈 Evolución</div>
-      <div class="tab" onclick="switchTab('fotos')">Fotos</div>
       <div class="tab" onclick="switchTab('turnos')">📅 Turnos</div>
     </div>
     <div class="ep-bar" id="epBar" style="display:none"></div>
@@ -1606,7 +1605,7 @@ function calcularScoresCuestionario(tipoId, respuestas) {
 let DB = { patients: [] };
 let currentPatientId = null;
 let currentTab = 'resumen';
-const TAB_ORDER=['sesiones','plan','evaluaciones','cuestionarios','evolucion','fotos','turnos'];
+const TAB_ORDER=['resumen','sesiones','plan','evaluaciones','cuestionarios','evolucion','turnos'];
 let editingPatientId = null;
 let autoSaveTimer = null;
 let cuestPickTipo = null;
@@ -1941,7 +1940,6 @@ function renderTab(){
   else if(currentTab==='evaluaciones') renderEvaluaciones(panel);
   else if(currentTab==='cuestionarios')renderCuestionarios(panel);
   else if(currentTab==='evolucion')    renderEvolucion(panel);
-  else if(currentTab==='fotos')        renderFotos(panel);
   else if(currentTab==='turnos')       renderTurnos(panel);
 }
 
