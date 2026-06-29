@@ -190,6 +190,9 @@ input,textarea,select{font-family:'Inter',sans-serif;}
 .btn-ej-move{background:none;border:none;color:var(--text-3);cursor:pointer;font-size:11px;padding:2px;line-height:1;flex-shrink:0;}
 .btn-ej-move:hover:not(:disabled){color:var(--navy);}
 .btn-ej-move:disabled{opacity:.25;cursor:default;}
+.ej-drag-handle{cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none;font-size:17px;color:var(--text-3);padding:2px 7px;line-height:1;flex-shrink:0;}
+.ej-drag-handle:active{cursor:grabbing;color:var(--navy);}
+.ej-row.ej-dragging{background:var(--blue-chip-light)!important;box-shadow:0 4px 12px rgba(0,0,0,.18);border-radius:6px;position:relative;z-index:5;}
 .btn-add-ej-row{width:100%;padding:7px;border:none;border-top:1px solid var(--border);background:var(--surface);color:var(--text-2);font-size:12px;cursor:pointer;font-family:Inter,sans-serif;text-align:left;padding-left:12px;}
 .btn-add-ej-row:hover{background:var(--border);}
 
@@ -1607,6 +1610,7 @@ function calcularScoresCuestionario(tipoId, respuestas) {
 let DB = { patients: [] };
 let currentPatientId = null;
 let currentTab = 'resumen';
+let openCardIds = new Set(); // recuerda qué fichas (sesión/plan) quedaron abiertas entre re-renders
 const TAB_ORDER=['resumen','sesiones','plan','evaluaciones','cuestionarios','evolucion','turnos'];
 let editingPatientId = null;
 let autoSaveTimer = null;
@@ -2698,8 +2702,7 @@ function buildEjTableEditable(sesId, ejercicios) {
       <input class="ej-input nota" type="text" value="${esc(e.nota||'')}" placeholder="notas…"
         oninput="updateEjField('${sesId}',${i},'nota',this.value)">
       <div class="ej-row-actions">
-        <button class="btn-ej-move" onclick="moveEjInSes('${sesId}',${i},-1)" ${i===0?'disabled':''} title="Subir">▲</button>
-        <button class="btn-ej-move" onclick="moveEjInSes('${sesId}',${i},1)" ${i===ejercicios.length-1?'disabled':''} title="Bajar">▼</button>
+        <span class="ej-drag-handle" data-kind="ses" data-ses="${sesId}" title="Mantené y arrastrá para reordenar">⠿</span>
         <button class="btn-ej-del" onclick="removeEjFromSes('${sesId}',${i})" title="Eliminar">×</button>
       </div>
     </div>`).join('');
@@ -2743,6 +2746,90 @@ function addEjToSes(sesId) {
   // Si no existe el elemento (primera vez), hacer re-render completo
   else renderTab();
 }
+
+// ══════════════════ ARRASTRAR PARA REORDENAR (sesiones y plan) ══════════════
+// El usuario mantiene apretado el agarrador "⠿" y arrastra con el dedo. Mientras arrastra,
+// solo se mueven los elementos visualmente (sin tocar los datos); al soltar, se lee el orden
+// final del DOM y ahí sí se reescribe el array — así evitamos líos de índices a mitad de arrastre.
+let ejDrag=null;
+function ejRowRealIdx(rowEl){ const parts=rowEl.id.split('_'); return parseInt(parts[parts.length-1],10); }
+
+function ejDragStart(e, handle){
+  if(e.pointerType==='mouse' && e.button!==0) return;
+  const rowEl=handle.closest('.ej-row');
+  const wrap=handle.closest('.ej-table-wrap');
+  if(!rowEl||!wrap) return;
+  e.preventDefault();
+  const order=Array.from(wrap.querySelectorAll('.ej-row'));
+  const pos=order.indexOf(rowEl);
+  const rowH=rowEl.getBoundingClientRect().height;
+  ejDrag={
+    kind:handle.dataset.kind,
+    planId:handle.dataset.plan, diaId:handle.dataset.dia, catId:handle.dataset.cat,
+    sesId:handle.dataset.ses,
+    wrap, order, pos, rowEl, rowH, startY:e.clientY, flowOffset:0
+  };
+  rowEl.classList.add('ej-dragging');
+  try{ handle.setPointerCapture(e.pointerId); }catch(err){}
+  handle.addEventListener('pointermove', ejDragMove);
+  handle.addEventListener('pointerup', ejDragEnd);
+  handle.addEventListener('pointercancel', ejDragEnd);
+}
+function ejDragMove(e){
+  if(!ejDrag) return;
+  let dy=(e.clientY-ejDrag.startY)-ejDrag.flowOffset;
+  let guard=0;
+  while(guard++<50){
+    if(dy>ejDrag.rowH*0.55 && ejDrag.pos<ejDrag.order.length-1){
+      const neighbor=ejDrag.order[ejDrag.pos+1];
+      ejDrag.wrap.insertBefore(neighbor, ejDrag.rowEl);
+      ejDrag.order[ejDrag.pos]=neighbor; ejDrag.order[ejDrag.pos+1]=ejDrag.rowEl;
+      ejDrag.pos++; ejDrag.flowOffset+=ejDrag.rowH;
+      dy=(e.clientY-ejDrag.startY)-ejDrag.flowOffset;
+    } else if(dy<-ejDrag.rowH*0.55 && ejDrag.pos>0){
+      const neighbor=ejDrag.order[ejDrag.pos-1];
+      ejDrag.wrap.insertBefore(ejDrag.rowEl, neighbor);
+      ejDrag.order[ejDrag.pos]=neighbor; ejDrag.order[ejDrag.pos-1]=ejDrag.rowEl;
+      ejDrag.pos--; ejDrag.flowOffset-=ejDrag.rowH;
+      dy=(e.clientY-ejDrag.startY)-ejDrag.flowOffset;
+    } else break;
+  }
+  ejDrag.rowEl.style.transform=`translateY(${dy}px)`;
+}
+function ejDragEnd(e){
+  if(!ejDrag) return;
+  const {kind,planId,diaId,catId,sesId,wrap,rowEl}=ejDrag;
+  const handle=e.target;
+  handle.removeEventListener('pointermove', ejDragMove);
+  handle.removeEventListener('pointerup', ejDragEnd);
+  handle.removeEventListener('pointercancel', ejDragEnd);
+  rowEl.style.transform=''; rowEl.classList.remove('ej-dragging');
+  const finalOrder=Array.from(wrap.querySelectorAll('.ej-row'));
+  ejDrag=null;
+
+  if(kind==='ses'){
+    const p=getPatient(currentPatientId); const ep=getEpData(p);
+    const ses=(ep.sesiones||[]).find(s=>s.id===sesId);
+    if(!ses||!ses.ejercicios) return;
+    const arr=ses.ejercicios;
+    if(finalOrder.length!==arr.length) return;
+    ses.ejercicios=finalOrder.map(rEl=>arr[ejRowRealIdx(rEl)]);
+    saveDB(); renderTab();
+  } else if(kind==='plan'){
+    const {dia}=findPlanDia(planId,diaId);
+    if(!dia||!dia.ejercicios) return;
+    const arr=dia.ejercicios;
+    const catSlots=[]; arr.forEach((ex,i)=>{ if((ex.categoria||'')===catId) catSlots.push(i); });
+    if(catSlots.length!==finalOrder.length) return;
+    const newItems=finalOrder.map(rEl=>arr[ejRowRealIdx(rEl)]);
+    catSlots.forEach((slotIdx,k)=>{ arr[slotIdx]=newItems[k]; });
+    saveDB(); renderTab();
+  }
+}
+document.addEventListener('pointerdown', e=>{
+  const handle=e.target && e.target.closest && e.target.closest('.ej-drag-handle');
+  if(handle) ejDragStart(e, handle);
+});
 
 function moveEjInSes(sesId, idx, dir) {
   const p = getPatient(currentPatientId);
@@ -2789,7 +2876,7 @@ function renderSesCard(s,num,fechaInicio){
         ${chip?`<div class="ses-eva">${chip}</div>`:''}
       </div>
       <div class="ses-preview" onclick="toggleSes('${s.id}')">${esc(preview.slice(0,90)+(preview.length>90?'…':''))}</div>
-      <div class="ses-body" id="sb_${s.id}">
+      <div class="ses-body${openCardIds.has(s.id)?' open':''}" id="sb_${s.id}">
         <div class="ses-fields">
           <div class="ses-field"><label>Fecha</label><input type="date" value="${s.fecha||''}" onchange="updateSes('${s.id}','fecha',this.value)"></div>
           <div class="ses-field"><label>Estado / Fase RTP</label><input type="text" value="${esc(s.fase||'')}" placeholder="Fase 3" oninput="updateSes('${s.id}','fase',this.value)"></div>
@@ -2814,7 +2901,11 @@ function renderSesCard(s,num,fechaInicio){
     </div>`;
 }
 
-function toggleSes(id){document.getElementById('sb_'+id).classList.toggle('open');}
+function toggleSes(id){
+  if(openCardIds.has(id)) openCardIds.delete(id); else openCardIds.add(id);
+  const el=document.getElementById('sb_'+id);
+  if(el) el.classList.toggle('open', openCardIds.has(id));
+}
 function updateSes(sesId,key,val){const p=getPatient(currentPatientId);const ep=getEpData(p);const ses=(ep.sesiones||[]).find(s=>s.id===sesId);if(!ses)return;ses[key]=val;clearTimeout(autoSaveTimer);autoSaveTimer=setTimeout(saveDB,800);}
 function deleteSes(sesId){if(!confirm('¿Eliminar esta sesión?'))return;const p=getPatient(currentPatientId);const ep=getEpData(p);ep.sesiones=(ep.sesiones||[]).filter(s=>s.id!==sesId);saveDB();renderTab();}
 
@@ -3397,7 +3488,7 @@ function renderPlanCard(pl){
         ${pl.fechaInicio?`<div class="ses-dias">desde ${formatFecha(pl.fechaInicio)}</div>`:''}
       </div>
       <div class="ses-preview" onclick="togglePlan('${pl.id}')">${esc(resumenDias.slice(0,90)+(resumenDias.length>90?'…':''))}</div>
-      <div class="ses-body" id="plb_${pl.id}">
+      <div class="ses-body${openCardIds.has(pl.id)?' open':''}" id="plb_${pl.id}">
         <div class="ses-fields">
           <div class="ses-field"><label>Nombre del plan</label><input type="text" value="${esc(pl.nombre||'')}" placeholder="Mesociclo 1 — Fuerza" oninput="updatePlanField('${pl.id}','nombre',this.value)"></div>
           <div class="ses-field"><label>Fecha inicio</label><input type="date" value="${pl.fechaInicio||''}" onchange="updatePlanField('${pl.id}','fechaInicio',this.value)"></div>
@@ -3462,8 +3553,7 @@ function buildPlanEjSectionTable(planId,diaId,ejercicios,catId){
       <input class="ej-input nota" type="text" value="${esc(e.nota||'')}" placeholder="notas…"
         oninput="updatePlanEjField('${planId}','${diaId}',${i},'nota',this.value)">
       <div class="ej-row-actions">
-        <button class="btn-ej-move" onclick="moveEjInPlanDia('${planId}','${diaId}',${i},-1)" ${localIdx===0?'disabled':''} title="Subir">▲</button>
-        <button class="btn-ej-move" onclick="moveEjInPlanDia('${planId}','${diaId}',${i},1)" ${localIdx===sub.length-1?'disabled':''} title="Bajar">▼</button>
+        <span class="ej-drag-handle" data-kind="plan" data-plan="${planId}" data-dia="${diaId}" data-cat="${catId||''}" title="Mantené y arrastrá para reordenar">⠿</span>
         <button class="btn-ej-del" onclick="removeEjFromPlanDia('${planId}','${diaId}',${i})" title="Eliminar">×</button>
       </div>
     </div>`;
@@ -3549,7 +3639,11 @@ function updatePlanField(planId,key,val){
   pl[key]=val;
   clearTimeout(autoSaveTimer); autoSaveTimer=setTimeout(saveDB,800);
 }
-function togglePlan(id){ document.getElementById('plb_'+id).classList.toggle('open'); }
+function togglePlan(id){
+  if(openCardIds.has(id)) openCardIds.delete(id); else openCardIds.add(id);
+  const el=document.getElementById('plb_'+id);
+  if(el) el.classList.toggle('open', openCardIds.has(id));
+}
 function deletePlan(planId){
   if(!confirm('¿Eliminar este plan completo?')) return;
   const p=getPatient(currentPatientId);const ep=getEpData(p);
