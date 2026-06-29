@@ -120,6 +120,10 @@ input,textarea,select{font-family:'Inter',sans-serif;}
 .field input,.field textarea,.field select{border:none;background:transparent;font-size:14px;color:var(--text);font-family:'Inter',sans-serif;width:100%;resize:none;outline:none;padding:0;}
 .field textarea{min-height:60px;line-height:1.5;}
 .field input::placeholder,.field textarea::placeholder{color:var(--text-3);}
+.dx-detail-block{background:var(--orange-light);border:1px solid rgba(232,119,34,.25);border-radius:var(--radius-sm);padding:10px 12px;margin-top:2px;}
+.dx-detail-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--orange);margin-bottom:8px;}
+.dx-detail-block .modal-2col{margin-bottom:0;}
+.dx-detail-block select,.dx-detail-block input{background:#fff;border:1px solid var(--border)!important;border-radius:var(--radius-sm);padding:8px 9px!important;font-size:13px!important;}
 
 .resumen-layout{display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start;}
 .notas-libres{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
@@ -180,6 +184,10 @@ input,textarea,select{font-family:'Inter',sans-serif;}
 .ej-input.nota{font-size:12px;color:var(--text-2);}
 .btn-ej-del{background:none;border:none;color:var(--text-3);cursor:pointer;font-size:16px;padding:0 4px;line-height:1;flex-shrink:0;}
 .btn-ej-del:hover{color:var(--red);}
+.ej-row-actions{display:flex;align-items:center;gap:2px;}
+.btn-ej-move{background:none;border:none;color:var(--text-3);cursor:pointer;font-size:11px;padding:2px;line-height:1;flex-shrink:0;}
+.btn-ej-move:hover:not(:disabled){color:var(--navy);}
+.btn-ej-move:disabled{opacity:.25;cursor:default;}
 .btn-add-ej-row{width:100%;padding:7px;border:none;border-top:1px solid var(--border);background:var(--surface);color:var(--text-2);font-size:12px;cursor:pointer;font-family:Inter,sans-serif;text-align:left;padding-left:12px;}
 .btn-add-ej-row:hover{background:var(--border);}
 
@@ -624,6 +632,149 @@ let DX_FLAT=[], DX_LOOKUP={};
 })();
 function normDx(s){ return (s||'').toString().toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
 function getDxMeta(nombre){ return DX_LOOKUP[normDx(nombre)] || null; }
+
+// ── Detalles dinámicos según diagnóstico (lo que "no hay que olvidar" de cada lesión) ──
+const DX_DETAIL_TEMPLATES={
+  injerto:{ title:'Detalles de la reconstrucción', fields:[
+    {key:'injerto',label:'Injerto utilizado',type:'select',options:['HTH (hueso-tendón-hueso) autólogo','Isquiotibiales (ST/Gracilis) autólogo','Cuádriceps (BTB / tendón cuadricipital)','Aloinjerto','Otro / no especificado']},
+    {key:'fechaCirugia',label:'Fecha de cirugía',type:'date'},
+  ]},
+  gradoLigamentario:{ title:'Detalles de la lesión ligamentaria', fields:[
+    {key:'grado',label:'Grado de lesión',type:'select',options:['Grado I (leve)','Grado II (moderado)','Grado III (rotura completa)']},
+  ]},
+  esguinceTobillo:{ title:'Detalles del esguince', fields:[
+    {key:'ladoEsguince',label:'Tipo / lado',type:'select',options:['Lateral (LPAA / LPC)','Medial (deltoideo)','Sindesmal (alta)','Mixto']},
+    {key:'grado',label:'Grado',type:'select',options:['Grado I (leve)','Grado II (moderado)','Grado III (rotura completa)']},
+  ]},
+  esguinceGenerico:{ title:'Detalles del esguince', fields:[
+    {key:'grado',label:'Grado',type:'select',options:['Grado I (leve)','Grado II (moderado)','Grado III (rotura completa)']},
+  ]},
+  desgarroMuscular:{ title:'Detalles del desgarro', fields:[
+    {key:'grado',label:'Grado',type:'select',options:['Grado I (leve)','Grado II (moderado)','Grado III (rotura completa)']},
+    {key:'localizacion',label:'Localización',type:'select',options:['Unión miotendinosa proximal','Cuerpo muscular','Unión miotendinosa distal','Inserción tendinosa']},
+  ]},
+  manguitoRotador:{ title:'Detalles del manguito rotador', fields:[
+    {key:'tendon',label:'Tendón afectado',type:'select',options:['Supraespinoso','Infraespinoso','Subescapular','Redondo menor','Múltiples tendones']},
+    {key:'tipoRotura',label:'Tipo de rotura',type:'select',options:['Tendinopatía (sin rotura)','Rotura parcial','Rotura completa','No aplica']},
+  ]},
+  luxacionHombro:{ title:'Detalles de la inestabilidad', fields:[
+    {key:'direccion',label:'Dirección de luxación',type:'select',options:['Anterior','Posterior','Multidireccional']},
+    {key:'episodios',label:'N° de episodios previos',type:'text'},
+  ]},
+  tratamientoQx:{ title:'Detalles del tratamiento', fields:[
+    {key:'tratamiento',label:'Tratamiento',type:'select',options:['Conservador (yeso / férula)','Quirúrgico (osteosíntesis / sutura)']},
+    {key:'material',label:'Material / técnica (si aplica)',type:'text'},
+  ]},
+  protesis:{ title:'Detalles de la prótesis', fields:[
+    {key:'tipoProtesis',label:'Tipo de prótesis',type:'select',options:['Total','Parcial / unicompartimental','Revisión']},
+  ]},
+  meniscal:{ title:'Detalles de la lesión meniscal', fields:[
+    {key:'tipoRotura',label:'Tipo de rotura',type:'select',options:['Longitudinal','Radial','Asa de balde','Degenerativa / compleja','Sin especificar']},
+  ]},
+};
+const DX_DETAIL_MAP={
+  'Reconstrucción de LCA (HTH)':'injerto',
+  'Reconstrucción de LCA (isquiotibiales)':'injerto',
+  'Reconstrucción de LCP':'injerto',
+  'Lesión de LCA (no operada)':'gradoLigamentario',
+  'Lesión de LCM':'gradoLigamentario',
+  'Lesión de LCL':'gradoLigamentario',
+  'Lesión de ligamento colateral medial de codo':'gradoLigamentario',
+  'Esguince de tobillo (LPAA)':'esguinceTobillo',
+  'Esguince de tobillo medial (ligamento deltoideo)':'esguinceTobillo',
+  'Inestabilidad crónica de tobillo':'esguinceTobillo',
+  'Esguince de Lisfranc':'esguinceGenerico',
+  'Esguince de muñeca':'esguinceGenerico',
+  'Desgarro de isquiotibiales':'desgarroMuscular',
+  'Desgarro de aductores':'desgarroMuscular',
+  'Desgarro de cuádriceps':'desgarroMuscular',
+  'Desgarro de gastrocnemio (gemelo)':'desgarroMuscular',
+  'Desgarro de sóleo':'desgarroMuscular',
+  'Tendinopatía del manguito rotador':'manguitoRotador',
+  'Rotura del manguito rotador':'manguitoRotador',
+  'Reparación artroscópica de manguito rotador':'manguitoRotador',
+  'Luxación de hombro / inestabilidad glenohumeral':'luxacionHombro',
+  'Lesión de Bankart / SLAP':'luxacionHombro',
+  'Fractura de meseta tibial':'tratamientoQx',
+  'Fractura de tobillo':'tratamientoQx',
+  'Fractura de muñeca (radio distal)':'tratamientoQx',
+  'Fractura de cadera':'tratamientoQx',
+  'Fractura de estrés tibial':'tratamientoQx',
+  'Rotura de tendón de Aquiles':'tratamientoQx',
+  'Prótesis total de rodilla':'protesis',
+  'Prótesis total de cadera':'protesis',
+  'Rotura meniscal (menisco interno)':'meniscal',
+  'Rotura meniscal (menisco externo)':'meniscal',
+  'Meniscectomía parcial':'meniscal',
+};
+let dxDetailFieldsFor='';
+// idPrefix + persist=true → cada campo se autoguarda con updateDxDetail (uso en Resumen)
+// persist=false → solo se lee al guardar el modal (uso en alta/edición de paciente)
+function buildDxDetailFieldsHTML(dxNombre, saved, idPrefix, persist){
+  const templateId=DX_DETAIL_MAP[dxNombre];
+  const tpl=templateId?DX_DETAIL_TEMPLATES[templateId]:null;
+  if(!tpl) return '';
+  saved=saved||{};
+  return `<div class="dx-detail-block">
+    <div class="dx-detail-title">⚡ ${esc(tpl.title)}</div>
+    <div class="modal-2col">
+      ${tpl.fields.map(f=>{
+        const val=saved[f.key]||'';
+        if(f.type==='select'){
+          const onAttr=persist?`onchange="updateDxDetail('${f.key}',this.value)"`:'';
+          return `<div class="modal-field"><label>${esc(f.label)}</label><select id="${idPrefix}_${f.key}" ${onAttr}>
+            <option value="">— Sin especificar —</option>
+            ${f.options.map(o=>`<option value="${esc(o)}" ${o===val?'selected':''}>${esc(o)}</option>`).join('')}
+          </select></div>`;
+        }
+        const onAttr=persist?`oninput="updateDxDetail('${f.key}',this.value)"`:'';
+        return `<div class="modal-field"><label>${esc(f.label)}</label><input type="${f.type==='date'?'date':'text'}" id="${idPrefix}_${f.key}" value="${esc(val)}" ${onAttr}></div>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+function collectDxDetailsFromDOM(dxNombre, idPrefix){
+  const templateId=DX_DETAIL_MAP[dxNombre];
+  const tpl=templateId?DX_DETAIL_TEMPLATES[templateId]:null;
+  if(!tpl) return {};
+  const out={};
+  tpl.fields.forEach(f=>{
+    const el=document.getElementById(idPrefix+'_'+f.key);
+    if(el) out[f.key]=el.value;
+  });
+  return out;
+}
+function updateDxDetail(key,val){
+  const p=getPatient(currentPatientId);if(!p)return;
+  if(!p.dxDetalles)p.dxDetalles={};
+  p.dxDetalles[key]=val;
+  clearTimeout(autoSaveTimer);autoSaveTimer=setTimeout(saveDB,600);
+}
+// Se llama cuando el diagnóstico cambia de verdad (al elegir de la lista o confirmar al salir del campo).
+// Si es el mismo dx de antes, no toca nada (para no perder lo ya tipeado al hacer foco/blur sin cambiar nada).
+function onDxConfirmed(nombre){
+  if(nombre===dxDetailFieldsFor) return;
+  dxDetailFieldsFor=nombre;
+  const modalWrap=document.getElementById('dxDetailFields');
+  if(modalWrap){
+    modalWrap.innerHTML=buildDxDetailFieldsHTML(nombre,{},'dxd',false);
+    modalWrap.style.display=modalWrap.innerHTML?'':'none';
+  }
+  const resWrap=document.getElementById('rDxDetailWrap');
+  if(resWrap){
+    const p=getPatient(currentPatientId);
+    if(p) p.dxDetalles={};
+    resWrap.innerHTML=buildDxDetailFieldsHTML(nombre,{},'rdxd',true);
+    clearTimeout(autoSaveTimer);autoSaveTimer=setTimeout(saveDB,600);
+  }
+}
+function renderDxDetailFieldsModal(nombre,saved){
+  dxDetailFieldsFor=nombre;
+  const wrap=document.getElementById('dxDetailFields');
+  if(!wrap) return;
+  wrap.innerHTML=buildDxDetailFieldsHTML(nombre,saved,'dxd',false);
+  wrap.style.display=wrap.innerHTML?'':'none';
+}
 
 
 function getCats() { return DB.cats || DEFAULT_CATS; }
@@ -1149,6 +1300,7 @@ function calcularScoresCuestionario(tipoId, respuestas) {
         <div class="modal-field"><label>Cirujano / Médico</label><input type="text" id="mCirujano" placeholder="Dr. ..."></div>
       </div>
       <div class="modal-field"><label>Diagnóstico principal</label><input type="text" id="mDx" class="dx-input" placeholder="Escribí para buscar en la lista…" autocomplete="off"></div>
+      <div id="dxDetailFields" style="display:none;margin-bottom:14px;"></div>
       <div class="modal-2col">
         <div class="modal-field"><label>Estructura / Lado</label><input type="text" id="mEstructura" placeholder="LCA derecho"></div>
         <div class="modal-field"><label>Fecha inicio / lesión</label><input type="date" id="mFechaInicio"></div>
@@ -2484,7 +2636,11 @@ function rField(label,id,val,key,type='text',full=false){
 }
 function rField2(l1,id1,v1,k1,l2,id2,v2,k2,type='text'){return rField(l1,id1,v1,k1,type)+rField(l2,id2,v2,k2,type);}
 function rFieldDx(val){
-  return `<div class="field"><span class="field-label">Diagnóstico principal <span id="rDxBadge">${dxBadgeHTML(val)}</span></span><input type="text" id="rDx" class="dx-input" value="${esc(val||'')}" placeholder="Escribí para buscar en la lista…" autocomplete="off" oninput="updateField('dx',this.value);updateDxBadge(this.value)"></div>`;
+  const p=getPatient(currentPatientId);
+  dxDetailFieldsFor=val;
+  const detailHTML=buildDxDetailFieldsHTML(val, p?p.dxDetalles:{}, 'rdxd', true);
+  return `<div class="field full"><span class="field-label">Diagnóstico principal <span id="rDxBadge">${dxBadgeHTML(val)}</span></span><input type="text" id="rDx" class="dx-input" value="${esc(val||'')}" placeholder="Escribí para buscar en la lista…" autocomplete="off" oninput="updateField('dx',this.value);updateDxBadge(this.value)"></div>
+  <div class="field full" id="rDxDetailWrap" style="${detailHTML?'':'display:none;'}">${detailHTML}</div>`;
 }
 function dxBadgeHTML(val){
   const meta=getDxMeta(val);
@@ -2542,7 +2698,11 @@ function buildEjTableEditable(sesId, ejercicios) {
         oninput="updateEjField('${sesId}',${i},'kg',this.value)">
       <input class="ej-input nota" type="text" value="${esc(e.nota||'')}" placeholder="notas…"
         oninput="updateEjField('${sesId}',${i},'nota',this.value)">
-      <button class="btn-ej-del" onclick="removeEjFromSes('${sesId}',${i})" title="Eliminar">×</button>
+      <div class="ej-row-actions">
+        <button class="btn-ej-move" onclick="moveEjInSes('${sesId}',${i},-1)" ${i===0?'disabled':''} title="Subir">▲</button>
+        <button class="btn-ej-move" onclick="moveEjInSes('${sesId}',${i},1)" ${i===ejercicios.length-1?'disabled':''} title="Bajar">▼</button>
+        <button class="btn-ej-del" onclick="removeEjFromSes('${sesId}',${i})" title="Eliminar">×</button>
+      </div>
     </div>`).join('');
 
   return `<div class="ej-table-wrap" id="ejtable_${sesId}">
@@ -2582,6 +2742,21 @@ function addEjToSes(sesId) {
   const tableEl = document.getElementById('ejtable_'+sesId);
   if(tableEl) tableEl.outerHTML = buildEjTableEditable(sesId, ses.ejercicios);
   // Si no existe el elemento (primera vez), hacer re-render completo
+  else renderTab();
+}
+
+function moveEjInSes(sesId, idx, dir) {
+  const p = getPatient(currentPatientId);
+  const ep = getEpData(p);
+  const ses = (ep.sesiones||[]).find(s=>s.id===sesId);
+  if(!ses || !ses.ejercicios) return;
+  const arr = ses.ejercicios;
+  const newIdx = idx + dir;
+  if(newIdx < 0 || newIdx >= arr.length) return;
+  [arr[idx], arr[newIdx]] = [arr[newIdx], arr[idx]];
+  saveDB();
+  const tableEl = document.getElementById('ejtable_'+sesId);
+  if(tableEl) tableEl.outerHTML = buildEjTableEditable(sesId, arr);
   else renderTab();
 }
 
@@ -2866,15 +3041,17 @@ function pickDxSuggest(name){
   dxSuggestInput.dispatchEvent(new Event('input',{bubbles:true}));
   hideDxSuggest();
   dxSuggestInput.focus();
+  onDxConfirmed(name);
 }
 // Si lo que quedó escrito no es un diagnóstico válido de la lista, lo revierte (o lo vacía).
 function enforceDxValue(input){
   const val=input.value.trim();
-  if(!val){ dxLastValid=''; return; }
+  if(!val){ dxLastValid=''; onDxConfirmed(''); return; }
   const meta=getDxMeta(val);
   if(meta){
     if(input.value!==meta.nombre){ input.value=meta.nombre; input.dispatchEvent(new Event('input',{bubbles:true})); }
     dxLastValid=meta.nombre;
+    onDxConfirmed(meta.nombre);
   } else {
     input.value=dxLastValid;
     input.dispatchEvent(new Event('input',{bubbles:true}));
@@ -2910,8 +3087,24 @@ function addEjercicioRow(nombre='',series='',reps='',kg='',nota='',bloque=''){
     <input type="text" value="${esc(reps)}" placeholder="—" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 6px;font-size:13px;font-family:Inter,sans-serif;outline:none;text-align:center;">
     <input type="text" value="${esc(kg)}" placeholder="—" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 6px;font-size:13px;font-family:Inter,sans-serif;outline:none;text-align:center;">
     <input type="text" value="${esc(nota)}" placeholder="notas…" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 8px;font-size:12px;font-family:Inter,sans-serif;outline:none;color:var(--text-2);">
-    <button onclick="document.getElementById('${id}').remove()" style="background:none;border:none;color:var(--text-3);cursor:pointer;font-size:18px;padding:0 4px;line-height:1;">×</button>`;
+    <div style="display:flex;align-items:center;gap:2px;">
+      <button type="button" onclick="moveEjRowDOM('${id}',-1)" style="background:none;border:none;color:var(--text-3);cursor:pointer;font-size:11px;padding:2px;line-height:1;" title="Subir">▲</button>
+      <button type="button" onclick="moveEjRowDOM('${id}',1)" style="background:none;border:none;color:var(--text-3);cursor:pointer;font-size:11px;padding:2px;line-height:1;" title="Bajar">▼</button>
+      <button onclick="document.getElementById('${id}').remove()" style="background:none;border:none;color:var(--text-3);cursor:pointer;font-size:18px;padding:0 4px;line-height:1;">×</button>
+    </div>`;
   container.appendChild(div);
+}
+
+function moveEjRowDOM(id, dir){
+  const el=document.getElementById(id);
+  if(!el) return;
+  if(dir<0){
+    const prev=el.previousElementSibling;
+    if(prev) el.parentNode.insertBefore(el, prev);
+  } else {
+    const next=el.nextElementSibling;
+    if(next) el.parentNode.insertBefore(next, el);
+  }
 }
 
 function getEjercicios(){
@@ -3256,7 +3449,11 @@ function buildPlanEjTable(planId,diaId,ejercicios){
         oninput="updatePlanEjField('${planId}','${diaId}',${i},'kg',this.value)">
       <input class="ej-input nota" type="text" value="${esc(e.nota||'')}" placeholder="notas…"
         oninput="updatePlanEjField('${planId}','${diaId}',${i},'nota',this.value)">
-      <button class="btn-ej-del" onclick="removeEjFromPlanDia('${planId}','${diaId}',${i})" title="Eliminar">×</button>
+      <div class="ej-row-actions">
+        <button class="btn-ej-move" onclick="moveEjInPlanDia('${planId}','${diaId}',${i},-1)" ${i===0?'disabled':''} title="Subir">▲</button>
+        <button class="btn-ej-move" onclick="moveEjInPlanDia('${planId}','${diaId}',${i},1)" ${i===ejercicios.length-1?'disabled':''} title="Bajar">▼</button>
+        <button class="btn-ej-del" onclick="removeEjFromPlanDia('${planId}','${diaId}',${i})" title="Eliminar">×</button>
+      </div>
     </div>`).join('');
   return `<div class="ej-table-wrap" id="pejtable_${planId}_${diaId}">
     <div class="ej-table-head">
@@ -3280,6 +3477,17 @@ function addEjToPlanDia(planId,diaId){
   saveDB();
   const tableEl=document.getElementById('pejtable_'+planId+'_'+diaId);
   if(tableEl) tableEl.outerHTML=buildPlanEjTable(planId,diaId,dia.ejercicios);
+  else renderTab();
+}
+function moveEjInPlanDia(planId,diaId,idx,dir){
+  const {dia}=findPlanDia(planId,diaId); if(!dia||!dia.ejercicios) return;
+  const arr=dia.ejercicios;
+  const newIdx=idx+dir;
+  if(newIdx<0||newIdx>=arr.length) return;
+  [arr[idx],arr[newIdx]]=[arr[newIdx],arr[idx]];
+  saveDB();
+  const tableEl=document.getElementById('pejtable_'+planId+'_'+diaId);
+  if(tableEl) tableEl.outerHTML=buildPlanEjTable(planId,diaId,arr);
   else renderTab();
 }
 function removeEjFromPlanDia(planId,diaId,idx){
@@ -3479,9 +3687,17 @@ function buildBarChartSVG(seriesArr, opts={}){
       const x=gx+j*(barW+barGap);
       const y=h-padB-((d.value-min)/range)*plotH;
       const barH=Math.max((h-padB)-y,0);
-      bars+=`<rect x="${x.toFixed(1)}" y="${Math.min(y,h-padB).toFixed(1)}" width="${barW.toFixed(1)}" height="${barH.toFixed(1)}" rx="2" fill="${s.color}"><title>${esc(s.name?s.name+': ':'')}${esc(lab)}: ${d.value}</title></rect>`;
+      bars+=`<rect x="${x.toFixed(1)}" y="${Math.min(y,h-padB).toFixed(1)}" width="${barW.toFixed(1)}" height="${barH.toFixed(1)}" rx="2" fill="${d.color||s.color}"><title>${esc(s.name?s.name+': ':'')}${esc(lab)}: ${d.value}</title></rect>`;
     });
   });
+
+  let thresholdLine='';
+  if(opts.threshold!=null){
+    const ty=h-padB-((opts.threshold-min)/range)*plotH;
+    if(ty>=padT-1 && ty<=h-padB+1){
+      thresholdLine=`<line x1="${padL}" y1="${ty.toFixed(1)}" x2="${w-padR}" y2="${ty.toFixed(1)}" stroke="var(--green)" stroke-width="1.3" stroke-dasharray="4,3"/><text x="${w-padR}" y="${(ty-3).toFixed(1)}" font-size="9" text-anchor="end" fill="var(--green)" font-family="Inter,sans-serif">${esc(opts.thresholdLabel||(opts.threshold+''))}</text>`;
+    }
+  }
 
   const gridYs=[0,0.5,1].map(f=>h-padB-f*plotH);
   const grid=gridYs.map(y=>`<line x1="${padL}" y1="${y.toFixed(1)}" x2="${w-padR}" y2="${y.toFixed(1)}" stroke="var(--border)" stroke-width="1"/>`).join('');
@@ -3492,6 +3708,7 @@ function buildBarChartSVG(seriesArr, opts={}){
     <text x="2" y="${padT+4}" font-size="9" fill="var(--text-3)" font-family="Inter,sans-serif">${max}</text>
     <text x="2" y="${h-padB+4}" font-size="9" fill="var(--text-3)" font-family="Inter,sans-serif">${min}</text>
     ${bars}
+    ${thresholdLine}
     ${labelsX}
   </svg>`;
 }
@@ -3503,6 +3720,7 @@ function renderEvolucion(panel){
   const p=getPatient(currentPatientId); const ep=getEpData(p);
   const sesiones=(ep.sesiones||[]).slice().sort((a,b)=>(a.fecha||'').localeCompare(b.fecha||''));
   const cuestionarios=(ep.cuestionarios||[]).slice().sort((a,b)=>(a.fecha||'').localeCompare(b.fecha||''));
+  const evaluaciones=(ep.evaluaciones||[]).slice().sort((a,b)=>(a.fecha||'').localeCompare(b.fecha||''));
 
   const dolorDiariaData = sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:getDolorDiarioSesion(s)}));
   const dolorEntrenoData= sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:getDolorSesion(s)}));
@@ -3519,6 +3737,18 @@ function renderEvolucion(panel){
     promGroups[c.tipoId].push({label:formatFechaCorta(c.fecha), value:avg});
   });
   const promKeys=Object.keys(promGroups);
+
+  // LSI% de evaluaciones, agrupado por test (cada instrumento/test tiene su propia tarjeta)
+  function lsiBarColor(v){ const c=lsiClass(v); return c==='lsi-ok'?'var(--green)':c==='lsi-warn'?'#E0A82E':'var(--red)'; }
+  const lsiGroups={};
+  evaluaciones.forEach(e=>{
+    const lsi=parseFloat(e.lsi);
+    if(isNaN(lsi)) return;
+    const key=e.testId?`${e.instrumento}_${e.testId}`:(e.test||'eval');
+    if(!lsiGroups[key]) lsiGroups[key]={label:e.test||'Evaluación', data:[]};
+    lsiGroups[key].data.push({label:formatFechaCorta(e.fecha), value:lsi, color:lsiBarColor(lsi)});
+  });
+  const lsiKeys=Object.keys(lsiGroups);
 
   panel.innerHTML = `
     <div class="home-grid">
@@ -3538,6 +3768,20 @@ function renderEvolucion(panel){
         <div class="home-card-title">🏋 Carga externa (volumen series×reps×kg)</div>
         ${buildBarChartSVG([{name:'Carga externa',color:'var(--blue-chip)',data:ceData}],{emptyMsg:'Cargá series/reps/kg en los ejercicios para ver este gráfico.'})}
       </div>
+      ${lsiKeys.length? lsiKeys.map(key=>`
+        <div class="home-card">
+          <div class="home-card-title">⚖️ LSI% — ${esc(lsiGroups[key].label)}</div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:8px;font-size:11px;color:var(--text-2);">
+            <div style="display:flex;align-items:center;gap:5px;"><span style="width:9px;height:9px;border-radius:2px;background:var(--green);display:inline-block;"></span>≥90% (RTP)</div>
+            <div style="display:flex;align-items:center;gap:5px;"><span style="width:9px;height:9px;border-radius:2px;background:#E0A82E;display:inline-block;"></span>75-89%</div>
+            <div style="display:flex;align-items:center;gap:5px;"><span style="width:9px;height:9px;border-radius:2px;background:var(--red);display:inline-block;"></span>&lt;75%</div>
+          </div>
+          ${buildBarChartSVG([{name:'LSI%',data:lsiGroups[key].data}],{min:0,max:110,threshold:90,thresholdLabel:'90% RTP'})}
+        </div>`).join('') : `
+      <div class="home-card">
+        <div class="home-card-title">⚖️ LSI% — evaluaciones</div>
+        <div class="home-empty-mini">Cargá evaluaciones con resultado afectado/sano (dinamómetro, tests funcionales) para ver la evolución del LSI%.</div>
+      </div>`}
       ${promKeys.length? promKeys.map(tipoId=>`
         <div class="home-card">
           <div class="home-card-title">📋 ${esc(QUESTIONNAIRES[tipoId]?.nombre||tipoId)} — score promedio (0-100)</div>
@@ -3630,6 +3874,7 @@ function openNewPatient(){
   editingPatientId=null;document.getElementById('modalTitle').textContent='Nuevo paciente';
   populateCatSelect('');
   ['mNombre','mEdad','mContacto','mInstitucion','mDeporte','mCirujano','mDx','mEstructura','mFechaInicio','mCirugia','mAntecedentes','mObjetivos','mMedicacion','mContra','mAlerta'].forEach(id=>document.getElementById(id).value='');
+  renderDxDetailFieldsModal('',{});
   document.getElementById('modalOverlay').classList.add('open');
 }
 function openEditPatient(){
@@ -3643,12 +3888,14 @@ function openEditPatient(){
   document.getElementById('mAntecedentes').value=p.antecedentes||'';document.getElementById('mObjetivos').value=p.objetivos||'';
   document.getElementById('mMedicacion').value=p.medicacion||'';document.getElementById('mContra').value=p.contra||'';
   document.getElementById('mAlerta').value=p.alerta||'';
+  renderDxDetailFieldsModal(p.dx||'', p.dxDetalles||{});
   document.getElementById('modalOverlay').classList.add('open');
 }
 function closeModal(){document.getElementById('modalOverlay').classList.remove('open');editingPatientId=null;}
 function savePatient(){
   const nombre=document.getElementById('mNombre').value.trim();if(!nombre){alert('El nombre es obligatorio.');return;}
-  const data={nombre,categoria:document.getElementById('mCategoria').value,edad:document.getElementById('mEdad').value,contacto:document.getElementById('mContacto').value,institucion:document.getElementById('mInstitucion').value,deporte:document.getElementById('mDeporte').value,cirujano:document.getElementById('mCirujano').value,dx:document.getElementById('mDx').value,estructura:document.getElementById('mEstructura').value,fechaInicio:document.getElementById('mFechaInicio').value,cirugia:document.getElementById('mCirugia').value,antecedentes:document.getElementById('mAntecedentes').value,objetivos:document.getElementById('mObjetivos').value,medicacion:document.getElementById('mMedicacion').value,contra:document.getElementById('mContra').value,alerta:document.getElementById('mAlerta').value};
+  const dxVal=document.getElementById('mDx').value;
+  const data={nombre,categoria:document.getElementById('mCategoria').value,edad:document.getElementById('mEdad').value,contacto:document.getElementById('mContacto').value,institucion:document.getElementById('mInstitucion').value,deporte:document.getElementById('mDeporte').value,cirujano:document.getElementById('mCirujano').value,dx:dxVal,estructura:document.getElementById('mEstructura').value,fechaInicio:document.getElementById('mFechaInicio').value,cirugia:document.getElementById('mCirugia').value,antecedentes:document.getElementById('mAntecedentes').value,objetivos:document.getElementById('mObjetivos').value,medicacion:document.getElementById('mMedicacion').value,contra:document.getElementById('mContra').value,alerta:document.getElementById('mAlerta').value,dxDetalles:collectDxDetailsFromDOM(dxVal,'dxd')};
   if(editingPatientId){const idx=DB.patients.findIndex(p=>p.id===editingPatientId);if(idx!==-1)Object.assign(DB.patients[idx],data);}
   else{DB.patients.unshift({id:uid(),sesiones:[],evaluaciones:[],cuestionarios:[],notas:'',...data});currentPatientId=DB.patients[0].id;}
   saveDB();closeModal();renderPatientList();renderPatient();
