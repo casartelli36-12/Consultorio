@@ -499,6 +499,114 @@ const EXERCISE_LIBRARY = {
 };
 let currentEpisodioIdx = 0;
 
+// ── Taxonomía de diagnósticos (lista cerrada, clasificada por zona y tipo) ──
+// Clasificación por región anatómica + tipo de tejido/lesión, siguiendo el
+// esquema habitual en vigilancia epidemiológica de lesiones deportivas
+// (zona corporal × tipo de tejido). Permite estadísticas comparables entre
+// pacientes sin depender de cómo se escribió cada diagnóstico.
+const DX_TAXONOMY = {
+  'Rodilla': [
+    {n:'Reconstrucción de LCA (HTH)',t:'Posquirúrgico'},
+    {n:'Reconstrucción de LCA (isquiotibiales)',t:'Posquirúrgico'},
+    {n:'Reconstrucción de LCP',t:'Posquirúrgico'},
+    {n:'Lesión de LCA (no operada)',t:'Ligamentario'},
+    {n:'Lesión de LCM',t:'Ligamentario'},
+    {n:'Lesión de LCL',t:'Ligamentario'},
+    {n:'Rotura meniscal (menisco interno)',t:'Meniscal / Cartílago'},
+    {n:'Rotura meniscal (menisco externo)',t:'Meniscal / Cartílago'},
+    {n:'Meniscectomía parcial',t:'Posquirúrgico'},
+    {n:'Condropatía rotuliana',t:'Meniscal / Cartílago'},
+    {n:'Síndrome femoropatelar',t:'Funcional / Sobreuso'},
+    {n:'Tendinopatía rotuliana',t:'Tendinopatía'},
+    {n:'Tendinopatía cuadricipital',t:'Tendinopatía'},
+    {n:'Artrosis de rodilla (gonartrosis)',t:'Articular / Capsular'},
+    {n:'Prótesis total de rodilla',t:'Posquirúrgico'},
+    {n:'Bursitis prerrotuliana',t:'Inflamatorio / Bursitis'},
+    {n:'Fractura de meseta tibial',t:'Óseo / Fractura'},
+    {n:'Luxación de rótula',t:'Articular / Capsular'},
+  ],
+  'Tobillo / Pie': [
+    {n:'Esguince de tobillo (LPAA)',t:'Ligamentario'},
+    {n:'Inestabilidad crónica de tobillo',t:'Ligamentario'},
+    {n:'Tendinopatía de Aquiles',t:'Tendinopatía'},
+    {n:'Rotura de tendón de Aquiles',t:'Tendinopatía'},
+    {n:'Fascitis plantar',t:'Inflamatorio / Bursitis'},
+    {n:'Fractura de tobillo',t:'Óseo / Fractura'},
+    {n:'Síndrome de pinzamiento de tobillo',t:'Articular / Capsular'},
+    {n:'Esguince de Lisfranc',t:'Ligamentario'},
+    {n:'Tendinopatía del tibial posterior',t:'Tendinopatía'},
+  ],
+  'Cadera / Pelvis': [
+    {n:'Pubalgia / Osteopatía dinámica de pubis',t:'Funcional / Sobreuso'},
+    {n:'Síndrome femoroacetabular (FAI)',t:'Articular / Capsular'},
+    {n:'Tendinopatía de glúteo medio',t:'Tendinopatía'},
+    {n:'Bursitis trocantérea',t:'Inflamatorio / Bursitis'},
+    {n:'Desgarro de isquiotibiales',t:'Muscular'},
+    {n:'Desgarro de aductores',t:'Muscular'},
+    {n:'Artrosis de cadera (coxartrosis)',t:'Articular / Capsular'},
+    {n:'Prótesis total de cadera',t:'Posquirúrgico'},
+    {n:'Fractura de cadera',t:'Óseo / Fractura'},
+  ],
+  'Columna lumbar': [
+    {n:'Lumbalgia mecánica',t:'Funcional / Postural'},
+    {n:'Lumbociatalgia',t:'Neural'},
+    {n:'Hernia de disco lumbar',t:'Neural'},
+    {n:'Espondilolistesis',t:'Óseo / Articular'},
+    {n:'Estenosis de canal lumbar',t:'Neural'},
+    {n:'Artrodesis lumbar',t:'Posquirúrgico'},
+  ],
+  'Columna cervical / dorsal': [
+    {n:'Cervicalgia mecánica',t:'Funcional / Postural'},
+    {n:'Hernia de disco cervical',t:'Neural'},
+    {n:'Latigazo cervical (whiplash)',t:'Funcional / Postural'},
+    {n:'Dorsalgia mecánica',t:'Funcional / Postural'},
+  ],
+  'Hombro': [
+    {n:'Síndrome subacromial / pinzamiento',t:'Inflamatorio / Bursitis'},
+    {n:'Tendinopatía del manguito rotador',t:'Tendinopatía'},
+    {n:'Rotura del manguito rotador',t:'Tendinopatía'},
+    {n:'Reparación artroscópica de manguito rotador',t:'Posquirúrgico'},
+    {n:'Luxación de hombro / inestabilidad glenohumeral',t:'Articular / Capsular'},
+    {n:'Lesión de Bankart / SLAP',t:'Articular / Capsular'},
+    {n:'Capsulitis adhesiva (hombro congelado)',t:'Articular / Capsular'},
+    {n:'Tendinopatía bicipital',t:'Tendinopatía'},
+    {n:'Artrosis acromioclavicular',t:'Articular / Capsular'},
+  ],
+  'Codo / Muñeca / Mano': [
+    {n:'Epicondilitis lateral (codo de tenista)',t:'Tendinopatía'},
+    {n:'Epitrocleítis (codo de golfista)',t:'Tendinopatía'},
+    {n:'Tendinopatía de De Quervain',t:'Tendinopatía'},
+    {n:'Síndrome del túnel carpiano',t:'Neural'},
+    {n:'Fractura de muñeca (radio distal)',t:'Óseo / Fractura'},
+    {n:'Esguince de muñeca',t:'Ligamentario'},
+  ],
+  'Muslo / Pierna': [
+    {n:'Desgarro de cuádriceps',t:'Muscular'},
+    {n:'Desgarro de gastrocnemio (gemelo)',t:'Muscular'},
+    {n:'Síndrome compartimental',t:'Funcional / Sobreuso'},
+    {n:'Periostitis tibial',t:'Funcional / Sobreuso'},
+    {n:'Fractura de estrés tibial',t:'Óseo / Fractura'},
+  ],
+  'Otra región / general': [
+    {n:'Dolor inespecífico',t:'Funcional / Postural'},
+    {n:'Posquirúrgico general',t:'Posquirúrgico'},
+    {n:'Otro (ver antecedentes)',t:'Otro'},
+  ],
+};
+let DX_FLAT=[], DX_LOOKUP={};
+(function buildDxFlat(){
+  Object.keys(DX_TAXONOMY).forEach(region=>{
+    DX_TAXONOMY[region].forEach(d=>{
+      const item={nombre:d.n, region, tipo:d.t};
+      DX_FLAT.push(item);
+      DX_LOOKUP[normDx(d.n)]=item;
+    });
+  });
+})();
+function normDx(s){ return (s||'').toString().toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+function getDxMeta(nombre){ return DX_LOOKUP[normDx(nombre)] || null; }
+
+
 function getCats() { return DB.cats || DEFAULT_CATS; }
 function catDotColor(catId) { const c = getCats().find(c=>c.id===catId); return c?c.color:null; }
 function catLabel(catId)    { const c = getCats().find(c=>c.id===catId); return c?c.label:''; }
@@ -1020,7 +1128,7 @@ function calcularScoresCuestionario(tipoId, respuestas) {
         <div class="modal-field"><label>Deporte / Posición</label><input type="text" id="mDeporte" placeholder="Fútbol / Defensor"></div>
         <div class="modal-field"><label>Cirujano / Médico</label><input type="text" id="mCirujano" placeholder="Dr. ..."></div>
       </div>
-      <div class="modal-field"><label>Diagnóstico principal</label><input type="text" id="mDx" placeholder="Reconstrucción LCA HTH, Lumbalgia mecánica…"></div>
+      <div class="modal-field"><label>Diagnóstico principal</label><input type="text" id="mDx" class="dx-input" placeholder="Escribí para buscar en la lista…" autocomplete="off"></div>
       <div class="modal-2col">
         <div class="modal-field"><label>Estructura / Lado</label><input type="text" id="mEstructura" placeholder="LCA derecho"></div>
         <div class="modal-field"><label>Fecha inicio / lesión</label><input type="date" id="mFechaInicio"></div>
@@ -2092,7 +2200,7 @@ function renderResumen(panel) {
           ${rField('Nombre completo','rNombre',p.nombre,'nombre','text',false)}
           ${rField2('Edad','rEdad',p.edad,'edad','Contacto / WhatsApp','rContacto',p.contacto,'contacto')}
           ${rField2('Institución / Club','rInstitucion',p.institucion,'institucion','Deporte / Posición','rDeporte',p.deporte,'deporte')}
-          ${rField('Diagnóstico principal','rDx',p.dx,'dx','text',false)}
+          ${rFieldDx(p.dx)}
           ${rField2('Estructura / Lado','rEstructura',p.estructura,'estructura','Cirujano / Médico','rCirujano',p.cirujano,'cirujano')}
           ${rField2('Fecha inicio / lesión','rFechaInicio',p.fechaInicio,'fechaInicio','Estado / Fase','rEstado',p.estado,'estado','date')}
           ${rField('Cirugía / Injerto / Técnica','rCirugia',p.cirugia,'cirugia','text',false)}
@@ -2330,6 +2438,11 @@ function rField(label,id,val,key,type='text',full=false){
   return `<div class="field${full?' full':''}"><span class="field-label">${label}</span>${input}</div>`;
 }
 function rField2(l1,id1,v1,k1,l2,id2,v2,k2,type='text'){return rField(l1,id1,v1,k1,type)+rField(l2,id2,v2,k2,type);}
+function rFieldDx(val){
+  const meta=getDxMeta(val);
+  const badge=meta?` <span style="font-size:10px;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:.03em;">${esc(meta.region)} · ${esc(meta.tipo)}</span>`:(val?' <span style="font-size:10px;color:var(--text-3);">(sin clasificar)</span>':'');
+  return `<div class="field"><span class="field-label">Diagnóstico principal${badge}</span><input type="text" id="rDx" class="dx-input" value="${esc(val||'')}" placeholder="Escribí para buscar en la lista…" autocomplete="off" oninput="updateField('dx',this.value)"></div>`;
+}
 function updateField(key,val){
   const p=getPatient(currentPatientId);if(!p)return;
   p[key]=val;clearTimeout(autoSaveTimer);
@@ -2620,6 +2733,119 @@ document.addEventListener('focusout', e=>{
   learnExerciseName(e.target.value);
   setTimeout(()=>{ if(document.activeElement!==ejSuggestInput) hideEjSuggest(); },120);
 });
+
+// ── Autocompletado RESTRINGIDO de diagnóstico (solo lista cerrada de DX_TAXONOMY) ──
+let dxSuggestInput=null, dxSuggestBox=null, dxSuggestExpandedRegion=null, dxLastValid='';
+
+function buildDxSuggestRegionBlock(region, items){
+  const isOpen=dxSuggestExpandedRegion===region;
+  let inner='';
+  if(isOpen){
+    items.forEach(d=>{ inner+=`<div class="ej-suggest-item" data-name="${esc(d.nombre)}">${esc(d.nombre)} <span style="opacity:.55;font-size:11px;">· ${esc(d.tipo)}</span></div>`; });
+  }
+  return `<div class="ej-suggest-cat" data-catname="${esc(region)}"><span>${esc(region)}</span><span class="ej-suggest-count">${items.length}</span><span class="ej-suggest-chevron">${isOpen?'▾':'▸'}</span></div>${inner}`;
+}
+function buildDxSuggestBrowseHTML(){
+  let html='';
+  Object.keys(DX_TAXONOMY).forEach(region=>{ html+=buildDxSuggestRegionBlock(region, DX_TAXONOMY[region]); });
+  return html;
+}
+function buildDxSuggestSearchHTML(f){
+  let html=''; let any=false;
+  Object.keys(DX_TAXONOMY).forEach(region=>{
+    const items=DX_TAXONOMY[region].filter(d=>normDx(d.nombre).includes(f));
+    if(!items.length) return;
+    html+=`<div class="ej-suggest-catlabel">${esc(region)}</div>`;
+    items.forEach(d=>{ html+=`<div class="ej-suggest-item" data-name="${esc(d.nombre)}">${esc(d.nombre)} <span style="opacity:.55;font-size:11px;">· ${esc(d.tipo)}</span></div>`; any=true; });
+  });
+  if(!any) html=`<div class="ej-suggest-empty">Sin coincidencias en la lista. Elegí el más parecido o "Otro (ver antecedentes)".</div>`;
+  return html;
+}
+function buildDxSuggestHTML(filterText){
+  const f=normDx(filterText);
+  if(f) return buildDxSuggestSearchHTML(f);
+  return buildDxSuggestBrowseHTML();
+}
+function positionDxSuggest(input){
+  const r=input.getBoundingClientRect();
+  let left=r.left, width=Math.max(r.width,240);
+  if(left+width>window.innerWidth-8) left=Math.max(window.innerWidth-8-width,8);
+  dxSuggestBox.style.left=left+'px';
+  dxSuggestBox.style.width=width+'px';
+  let top=r.bottom+4;
+  if(top+280>window.innerHeight){ top=Math.max(r.top-284,8); }
+  dxSuggestBox.style.top=top+'px';
+}
+function showDxSuggest(input){
+  dxSuggestInput=input;
+  dxLastValid=getDxMeta(input.value)?input.value:'';
+  if(!dxSuggestBox){
+    dxSuggestBox=document.createElement('div');
+    dxSuggestBox.className='ej-suggest-box';
+    document.body.appendChild(dxSuggestBox);
+    dxSuggestBox.addEventListener('mousedown', e=>{
+      const item=e.target.closest('.ej-suggest-item');
+      if(item){ e.preventDefault(); pickDxSuggest(item.getAttribute('data-name')); return; }
+      const catEl=e.target.closest('.ej-suggest-cat');
+      if(catEl){
+        e.preventDefault();
+        const name=catEl.getAttribute('data-catname');
+        dxSuggestExpandedRegion=(dxSuggestExpandedRegion===name)?null:name;
+        if(dxSuggestInput) refreshDxSuggest(dxSuggestInput);
+      }
+    });
+  }
+  dxSuggestBox.innerHTML=buildDxSuggestHTML(input.value);
+  dxSuggestBox.style.display='block';
+  positionDxSuggest(input);
+}
+function refreshDxSuggest(input){
+  if(!dxSuggestBox||dxSuggestInput!==input) return;
+  dxSuggestBox.innerHTML=buildDxSuggestHTML(input.value);
+  positionDxSuggest(input);
+}
+function hideDxSuggest(){
+  if(dxSuggestBox) dxSuggestBox.style.display='none';
+  dxSuggestInput=null;
+}
+function pickDxSuggest(name){
+  if(!dxSuggestInput) return;
+  dxSuggestInput.value=name;
+  dxLastValid=name;
+  dxSuggestInput.dispatchEvent(new Event('input',{bubbles:true}));
+  hideDxSuggest();
+  dxSuggestInput.focus();
+}
+// Si lo que quedó escrito no es un diagnóstico válido de la lista, lo revierte (o lo vacía).
+function enforceDxValue(input){
+  const val=input.value.trim();
+  if(!val){ dxLastValid=''; return; }
+  const meta=getDxMeta(val);
+  if(meta){
+    if(input.value!==meta.nombre){ input.value=meta.nombre; input.dispatchEvent(new Event('input',{bubbles:true})); }
+    dxLastValid=meta.nombre;
+  } else {
+    input.value=dxLastValid;
+    input.dispatchEvent(new Event('input',{bubbles:true}));
+    if(val) showDxWarning(input);
+  }
+}
+function showDxWarning(input){
+  const r=input.getBoundingClientRect();
+  const div=document.createElement('div');
+  div.textContent='Elegí un diagnóstico de la lista (o "Otro (ver antecedentes)")';
+  div.style.cssText=`position:fixed;left:${r.left}px;top:${r.bottom+4}px;max-width:260px;background:var(--orange);color:#fff;font-size:11.5px;font-weight:600;padding:6px 10px;border-radius:6px;z-index:2100;box-shadow:0 4px 14px rgba(0,0,0,.2);font-family:Inter,sans-serif;`;
+  document.body.appendChild(div);
+  setTimeout(()=>div.remove(),2600);
+}
+document.addEventListener('focusin', e=>{ if(e.target.matches&&e.target.matches('.dx-input')) showDxSuggest(e.target); });
+document.addEventListener('input', e=>{ if(e.target.matches&&e.target.matches('.dx-input')) refreshDxSuggest(e.target); });
+document.addEventListener('focusout', e=>{
+  if(!e.target.matches||!e.target.matches('.dx-input')) return;
+  enforceDxValue(e.target);
+  setTimeout(()=>{ if(document.activeElement!==dxSuggestInput) hideDxSuggest(); },120);
+});
+
 
 function addEjercicioRow(nombre='',series='',reps='',kg='',nota='',bloque=''){
   const container=document.getElementById('ejerciciosList');const id='ej_'+uid();const div=document.createElement('div');
@@ -3074,6 +3300,20 @@ function renderHomeDashboard(){
     color: catId==='_sin'?'#C7CCD4':(catDotColor(catId)||'#888'),
   })).sort((a,b)=>b.count-a.count);
 
+  // Lesiones por zona y por tipo (todos los pacientes, según diagnóstico estandarizado)
+  const ZONA_COLORS=['#1A4E8C','#B8962E','#5E35B1','#1B5E3B','#C0392B','#1893A8','#8E5A2E','#6B7280','#A23B72'];
+  const TIPO_COLORS={'Ligamentario':'#1A4E8C','Tendinopatía':'#B8962E','Muscular':'#1B5E3B','Meniscal / Cartílago':'#5E35B1','Óseo / Fractura':'#C0392B','Articular / Capsular':'#1893A8','Neural':'#8E5A2E','Inflamatorio / Bursitis':'#A23B72','Posquirúrgico':'#2E6B6B','Funcional / Sobreuso':'#6B7280','Funcional / Postural':'#6B7280','Otro':'#9AA0AD'};
+  const porZona={}, porTipo={}; let sinClasificar=0;
+  pts.forEach(p=>{
+    if(!p.dx||!p.dx.trim()) return;
+    const meta=getDxMeta(p.dx);
+    if(!meta){ sinClasificar++; return; }
+    porZona[meta.region]=(porZona[meta.region]||0)+1;
+    porTipo[meta.tipo]=(porTipo[meta.tipo]||0)+1;
+  });
+  const zonaData=Object.entries(porZona).map(([region,count],i)=>({label:region,count,color:ZONA_COLORS[i%ZONA_COLORS.length]})).sort((a,b)=>b.count-a.count);
+  const tipoData=Object.entries(porTipo).map(([tipo,count])=>({label:tipo,count,color:TIPO_COLORS[tipo]||'#9AA0AD'})).sort((a,b)=>b.count-a.count);
+
   panel.innerHTML = `
     <div class="home-header">
       <h2>Hola, Lucas 👋</h2>
@@ -3127,6 +3367,38 @@ function renderHomeDashboard(){
         </div>`}
       </div>
 
+      <div class="home-card">
+        <div class="home-card-title">🦵 Lesiones por zona ${sinClasificar?`<span style="font-weight:400;opacity:.55;font-size:11px;">(+${sinClasificar} sin clasificar)</span>`:''}</div>
+        ${!zonaData.length?'<div class="home-empty-mini">Todavía no hay diagnósticos estandarizados cargados.</div>':`
+        <div class="home-donut-wrap">
+          ${buildDonutSVG(zonaData,'lesiones')}
+          <div class="home-legend">
+            ${zonaData.map(d=>`
+              <div class="home-legend-item">
+                <span class="hli-dot" style="background:${d.color}"></span>
+                <span class="hli-label">${esc(d.label)}</span>
+                <span class="hli-count">${d.count}</span>
+              </div>`).join('')}
+          </div>
+        </div>`}
+      </div>
+
+      <div class="home-card">
+        <div class="home-card-title">🩺 Lesiones por tipo</div>
+        ${!tipoData.length?'<div class="home-empty-mini">Todavía no hay diagnósticos estandarizados cargados.</div>':`
+        <div class="home-donut-wrap">
+          ${buildDonutSVG(tipoData,'lesiones')}
+          <div class="home-legend">
+            ${tipoData.map(d=>`
+              <div class="home-legend-item">
+                <span class="hli-dot" style="background:${d.color}"></span>
+                <span class="hli-label">${esc(d.label)}</span>
+                <span class="hli-count">${d.count}</span>
+              </div>`).join('')}
+          </div>
+        </div>`}
+      </div>
+
       <div class="home-card" style="grid-column:1/-1">
         <div class="home-card-title">⚡ Alertas activas</div>
         ${!conAlerta.length?'<div class="home-empty-mini">Ningún paciente en tratamiento tiene una alerta cargada.</div>':
@@ -3157,7 +3429,7 @@ function goToTurnosToday(){
   });
 }
 
-function buildDonutSVG(data){
+function buildDonutSVG(data, centerLabel='activos'){
   const total=data.reduce((s,d)=>s+d.count,0);
   const r=46, cx=60, cy=60, sw=20;
   const circ=2*Math.PI*r;
@@ -3172,7 +3444,7 @@ function buildDonutSVG(data){
   return `<svg width="120" height="120" viewBox="0 0 120 120" style="flex-shrink:0;">
     <g transform="rotate(-90 ${cx} ${cy})">${segs}</g>
     <text x="${cx}" y="${cy-3}" text-anchor="middle" font-size="22" font-weight="700" fill="var(--text)" font-family="Inter,sans-serif">${total}</text>
-    <text x="${cx}" y="${cy+13}" text-anchor="middle" font-size="9" fill="var(--text-3)" font-family="Inter,sans-serif">activos</text>
+    <text x="${cx}" y="${cy+13}" text-anchor="middle" font-size="9" fill="var(--text-3)" font-family="Inter,sans-serif">${esc(centerLabel)}</text>
   </svg>`;
 }
 
