@@ -524,12 +524,15 @@ const DX_TAXONOMY = {
     {n:'Bursitis prerrotuliana',t:'Inflamatorio / Bursitis'},
     {n:'Fractura de meseta tibial',t:'Óseo / Fractura'},
     {n:'Luxación de rótula',t:'Articular / Capsular'},
+    {n:'Síndrome de la banda iliotibial',t:'Funcional / Sobreuso'},
   ],
   'Tobillo / Pie': [
     {n:'Esguince de tobillo (LPAA)',t:'Ligamentario'},
+    {n:'Esguince de tobillo medial (ligamento deltoideo)',t:'Ligamentario'},
     {n:'Inestabilidad crónica de tobillo',t:'Ligamentario'},
     {n:'Tendinopatía de Aquiles',t:'Tendinopatía'},
     {n:'Rotura de tendón de Aquiles',t:'Tendinopatía'},
+    {n:'Tendinopatía peronea',t:'Tendinopatía'},
     {n:'Fascitis plantar',t:'Inflamatorio / Bursitis'},
     {n:'Fractura de tobillo',t:'Óseo / Fractura'},
     {n:'Síndrome de pinzamiento de tobillo',t:'Articular / Capsular'},
@@ -540,6 +543,9 @@ const DX_TAXONOMY = {
     {n:'Pubalgia / Osteopatía dinámica de pubis',t:'Funcional / Sobreuso'},
     {n:'Síndrome femoroacetabular (FAI)',t:'Articular / Capsular'},
     {n:'Tendinopatía de glúteo medio',t:'Tendinopatía'},
+    {n:'Tendinopatía isquiosural (proximal)',t:'Tendinopatía'},
+    {n:'Tendinopatía de aductores',t:'Tendinopatía'},
+    {n:'Síndrome piriforme',t:'Neural'},
     {n:'Bursitis trocantérea',t:'Inflamatorio / Bursitis'},
     {n:'Desgarro de isquiotibiales',t:'Muscular'},
     {n:'Desgarro de aductores',t:'Muscular'},
@@ -551,6 +557,7 @@ const DX_TAXONOMY = {
     {n:'Lumbalgia mecánica',t:'Funcional / Postural'},
     {n:'Lumbociatalgia',t:'Neural'},
     {n:'Hernia de disco lumbar',t:'Neural'},
+    {n:'Síndrome facetario lumbar',t:'Articular / Capsular'},
     {n:'Espondilolistesis',t:'Óseo / Articular'},
     {n:'Estenosis de canal lumbar',t:'Neural'},
     {n:'Artrodesis lumbar',t:'Posquirúrgico'},
@@ -571,11 +578,14 @@ const DX_TAXONOMY = {
     {n:'Capsulitis adhesiva (hombro congelado)',t:'Articular / Capsular'},
     {n:'Tendinopatía bicipital',t:'Tendinopatía'},
     {n:'Artrosis acromioclavicular',t:'Articular / Capsular'},
+    {n:'Discinesia escapular',t:'Funcional / Postural'},
   ],
   'Codo / Muñeca / Mano': [
     {n:'Epicondilitis lateral (codo de tenista)',t:'Tendinopatía'},
     {n:'Epitrocleítis (codo de golfista)',t:'Tendinopatía'},
+    {n:'Lesión de ligamento colateral medial de codo',t:'Ligamentario'},
     {n:'Tendinopatía de De Quervain',t:'Tendinopatía'},
+    {n:'Dedo en gatillo (tenosinovitis estenosante)',t:'Tendinopatía'},
     {n:'Síndrome del túnel carpiano',t:'Neural'},
     {n:'Fractura de muñeca (radio distal)',t:'Óseo / Fractura'},
     {n:'Esguince de muñeca',t:'Ligamentario'},
@@ -583,12 +593,15 @@ const DX_TAXONOMY = {
   'Muslo / Pierna': [
     {n:'Desgarro de cuádriceps',t:'Muscular'},
     {n:'Desgarro de gastrocnemio (gemelo)',t:'Muscular'},
+    {n:'Desgarro de sóleo',t:'Muscular'},
     {n:'Síndrome compartimental',t:'Funcional / Sobreuso'},
     {n:'Periostitis tibial',t:'Funcional / Sobreuso'},
     {n:'Fractura de estrés tibial',t:'Óseo / Fractura'},
   ],
   'Otra región / general': [
     {n:'Dolor inespecífico',t:'Funcional / Postural'},
+    {n:'Síndrome de dolor miofascial',t:'Otro'},
+    {n:'Fibromialgia',t:'Otro'},
     {n:'Posquirúrgico general',t:'Posquirúrgico'},
     {n:'Otro (ver antecedentes)',t:'Otro'},
   ],
@@ -2439,14 +2452,20 @@ function rField(label,id,val,key,type='text',full=false){
 }
 function rField2(l1,id1,v1,k1,l2,id2,v2,k2,type='text'){return rField(l1,id1,v1,k1,type)+rField(l2,id2,v2,k2,type);}
 function rFieldDx(val){
+  return `<div class="field"><span class="field-label">Diagnóstico principal <span id="rDxBadge">${dxBadgeHTML(val)}</span></span><input type="text" id="rDx" class="dx-input" value="${esc(val||'')}" placeholder="Escribí para buscar en la lista…" autocomplete="off" oninput="updateField('dx',this.value);updateDxBadge(this.value)"></div>`;
+}
+function dxBadgeHTML(val){
   const meta=getDxMeta(val);
-  const badge=meta?` <span style="font-size:10px;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:.03em;">${esc(meta.region)} · ${esc(meta.tipo)}</span>`:(val?' <span style="font-size:10px;color:var(--text-3);">(sin clasificar)</span>':'');
-  return `<div class="field"><span class="field-label">Diagnóstico principal${badge}</span><input type="text" id="rDx" class="dx-input" value="${esc(val||'')}" placeholder="Escribí para buscar en la lista…" autocomplete="off" oninput="updateField('dx',this.value)"></div>`;
+  return meta?`<span style="font-size:10px;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:.03em;">${esc(meta.region)} · ${esc(meta.tipo)}</span>`:(val?'<span style="font-size:10px;color:var(--text-3);">(sin clasificar)</span>':'');
+}
+function updateDxBadge(val){
+  const b=document.getElementById('rDxBadge');
+  if(b) b.innerHTML=dxBadgeHTML(val);
 }
 function updateField(key,val){
   const p=getPatient(currentPatientId);if(!p)return;
   p[key]=val;clearTimeout(autoSaveTimer);
-  autoSaveTimer=setTimeout(()=>{saveDB();renderPatientList();if(['fechaInicio','alerta','nombre','dx'].includes(key))renderPatient();},600);
+  autoSaveTimer=setTimeout(()=>{saveDB();renderPatientList();if(['fechaInicio','alerta','nombre'].includes(key))renderPatient();},600);
 }
 
 // ── SESIONES ──────────────────────────────────────────────────────────────────
