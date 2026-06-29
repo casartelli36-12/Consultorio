@@ -1606,6 +1606,7 @@ function calcularScoresCuestionario(tipoId, respuestas) {
 let DB = { patients: [] };
 let currentPatientId = null;
 let currentTab = 'resumen';
+const TAB_ORDER=['sesiones','plan','evaluaciones','cuestionarios','evolucion','fotos','turnos'];
 let editingPatientId = null;
 let autoSaveTimer = null;
 let cuestPickTipo = null;
@@ -1905,7 +1906,7 @@ function renderPatient(){
   if(p.alerta){ac.style.display='block';ac.textContent='⚡ '+p.alerta;}else{ac.style.display='none';}
   document.getElementById('tabs').style.display='flex';
   document.querySelectorAll('.tab').forEach((t,i)=>{
-    const tabs=['sesiones','plan','evaluaciones','cuestionarios','evolucion','fotos','turnos'];
+    const tabs=TAB_ORDER;
     t.classList.toggle('active', tabs[i]===currentTab);
   });
   const epBar=document.getElementById('epBar');
@@ -1922,7 +1923,7 @@ function renderPatient(){
 
 function switchTab(tab){
   currentTab=tab;
-  const tabs=['sesiones','plan','evaluaciones','cuestionarios','evolucion','fotos','turnos'];
+  const tabs=TAB_ORDER;
   document.querySelectorAll('.tab').forEach((t,i)=>{
     t.classList.toggle('active', tabs[i]===tab);
   });
@@ -4070,7 +4071,7 @@ function goToTurnosToday(){
   }
   switchTab('turnos');
   document.querySelectorAll('.tab').forEach((t,i)=>{
-    const tabs=['resumen','sesiones','evaluaciones','cuestionarios','evolucion','fotos','turnos'];
+    const tabs=TAB_ORDER;
     t.classList.toggle('active',tabs[i]==='turnos');
   });
 }
