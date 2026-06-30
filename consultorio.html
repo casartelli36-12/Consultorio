@@ -1642,7 +1642,7 @@ function calcularScoresCuestionario(tipoId, respuestas) {
       </div>
       <div id="daysChip" style="display:none" class="days-chip">
         <div><div class="num" id="daysNum">—</div></div>
-        <div class="lbl">días de<br>evolución</div>
+        <div class="lbl" id="daysLbl">días de<br>evolución</div>
       </div>
       <div id="alertaChip" style="display:none" class="alerta-chip"></div>
     </div>
@@ -2000,6 +2000,20 @@ function diasDesde(f) {
   const d = Math.floor((new Date()-new Date(f))/86400000);
   return d>=0?d:null;
 }
+// Formatea un número de días de evolución de forma automática:
+// menos de 2 semanas en días, de ahí hasta 2 meses en semanas, y de ahí en meses.
+function tiempoEvolucion(dias) {
+  if(dias===null||dias===undefined) return null;
+  if(dias < 14) {
+    return {valor:dias, unidad:dias===1?'día':'días', corto:dias+'d'};
+  }
+  if(dias < 60) {
+    const sem = Math.round(dias/7);
+    return {valor:sem, unidad:sem===1?'semana':'semanas', corto:'sem '+sem};
+  }
+  const mes = Math.round(dias/30.44);
+  return {valor:mes, unidad:mes===1?'mes':'meses', corto:'mes '+mes};
+}
 function formatFecha(s) {
   if(!s) return '—';
   const [y,m,d]=s.split('-');
@@ -2082,7 +2096,7 @@ function openExportPaciente() {
     lines.push(''); lines.push('=== EVALUACIONES ===');
     evaluaciones.forEach(e => {
       const diasEv = (e.fecha && p.fechaInicio) ? Math.floor((new Date(e.fecha)-new Date(p.fechaInicio))/86400000) : null;
-      lines.push(`[${formatFecha(e.fecha)}${diasEv!==null?' · día '+diasEv:''}] ${e.test||'Test'}`);
+      lines.push(`[${formatFecha(e.fecha)}${diasEv!==null?' · '+tiempoEvolucion(diasEv).corto:''}] ${e.test||'Test'}`);
       if(e.afectado || e.sano) lines.push(`  Afectado: ${e.afectado||'—'} | Sano/Ref: ${e.sano||'—'}`);
       if(e.lsi) lines.push(`  LSI: ${e.lsi}% (umbral: ${e.umbral||'—'})`);
       if(e.obs) lines.push(`  Obs: ${e.obs}`);
@@ -2095,7 +2109,7 @@ function openExportPaciente() {
     cuestionarios.forEach(c => {
       const def = QUESTIONNAIRES[c.tipoId];
       const diasC = (c.fecha && p.fechaInicio) ? Math.floor((new Date(c.fecha)-new Date(p.fechaInicio))/86400000) : null;
-      lines.push(`[${formatFecha(c.fecha)}${diasC!==null?' · día '+diasC:''}] ${def?def.nombre:c.tipoId}`);
+      lines.push(`[${formatFecha(c.fecha)}${diasC!==null?' · '+tiempoEvolucion(diasC).corto:''}] ${def?def.nombre:c.tipoId}`);
       Object.entries(c.scores||{}).forEach(([subId,score])=>{
         const subLabel = def?.subescalas.find(s=>s.id===subId)?.label || subId;
         lines.push(`  ${subLabel}: ${score!==null?score+'%':'—'}`);
@@ -2108,7 +2122,7 @@ function openExportPaciente() {
     lines.push(''); lines.push('=== SESIONES ===');
     sesiones.forEach((s, i) => {
       const diasSes = (s.fecha && p.fechaInicio) ? Math.floor((new Date(s.fecha)-new Date(p.fechaInicio))/86400000) : null;
-      lines.push(`\n[Sesión ${i+1} · ${formatFecha(s.fecha)}${diasSes!==null?' · día '+diasSes:''}${s.fase?' · '+s.fase:''}]`);
+      lines.push(`\n[Sesión ${i+1} · ${formatFecha(s.fecha)}${diasSes!==null?' · '+tiempoEvolucion(diasSes).corto:''}${s.fase?' · '+s.fase:''}]`);
       if(s.subjetivo) lines.push(`  Cómo llegó: ${s.subjetivo}`);
       const ejercicios = s.ejercicios || [];
       if(ejercicios.length) {
@@ -2240,7 +2254,7 @@ function renderPatientList(){
         </div>
         <div class="pi-sub">${p.dx||p.institucion||'—'}</div>
       </div>
-      ${dias!==null&&estado==='tratamiento'?`<div class="pi-days">${dias}d</div>`:''}
+      ${dias!==null&&estado==='tratamiento'?`<div class="pi-days">${tiempoEvolucion(dias).corto}</div>`:''}
     </div>`;
   }).join('');
 }
@@ -2261,8 +2275,12 @@ function renderPatient(){
   document.getElementById('topbarName').textContent=p.nombre||'Sin nombre';
   document.getElementById('topbarSub').textContent=[p.dx,p.institucion].filter(Boolean).join(' · ')||'—';
   const chip=document.getElementById('daysChip');
-  if(dias!==null&&ep.estado==='tratamiento'){chip.style.display='flex';document.getElementById('daysNum').textContent=dias;}
-  else{chip.style.display='none';}
+  if(dias!==null&&ep.estado==='tratamiento'){
+    const t=tiempoEvolucion(dias);
+    chip.style.display='flex';
+    document.getElementById('daysNum').textContent=t.valor;
+    document.getElementById('daysLbl').innerHTML=t.unidad+' de<br>evolución';
+  } else{chip.style.display='none';}
   const ac=document.getElementById('alertaChip');
   if(p.alerta){ac.style.display='block';ac.textContent='⚡ '+p.alerta;}else{ac.style.display='none';}
   document.getElementById('tabs').style.display='flex';
@@ -2345,7 +2363,7 @@ function renderCuestCard(c, fechaInicio){
     <div class="cuest-card" id="cc_${c.id}">
       <div class="cuest-card-header" onclick="toggleCuest('${c.id}')">
         <span class="cuest-tipo" style="background:${regionColor(def.region)}1A;color:${regionColor(def.region)};padding:3px 9px;border-radius:20px;">${esc(def.nombre)}</span>
-        <span class="cuest-fecha">${formatFecha(c.fecha)}${dias!==null?' · día '+dias:''}</span>
+        <span class="cuest-fecha">${formatFecha(c.fecha)}${dias!==null?' · '+tiempoEvolucion(dias).corto:''}</span>
         <div class="cuest-scores">
           ${def.subescalas.map(sub=>{
             const sc=scores[sub.id];
@@ -3238,7 +3256,7 @@ function renderSesCard(s,num,fechaInicio){
         <div class="ses-num">${num}</div>
         <div class="ses-fecha">${formatFecha(s.fecha)}</div>
         ${s.fase?`<span style="font-size:11px;color:var(--text-2);background:var(--surface);padding:3px 8px;border-radius:20px;">${esc(s.fase)}</span>`:''}
-        ${dias!==null?`<div class="ses-dias">día ${dias}</div>`:''}
+        ${dias!==null?`<div class="ses-dias">${tiempoEvolucion(dias).corto}</div>`:''}
         ${chip?`<div class="ses-eva">${chip}</div>`:''}
       </div>
       <div class="ses-preview" onclick="toggleSes('${s.id}')">${esc(preview.slice(0,90)+(preview.length>90?'…':''))}</div>
@@ -3821,14 +3839,14 @@ function renderEvaluaciones(panel){
     </div>
     ${!evals.length?'<div class="ses-empty">Todavía no hay evaluaciones registradas.</div>':`
     <table class="eval-table">
-      <thead><tr><th>Fecha</th><th>Día evol.</th><th>Test</th><th>Afectado</th><th>Sano / Ref.</th><th>LSI %</th><th>Umbral</th><th>Obs.</th><th></th></tr></thead>
+      <thead><tr><th>Fecha</th><th>Evolución</th><th>Test</th><th>Afectado</th><th>Sano / Ref.</th><th>LSI %</th><th>Umbral</th><th>Obs.</th><th></th></tr></thead>
       <tbody>
         ${evals.map(e=>{
-          const dias=(e.fecha&&(ep.fechaInicio||p.fechaInicio))?Math.floor((new Date(e.fecha)-new Date(ep.fechaInicio||p.fechaInicio))/86400000):'—';
+          const dias=(e.fecha&&(ep.fechaInicio||p.fechaInicio))?Math.floor((new Date(e.fecha)-new Date(ep.fechaInicio||p.fechaInicio))/86400000):null;
           const lsi=parseFloat(e.lsi);const pasa=!isNaN(lsi)?(lsi>=90?'✓ Pasa':'✗ No pasa'):'';
           return `<tr>
             <td>${formatFecha(e.fecha)}</td>
-            <td style="font-weight:700;color:var(--blue-chip)">${dias!=='—'?'día '+dias:'—'}</td>
+            <td style="font-weight:700;color:var(--blue-chip)">${dias!==null?tiempoEvolucion(dias).corto:'—'}</td>
             <td>${esc(e.test||'—')}</td><td>${esc(e.afectado||'—')}</td><td>${esc(e.sano||'—')}</td>
             <td>${e.lsi?`<span class="lsi-badge ${lsiClass(e.lsi)}">${e.lsi}%</span>`:'—'}</td>
             <td>${esc(e.umbral||'—')}${pasa?`<br><small style="font-size:10px;color:var(--${lsi>=90?'green':'red'})">${pasa}</small>`:''}</td>
