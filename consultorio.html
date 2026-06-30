@@ -851,11 +851,21 @@ const QUESTIONNAIRES = {
       {v:4, l:'Extremo'},
     ],
     invertido: true, // 0 = mejor, a diferencia del FAAM. El score normalizado lo resuelve igual.
+    escalas: {
+      frecuencia: [
+        {v:0, l:'Nunca'},
+        {v:1, l:'Mensualmente'},
+        {v:2, l:'Semanalmente'},
+        {v:3, l:'A diario'},
+        {v:4, l:'Siempre'},
+      ],
+    },
     subescalas: [
       {
         id:'Dolor', label:'Dolor',
         items:[
-          '¿Con qué frecuencia tenés dolor de tobillo/pie?','Al girar/pivotear sobre el tobillo',
+          {t:'¿Con qué frecuencia tenés dolor de tobillo/pie?', e:'frecuencia'},
+          'Al girar/pivotear sobre el tobillo',
           'Al estirar completamente el tobillo/pie','Al subir o bajar escaleras',
           'Por la noche, en la cama','Al estar sentado o acostado','Al estar de pie',
           'Al caminar en superficie plana','Al subir o bajar de un auto',
@@ -888,9 +898,9 @@ const QUESTIONNAIRES = {
       {
         id:'CalidadVida', label:'Calidad de vida',
         items:[
-          '¿Con qué frecuencia sos consciente del problema en tu tobillo/pie?',
+          {t:'¿Con qué frecuencia sos consciente del problema en tu tobillo/pie?', e:'frecuencia'},
           '¿Modificaste tu estilo de vida para evitar actividades que dañen el tobillo/pie?',
-          '¿Cuánto confiás en tu tobillo/pie?',
+          '¿Cuánto te molesta la falta de confianza en tu tobillo/pie?',
           '¿Qué tan difícil te resulta en general convivir con el problema?',
         ],
       },
@@ -1059,12 +1069,30 @@ const QUESTIONNAIRES = {
       {v:1, l:'Dificultad extrema'},
       {v:0, l:'Incapaz de hacerlo'},
     ],
+    escalas: {
+      severidad: [
+        {v:4, l:'Ninguno'},
+        {v:3, l:'Leve'},
+        {v:2, l:'Moderado'},
+        {v:1, l:'Severo'},
+        {v:0, l:'Muy severo'},
+      ],
+      frecuencia: [
+        {v:4, l:'Nunca'},
+        {v:3, l:'Rara vez'},
+        {v:2, l:'A veces'},
+        {v:1, l:'Frecuentemente'},
+        {v:0, l:'Siempre'},
+      ],
+    },
     subescalas: [
       {
         id:'Total', label:'Puntaje total',
         items:[
           'Grado más alto de actividad que podés realizar sin dolor importante en la rodilla',
-          'Dolor en la rodilla','Rigidez o hinchazón','Sensación de que la rodilla cede o falla (inestabilidad)',
+          {t:'Dolor en la rodilla', e:'severidad'},
+          {t:'Rigidez o hinchazón', e:'severidad'},
+          {t:'Sensación de que la rodilla cede o falla (inestabilidad)', e:'frecuencia'},
           'Subir escaleras','Bajar escaleras','Ponerte en cuclillas','Sentarte con la rodilla flexionada',
           'Levantarte de una silla','Correr en línea recta','Saltar y aterrizar sobre la pierna afectada',
           'Arrancar y frenar rápidamente','Giros / cambios de dirección bruscos',
@@ -1088,11 +1116,21 @@ const QUESTIONNAIRES = {
       {v:4, l:'Extremo'},
     ],
     invertido: true,
+    escalas: {
+      frecuencia: [
+        {v:0, l:'Nunca'},
+        {v:1, l:'Mensualmente'},
+        {v:2, l:'Semanalmente'},
+        {v:3, l:'A diario'},
+        {v:4, l:'Siempre'},
+      ],
+    },
     subescalas: [
       {
         id:'Dolor', label:'Dolor',
         items:[
-          '¿Con qué frecuencia tenés dolor de rodilla?','Al girar/pivotear sobre la rodilla',
+          {t:'¿Con qué frecuencia tenés dolor de rodilla?', e:'frecuencia'},
+          'Al girar/pivotear sobre la rodilla',
           'Al estirar completamente la rodilla','Al flexionar completamente la rodilla',
           'Al caminar en superficie plana','Al subir o bajar escaleras','Por la noche, en la cama',
           'Al estar sentado o acostado','Al estar de pie',
@@ -1126,7 +1164,7 @@ const QUESTIONNAIRES = {
       {
         id:'CalidadVida', label:'Calidad de vida',
         items:[
-          '¿Con qué frecuencia sos consciente del problema en tu rodilla?',
+          {t:'¿Con qué frecuencia sos consciente del problema en tu rodilla?', e:'frecuencia'},
           '¿Modificaste tu estilo de vida para evitar actividades que puedan dañarla?',
           '¿Cuánto te afecta la falta de confianza en tu rodilla?',
           '¿Qué tan difícil te resulta en general convivir con el problema?',
@@ -1141,9 +1179,30 @@ const QUESTIONNAIRES = {
     region: 'Rodilla — LCA (readiness psicológica)',
     descripcion: 'Confianza psicológica y miedo a la re-lesión antes de volver al deporte tras una lesión de LCA. No mide función, sino el aspecto mental del RTP.',
     escala: [
-      {v:10,l:'10 — Totalmente confiado / sin preocupación'},{v:9,l:'9'},{v:8,l:'8'},{v:7,l:'7'},{v:6,l:'6'},
-      {v:5,l:'5'},{v:4,l:'4'},{v:3,l:'3'},{v:2,l:'2'},{v:1,l:'1'},{v:0,l:'0 — Nada confiado / máxima preocupación'},
+      {v:10,l:'10 — Totalmente confiado/a'},{v:9,l:'9'},{v:8,l:'8'},{v:7,l:'7'},{v:6,l:'6'},
+      {v:5,l:'5'},{v:4,l:'4'},{v:3,l:'3'},{v:2,l:'2'},{v:1,l:'1'},{v:0,l:'0 — Nada confiado/a'},
     ],
+    escalas: {
+      // Ítems negativos (miedo, frustración, tensión, preocupación): se preguntan y muestran
+      // con su propia ancla ("nada" → "extremadamente"), pero puntúan invertido (10 = peor)
+      // porque la literatura los resta del puntaje final (reverse-scoring).
+      negativo: [
+        {v:0,l:'0 — Nada'},{v:1,l:'1'},{v:2,l:'2'},{v:3,l:'3'},{v:4,l:'4'},
+        {v:5,l:'5'},{v:6,l:'6'},{v:7,l:'7'},{v:8,l:'8'},{v:9,l:'9'},{v:10,l:'10 — Extremadamente'},
+      ],
+      dudas: [
+        {v:0,l:'0 — Ninguna duda'},{v:1,l:'1'},{v:2,l:'2'},{v:3,l:'3'},{v:4,l:'4'},
+        {v:5,l:'5'},{v:6,l:'6'},{v:7,l:'7'},{v:8,l:'8'},{v:9,l:'9'},{v:10,l:'10 — Muchísimas dudas'},
+      ],
+      frecuenciaPensamiento: [
+        {v:0,l:'0 — Nunca'},{v:1,l:'1'},{v:2,l:'2'},{v:3,l:'3'},{v:4,l:'4'},
+        {v:5,l:'5'},{v:6,l:'6'},{v:7,l:'7'},{v:8,l:'8'},{v:9,l:'9'},{v:10,l:'10 — Todo el tiempo'},
+      ],
+      normalidad: [
+        {v:0,l:'0 — Nada normal'},{v:1,l:'1'},{v:2,l:'2'},{v:3,l:'3'},{v:4,l:'4'},
+        {v:5,l:'5'},{v:6,l:'6'},{v:7,l:'7'},{v:8,l:'8'},{v:9,l:'9'},{v:10,l:'10 — Completamente normal'},
+      ],
+    },
     subescalas: [
       {
         id:'Total', label:'Puntaje total',
@@ -1151,14 +1210,14 @@ const QUESTIONNAIRES = {
           '¿Qué tan confiado/a te sentís en tu rodilla para rendir en tu deporte?',
           '¿Qué tan confiado/a estás en que tu rodilla no se va a lesionar de nuevo si la sometés a estrés (girar, frenar, saltar)?',
           '¿Qué tan confiado/a te sentís en general sobre volver a tu deporte sin miedo a una nueva lesión?',
-          '¿Sentís que tu rodilla se siente normal cuando hacés tu deporte?',
-          '¿Qué tan frustrado/a te sentís por tu lesión de rodilla?',
-          '¿Sentís miedo de lesionarte la rodilla de nuevo al practicar tu deporte?',
-          '¿Estás nervioso/a por jugar tu deporte?',
-          '¿Te genera tensión o ansiedad pensar en jugar tu deporte?',
-          '¿Tenés dudas sobre si vas a poder rendir al nivel que tenías antes de la lesión?',
-          '¿Pensás en tu lesión de rodilla mientras practicás tu deporte?',
-          '¿Te preocupa lesionarte otra parte del cuerpo por proteger la rodilla?',
+          {t:'¿Sentís que tu rodilla se siente normal cuando hacés tu deporte?', e:'normalidad'},
+          {t:'¿Qué tan frustrado/a te sentís por tu lesión de rodilla?', e:'negativo', inv:true},
+          {t:'¿Sentís miedo de lesionarte la rodilla de nuevo al practicar tu deporte?', e:'negativo', inv:true},
+          {t:'¿Estás nervioso/a por jugar tu deporte?', e:'negativo', inv:true},
+          {t:'¿Te genera tensión o ansiedad pensar en jugar tu deporte?', e:'negativo', inv:true},
+          {t:'¿Tenés dudas sobre si vas a poder rendir al nivel que tenías antes de la lesión?', e:'dudas', inv:true},
+          {t:'¿Pensás en tu lesión de rodilla mientras practicás tu deporte?', e:'frecuenciaPensamiento', inv:true},
+          {t:'¿Te preocupa lesionarte otra parte del cuerpo por proteger la rodilla?', e:'negativo', inv:true},
           'En general, ¿qué tan preparado/a te sentís mentalmente para volver a tu deporte al nivel previo?',
         ],
       },
@@ -1177,6 +1236,22 @@ const QUESTIONNAIRES = {
       {v:1, l:'Dificultad extrema'},
       {v:0, l:'Incapaz de hacerlo'},
     ],
+    escalas: {
+      severidad: [
+        {v:4, l:'Ninguno'},
+        {v:3, l:'Leve'},
+        {v:2, l:'Moderado'},
+        {v:1, l:'Severo'},
+        {v:0, l:'Extremo'},
+      ],
+      extension: [
+        {v:4, l:'Nada'},
+        {v:3, l:'Levemente'},
+        {v:2, l:'Moderadamente'},
+        {v:1, l:'Bastante'},
+        {v:0, l:'Extremadamente'},
+      ],
+    },
     subescalas: [
       {
         id:'Total', label:'Puntaje total',
@@ -1192,12 +1267,15 @@ const QUESTIONNAIRES = {
           'Actividades en las que movés el brazo libremente (ej. frisbee, paleta)',
           'Manejar tus necesidades de transporte (manejar, subir/bajar del colectivo)',
           'Actividad sexual',
-          'Cuánto te interfirió tu problema de hombro/brazo/mano en tus actividades sociales habituales',
-          'Cuánto te limitó tu problema de hombro/brazo/mano en tu trabajo u otra actividad diaria',
-          'Dolor en el brazo, hombro o mano','Dolor al realizar una actividad específica con el brazo/hombro/mano',
-          'Hormigueo (alfileres y agujas) en el brazo, hombro o mano','Debilidad en el brazo, hombro o mano',
-          'Rigidez en el brazo, hombro o mano','Dificultad para dormir por el dolor en el brazo, hombro o mano',
-          'Sentís que tenés menos confianza o sos menos capaz de usar tu brazo, hombro o mano',
+          {t:'Cuánto te interfirió tu problema de hombro/brazo/mano en tus actividades sociales habituales', e:'extension'},
+          {t:'Cuánto te limitó tu problema de hombro/brazo/mano en tu trabajo u otra actividad diaria', e:'extension'},
+          {t:'Dolor en el brazo, hombro o mano', e:'severidad'},
+          {t:'Dolor al realizar una actividad específica con el brazo/hombro/mano', e:'severidad'},
+          {t:'Hormigueo (alfileres y agujas) en el brazo, hombro o mano', e:'severidad'},
+          {t:'Debilidad en el brazo, hombro o mano', e:'severidad'},
+          {t:'Rigidez en el brazo, hombro o mano', e:'severidad'},
+          'Dificultad para dormir por el dolor en el brazo, hombro o mano',
+          {t:'Sentís que tenés menos confianza o sos menos capaz de usar tu brazo, hombro o mano', e:'extension'},
         ],
       },
     ],
@@ -1205,25 +1283,41 @@ const QUESTIONNAIRES = {
 
 };
 
+// Un item de cuestionario puede ser un string simple (usa la escala/dirección por
+// defecto del cuestionario) o un objeto {t:texto, e:'nombreEscalaAlternativa', inv:true}
+// cuando ese ítem puntual necesita una escala distinta (frecuencia, severidad, etc.)
+// y/o una dirección de puntaje invertida respecto al resto del cuestionario —
+// esto sigue cómo están armados los PROMs originales en la literatura, donde no
+// todos los ítems de un mismo cuestionario comparten la misma escala de respuesta.
+function itemTexto(item) { return typeof item === 'string' ? item : item.t; }
+function itemEscala(def, item) {
+  if (typeof item === 'object' && item.e && def.escalas && def.escalas[item.e]) return def.escalas[item.e];
+  return def.escala;
+}
+function itemInvertido(def, item) {
+  if (typeof item === 'object' && item.inv !== undefined) return item.inv;
+  return !!def.invertido;
+}
+
 // Devuelve {subescalaId: scoreNormalizado(0-100)} a partir de las respuestas crudas
 function calcularScoresCuestionario(tipoId, respuestas) {
   const def = QUESTIONNAIRES[tipoId];
   if(!def) return {};
-  const maxVal = Math.max(...def.escala.map(e=>e.v));
   const scores = {};
   def.subescalas.forEach(sub => {
-    let suma = 0, n = 0;
-    sub.items.forEach((_, i) => {
+    let sumaPct = 0, n = 0;
+    sub.items.forEach((item, i) => {
       const key = tipoId+'_'+sub.id+'_'+i;
       const val = respuestas[key];
-      if(val !== undefined && val !== null && val !== '') { suma += parseFloat(val); n++; }
+      if(val === undefined || val === null || val === '') return;
+      const escala = itemEscala(def, item);
+      const maxVal = Math.max(...escala.map(e=>e.v));
+      const v = parseFloat(val);
+      // Normalizamos cada ítem a "mayor = mejor función", 0-1, y promediamos
+      const pct = itemInvertido(def, item) ? (1 - v / maxVal) : (v / maxVal);
+      sumaPct += pct; n++;
     });
-    if(n === 0) { scores[sub.id] = null; return; }
-    const mean = suma / n;
-    // Normalizamos siempre a "mayor = mejor función", 0-100
-    scores[sub.id] = def.invertido
-      ? Math.round((1 - mean / maxVal) * 100)
-      : Math.round((mean / maxVal) * 100);
+    scores[sub.id] = n === 0 ? null : Math.round((sumaPct / n) * 100);
   });
   return scores;
 }
@@ -1991,8 +2085,9 @@ function renderCuestCard(c, fechaInicio){
             ${sub.items.map((item,i)=>{
               const key=c.tipoId+'_'+sub.id+'_'+i;
               const val=(c.respuestas||{})[key];
-              const opt=def.escala.find(e=>String(e.v)===String(val));
-              return `<div class="cuest-item-row"><span class="cuest-item-label">${esc(item)}</span><span class="cuest-item-val">${opt?esc(opt.l):'—'}</span></div>`;
+              const escala=itemEscala(def,item);
+              const opt=escala.find(e=>String(e.v)===String(val));
+              return `<div class="cuest-item-row"><span class="cuest-item-label">${esc(itemTexto(item))}</span><span class="cuest-item-val">${opt?esc(opt.l):'—'}</span></div>`;
             }).join('')}
           </div>`).join('')}
       </div>
@@ -2087,11 +2182,12 @@ function openCuestForm(tipoId, fecha, respuestas){
     sub.items.forEach((item,i)=>{
       const key=tipoId+'_'+sub.id+'_'+i;
       const current=respuestas[key];
+      const escala=itemEscala(def,item);
       html+=`<div class="cuest-form-item">
-        <label>${esc(item)}</label>
+        <label>${esc(itemTexto(item))}</label>
         <select id="cuq_${key}">
           <option value="">— Sin responder —</option>
-          ${def.escala.map(e=>`<option value="${e.v}" ${String(current)===String(e.v)?'selected':''}>${esc(e.l)}</option>`).join('')}
+          ${escala.map(e=>`<option value="${e.v}" ${String(current)===String(e.v)?'selected':''}>${esc(e.l)}</option>`).join('')}
         </select>
       </div>`;
     });
