@@ -1281,6 +1281,282 @@ const QUESTIONNAIRES = {
     ],
   },
 
+  CAIT: {
+    nombre: 'CAIT',
+    nombreCompleto: 'Cumberland Ankle Instability Tool (adaptado)',
+    region: 'Tobillo / Pie',
+    descripcion: 'Inestabilidad funcional de tobillo — sensación de que "se va" o cede, con o sin esguinces previos. Versión adaptada a escalas de frecuencia/severidad.',
+    escala: [
+      {v:0, l:'Nunca'},
+      {v:1, l:'Rara vez'},
+      {v:2, l:'A veces'},
+      {v:3, l:'Frecuentemente'},
+      {v:4, l:'Siempre'},
+    ],
+    invertido: true,
+    escalas: {
+      severidad: [
+        {v:0, l:'Ninguno'},
+        {v:1, l:'Leve'},
+        {v:2, l:'Moderado'},
+        {v:3, l:'Severo'},
+        {v:4, l:'Extremo'},
+      ],
+    },
+    subescalas: [
+      {
+        id:'Total', label:'Puntaje total',
+        items:[
+          {t:'Dolor en el tobillo', e:'severidad'},
+          'Sensación de que el tobillo "se va" o cede al caminar en superficie irregular',
+          'Sensación de inestabilidad al correr en superficie plana',
+          'Sensación de inestabilidad al correr en superficie irregular',
+          'Sensación de inestabilidad al saltar y aterrizar con ese pie',
+          'Sensación de inestabilidad al girar o pivotear rápido sobre el tobillo',
+          'Sensación de inestabilidad al bajar escaleras',
+          'Sensación de inestabilidad al pararse en una sola pierna',
+          'Sensación general de que el tobillo no es confiable o estable',
+        ],
+      },
+    ],
+  },
+
+  LYSHOLM: {
+    nombre: 'Lysholm',
+    nombreCompleto: 'Lysholm Knee Score (adaptado)',
+    region: 'Rodilla (general / LCA / menisco)',
+    descripcion: 'Función de rodilla orientada a inestabilidad ligamentaria y lesión meniscal. Complementa al IKDC/KOOS, clásico en seguimiento de LCA.',
+    escala: [
+      {v:4, l:'Sin dificultad'},
+      {v:3, l:'Dificultad leve'},
+      {v:2, l:'Dificultad moderada'},
+      {v:1, l:'Dificultad extrema'},
+      {v:0, l:'Incapaz de hacerlo'},
+    ],
+    escalas: {
+      severidad: [
+        {v:4, l:'Ninguno'},
+        {v:3, l:'Leve'},
+        {v:2, l:'Moderado'},
+        {v:1, l:'Severo'},
+        {v:0, l:'Extremo'},
+      ],
+      frecuencia: [
+        {v:4, l:'Nunca'},
+        {v:3, l:'Rara vez'},
+        {v:2, l:'A veces'},
+        {v:1, l:'Frecuentemente'},
+        {v:0, l:'Siempre'},
+      ],
+    },
+    subescalas: [
+      {
+        id:'Total', label:'Puntaje total',
+        items:[
+          {t:'Cojera al caminar', e:'severidad'},
+          {t:'Necesidad de apoyo (bastón o muleta) para caminar', e:'severidad'},
+          {t:'Sensación de traba o bloqueo de la rodilla', e:'frecuencia'},
+          {t:'Sensación de que la rodilla cede o se "va" (inestabilidad)', e:'frecuencia'},
+          {t:'Dolor en la rodilla', e:'severidad'},
+          {t:'Hinchazón de la rodilla', e:'frecuencia'},
+          'Subir escaleras',
+          'Ponerte en cuclillas',
+        ],
+      },
+    ],
+  },
+
+  KUJALA: {
+    nombre: 'Kujala',
+    nombreCompleto: 'Anterior Knee Pain Scale / Kujala Score (adaptado)',
+    region: 'Rodilla — Femoropatelar',
+    descripcion: 'Dolor anterior de rodilla y síndrome femoropatelar: subluxación rotuliana, dolor al sentarse flexionado, atrofia de cuádriceps.',
+    escala: [
+      {v:4, l:'Sin dificultad'},
+      {v:3, l:'Dificultad leve'},
+      {v:2, l:'Dificultad moderada'},
+      {v:1, l:'Dificultad extrema'},
+      {v:0, l:'Incapaz de hacerlo'},
+    ],
+    escalas: {
+      severidad: [
+        {v:4, l:'Ninguno'},
+        {v:3, l:'Leve'},
+        {v:2, l:'Moderado'},
+        {v:1, l:'Severo'},
+        {v:0, l:'Extremo'},
+      ],
+      frecuencia: [
+        {v:4, l:'Nunca'},
+        {v:3, l:'Rara vez'},
+        {v:2, l:'A veces'},
+        {v:1, l:'Frecuentemente'},
+        {v:0, l:'Siempre'},
+      ],
+    },
+    subescalas: [
+      {
+        id:'Total', label:'Puntaje total',
+        items:[
+          'Caminar','Subir escaleras','Ponerte en cuclillas','Correr','Saltar',
+          {t:'Dolor al estar sentado con la rodilla flexionada por tiempo prolongado', e:'severidad'},
+          {t:'Dolor en la rodilla', e:'severidad'},
+          {t:'Hinchazón de la rodilla', e:'frecuencia'},
+          {t:'Sensación de que la rótula se desplaza o "se va" de lugar (inestabilidad rotuliana)', e:'frecuencia'},
+          {t:'Atrofia (pérdida de volumen muscular) del muslo afectado comparado con el sano', e:'severidad'},
+        ],
+      },
+    ],
+  },
+
+  SPADI: {
+    nombre: 'SPADI',
+    nombreCompleto: 'Shoulder Pain and Disability Index (adaptado)',
+    region: 'Hombro / Miembro superior',
+    descripcion: 'Dolor y discapacidad de hombro, más específico que el DASH para patología de manguito rotador y dolor subacromial.',
+    escala: [
+      {v:0,l:'0 — Sin dolor / sin dificultad'},{v:1,l:'1'},{v:2,l:'2'},{v:3,l:'3'},{v:4,l:'4'},
+      {v:5,l:'5'},{v:6,l:'6'},{v:7,l:'7'},{v:8,l:'8'},{v:9,l:'9'},{v:10,l:'10 — Peor dolor / incapaz de hacerlo'},
+    ],
+    invertido: true,
+    subescalas: [
+      {
+        id:'Dolor', label:'Dolor',
+        items:[
+          'Dolor en su peor momento',
+          'Dolor al acostarte sobre el hombro afectado',
+          'Dolor al alcanzar algo en un estante alto',
+          'Dolor al tocarte la nuca',
+          'Dolor al empujar con el brazo afectado',
+        ],
+      },
+      {
+        id:'Funcion', label:'Función',
+        items:[
+          'Lavarte el cabello',
+          'Lavarte la espalda',
+          'Ponerte una remera o campera por la cabeza',
+          'Ponerte una camisa con botones',
+          'Ponerte el pantalón',
+          'Colocar un objeto en un estante alto',
+          'Cargar un objeto de 5 kg',
+          'Sacar algo del bolsillo trasero',
+        ],
+      },
+    ],
+  },
+
+  NDI: {
+    nombre: 'NDI',
+    nombreCompleto: 'Neck Disability Index (adaptado)',
+    region: 'Cervical',
+    descripcion: 'Discapacidad por dolor cervical: impacto en cuidado personal, lectura, concentración, trabajo y sueño.',
+    escala: [
+      {v:4, l:'Sin dificultad'},
+      {v:3, l:'Dificultad leve'},
+      {v:2, l:'Dificultad moderada'},
+      {v:1, l:'Dificultad extrema'},
+      {v:0, l:'Incapaz de hacerlo'},
+    ],
+    escalas: {
+      severidad: [
+        {v:4, l:'Ninguno'},
+        {v:3, l:'Leve'},
+        {v:2, l:'Moderado'},
+        {v:1, l:'Severo'},
+        {v:0, l:'Extremo'},
+      ],
+    },
+    subescalas: [
+      {
+        id:'Total', label:'Puntaje total',
+        items:[
+          {t:'Intensidad del dolor de cuello', e:'severidad'},
+          'Cuidado personal (higiene, vestirte)',
+          'Levantar objetos',
+          'Leer',
+          {t:'Dolor de cabeza asociado', e:'severidad'},
+          'Concentrarte en tus tareas habituales',
+          'Trabajar (tareas laborales o domésticas)',
+          'Manejar o conducir un vehículo',
+          'Dormir sin que el dolor te despierte o interrumpa',
+          'Actividades recreativas o sociales',
+        ],
+      },
+    ],
+  },
+
+  ODI: {
+    nombre: 'ODI',
+    nombreCompleto: 'Oswestry Disability Index (adaptado)',
+    region: 'Lumbar',
+    descripcion: 'Discapacidad por dolor lumbar: impacto en cuidado personal, levantar objetos, caminar, estar sentado/de pie, dormir y actividades sociales.',
+    escala: [
+      {v:4, l:'Sin dificultad'},
+      {v:3, l:'Dificultad leve'},
+      {v:2, l:'Dificultad moderada'},
+      {v:1, l:'Dificultad extrema'},
+      {v:0, l:'Incapaz de hacerlo'},
+    ],
+    escalas: {
+      severidad: [
+        {v:4, l:'Ninguno'},
+        {v:3, l:'Leve'},
+        {v:2, l:'Moderado'},
+        {v:1, l:'Severo'},
+        {v:0, l:'Extremo'},
+      ],
+    },
+    subescalas: [
+      {
+        id:'Total', label:'Puntaje total',
+        items:[
+          {t:'Intensidad del dolor lumbar', e:'severidad'},
+          'Cuidado personal (higiene, vestirte)',
+          'Levantar objetos',
+          'Caminar',
+          'Estar sentado',
+          'Estar de pie',
+          'Dormir sin que el dolor te despierte o interrumpa',
+          'Vida social',
+          'Viajar (auto, colectivo, avión)',
+        ],
+      },
+    ],
+  },
+
+  TSK11: {
+    nombre: 'TSK-11',
+    nombreCompleto: 'Tampa Scale of Kinesiophobia — versión corta (adaptada)',
+    region: 'Kinesiofobia (transversal)',
+    descripcion: 'Miedo al movimiento y creencias de evitación por miedo al dolor/lesión. Útil junto con cualquier PROM funcional cuando el componente psicológico parece estar limitando la recuperación.',
+    escala: [
+      {v:0, l:'Totalmente en desacuerdo'},
+      {v:1, l:'En desacuerdo'},
+      {v:2, l:'De acuerdo'},
+      {v:3, l:'Totalmente de acuerdo'},
+    ],
+    invertido: true, // 0 = mejor (en desacuerdo con creencias de miedo/evitación)
+    subescalas: [
+      {
+        id:'Total', label:'Puntaje total',
+        items:[
+          'Tengo miedo de lesionarme si hago ejercicio o actividad física',
+          'Si intentara superar el miedo, mi dolor aumentaría',
+          'Mi cuerpo me está diciendo que tengo algo peligroso',
+          'Mi dolor significa que algo en mi cuerpo está dañado',
+          'El hecho de que mi dolor sea tan fuerte significa que algo anda mal',
+          'Tengo miedo de lesionarme accidentalmente',
+          'La forma más segura de evitar que mi dolor empeore es teniendo cuidado y no haciendo movimientos innecesarios',
+          'No estaría con tanto dolor si no hubiera algo potencialmente peligroso en mi cuerpo',
+          {t:'Aunque algo me duela mucho, no creo que sea peligroso', inv:false},
+          'Nadie debería tener que hacer actividad física cuando tiene dolor',
+          'No puedo hacer todo lo que hace la gente normal porque me lastimo con facilidad',
+        ],
+      },
+    ],
+  },
+
 };
 
 // Un item de cuestionario puede ser un string simple (usa la escala/dirección por
@@ -2106,6 +2382,10 @@ const REGION_COLORS = {
   'Rodilla (general / LCA / menisco)': '#1A4E8C',
   'Rodilla — LCA (readiness psicológica)': '#8E44AD',
   'Hombro / Miembro superior': '#D4A017',
+  'Rodilla — Femoropatelar': '#2E86AB',
+  'Cervical': '#6D4C41',
+  'Lumbar': '#795548',
+  'Kinesiofobia (transversal)': '#8E44AD',
 };
 function regionColor(region){ return REGION_COLORS[region] || '#5A6373'; }
 
