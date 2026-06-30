@@ -1340,11 +1340,19 @@ function calcularScoresCuestionario(tipoId, respuestas) {
               style="padding:5px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text-2);font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap;">
               ↩ Copiar última sesión
             </button>
+            <button type="button" onclick="openModalCargarPlan('nueva')"
+              style="padding:5px 10px;border:1px solid var(--navy);border-radius:var(--radius-sm);background:var(--blue-chip-light,#eef2fb);color:var(--navy);font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap;">
+              🗓️ Usar plan
+            </button>
             <button type="button" onclick="openModalPlantillas()"
               style="padding:5px 10px;border:1px solid var(--orange);border-radius:var(--radius-sm);background:var(--orange-light);color:var(--orange);font-size:11px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap;">
               📋 Plantillas
             </button>
           </div>
+        </div>
+        <div id="sesPlanRefBox" style="display:none;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;padding:6px 10px;background:var(--blue-chip-light,#eef2fb);border:1px solid var(--navy);border-radius:var(--radius-sm);font-size:11.5px;color:var(--navy);font-weight:600;">
+          <span id="sesPlanRefLabel"></span>
+          <button type="button" onclick="quitarPlanRefSesion()" style="background:none;border:none;color:var(--navy);cursor:pointer;font-size:13px;font-weight:700;">×</button>
         </div>
         <!-- Header columnas modal nueva sesión -->
         <div style="display:grid;grid-template-columns:40px 2fr 52px 52px 62px 1fr 64px;gap:4px;padding:5px 8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm) var(--radius-sm) 0 0;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3);">
@@ -1393,6 +1401,22 @@ function calcularScoresCuestionario(tipoId, respuestas) {
     </div>
     <div class="modal-footer">
       <button class="btn-secondary" onclick="closeModalPlantillas()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalCargarPlan">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <h2>Cargar desde el plan mensual</h2>
+      <button class="btn-close" onclick="closeModalCargarPlan()">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:var(--text-2);margin-bottom:10px;">Elegí el día del plan que hizo hoy. Los ejercicios se cargan en la sesión y después los podés editar o tildar si no se hicieron igual.</div>
+      <div id="cargarPlanList"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModalCargarPlan()">Cerrar</button>
     </div>
   </div>
 </div>
@@ -1611,6 +1635,8 @@ let DB = { patients: [] };
 let currentPatientId = null;
 let currentTab = 'resumen';
 let openCardIds = new Set(); // recuerda qué fichas (sesión/plan) quedaron abiertas entre re-renders
+let cargarPlanTarget = null; // 'nueva' o el id de una sesión existente, mientras está abierto modalCargarPlan
+let sesPlanRefNueva = null; // {planId,planNombre,diaId,diaNombre} del plan elegido para la sesión que se está creando
 const TAB_ORDER=['resumen','sesiones','plan','evaluaciones','cuestionarios','evolucion','turnos'];
 let editingPatientId = null;
 let autoSaveTimer = null;
@@ -2877,12 +2903,22 @@ function renderSesCard(s,num,fechaInicio){
       </div>
       <div class="ses-preview" onclick="toggleSes('${s.id}')">${esc(preview.slice(0,90)+(preview.length>90?'…':''))}</div>
       <div class="ses-body${openCardIds.has(s.id)?' open':''}" id="sb_${s.id}">
+        ${s.planRef?`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;padding:6px 10px;background:var(--blue-chip-light,#eef2fb);border:1px solid var(--navy);border-radius:var(--radius-sm);font-size:11.5px;color:var(--navy);font-weight:600;">
+          <span>🗓️ Del plan: ${esc(s.planRef.planNombre)} — ${esc(s.planRef.diaNombre)}</span>
+          <button onclick="quitarPlanRefDeSes('${s.id}')" style="background:none;border:none;color:var(--navy);cursor:pointer;font-size:13px;font-weight:700;">×</button>
+        </div>`:''}
         <div class="ses-fields">
           <div class="ses-field"><label>Fecha</label><input type="date" value="${s.fecha||''}" onchange="updateSes('${s.id}','fecha',this.value)"></div>
           <div class="ses-field"><label>Estado / Fase RTP</label><input type="text" value="${esc(s.fase||'')}" placeholder="Fase 3" oninput="updateSes('${s.id}','fase',this.value)"></div>
           <div class="ses-field full"><label>Cómo llegó</label><textarea oninput="updateSes('${s.id}','subjetivo',this.value)">${esc(s.subjetivo||'')}</textarea></div>
           <div class="ses-field full">
-            <label>Ejercicios</label>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+              <label style="margin:0">Ejercicios</label>
+              <button type="button" onclick="openModalCargarPlan('${s.id}')"
+                style="padding:4px 9px;border:1px solid var(--navy);border-radius:var(--radius-sm);background:var(--blue-chip-light,#eef2fb);color:var(--navy);font-size:10.5px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap;">
+                🗓️ ${s.planRef?'Cambiar día del plan':'Cargar desde plan'}
+              </button>
+            </div>
             ${buildEjTableEditable(s.id, ejercicios)}
           </div>
           <div class="ses-field"><label>EVA diaria (general)</label><input type="number" min="0" max="10" value="${esc(s.dolorDiario!=null?s.dolorDiario:'')}" oninput="updateSes('${s.id}','dolorDiario',this.value)"></div>
@@ -3207,9 +3243,11 @@ function openNewSesion(){
   document.getElementById('sFecha').value=new Date().toISOString().slice(0,10);
   ['sFase','sSubjetivo','sDolorDiario','sDolor','sRpe','sDuracion','sObjetivo','sPlan'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('ejerciciosList').innerHTML='';addEjercicioRow();
+  sesPlanRefNueva=null;
+  document.getElementById('sesPlanRefBox').style.display='none';
   document.getElementById('modalSesion').classList.add('open');
 }
-function closeModalSesion(){document.getElementById('modalSesion').classList.remove('open');}
+function closeModalSesion(){document.getElementById('modalSesion').classList.remove('open');sesPlanRefNueva=null;}
 
 // ── Copiar última sesión ──────────────────────────────────────────────────────
 function copiarUltimaSesion(){
@@ -3224,6 +3262,7 @@ function copiarUltimaSesion(){
   if(!faseEl.value && ultima.fase) faseEl.value=ultima.fase;
   document.getElementById('ejerciciosList').innerHTML='';
   ejercicios.forEach(e=>addEjercicioRow(e.nombre,e.series,e.reps,e.kg,e.nota||'',e.bloque||''));
+  quitarPlanRefSesion();
   showToast('Ejercicios copiados ✓');
 }
 
@@ -3252,6 +3291,7 @@ function aplicarPlantilla(id){
   if(!pl) return;
   document.getElementById('ejerciciosList').innerHTML='';
   pl.ejercicios.forEach(e=>addEjercicioRow(e.nombre,e.series,e.reps,e.kg,e.nota||'',e.bloque||''));
+  quitarPlanRefSesion();
   closeModalPlantillas();
   showToast(`Plantilla "${pl.nombre}" aplicada ✓`);
 }
@@ -3293,6 +3333,83 @@ function openModalPlantillas(){
 function closeModalPlantillas(){
   document.getElementById('modalPlantillas').classList.remove('open');
 }
+
+// ── Cargar ejercicios desde el plan mensual a una sesión ─────────────────────
+function openModalCargarPlan(target){
+  cargarPlanTarget=target; // 'nueva' o el id de una sesión existente
+  renderCargarPlanList();
+  document.getElementById('modalCargarPlan').classList.add('open');
+}
+function closeModalCargarPlan(){
+  document.getElementById('modalCargarPlan').classList.remove('open');
+  cargarPlanTarget=null;
+}
+function renderCargarPlanList(){
+  const p=getPatient(currentPatientId); const ep=getEpData(p);
+  const planes=getPlanes(ep).slice().reverse();
+  const el=document.getElementById('cargarPlanList');
+  if(!planes.length){
+    el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text-3);font-size:13px;">Todavía no hay planes armados.<br>Creá uno en la pestaña 📋 Plan.</div>';
+    return;
+  }
+  el.innerHTML=planes.map(pl=>{
+    const dias=pl.dias||[];
+    if(!dias.length) return '';
+    return `
+    <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:8px;">
+      <div style="font-size:13px;font-weight:700;margin-bottom:6px;">${esc(pl.nombre||'Plan')}${pl.semanas?` · ${esc(pl.semanas)} sem.`:''}</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        ${dias.map(d=>{
+          const nEj=(d.ejercicios||[]).filter(e=>(e.nombre||'').trim()).length;
+          return `<button onclick="elegirDiaPlan('${pl.id}','${d.id}')"
+            style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;text-align:left;font-family:Inter,sans-serif;">
+            <span style="font-size:12.5px;color:var(--text);font-weight:600;">${d.lugar==='domicilio'?'🏠':'🏥'} ${esc(d.nombre||'Día')}</span>
+            <span style="font-size:11px;color:var(--text-3);">${nEj} ejercicio${nEj!==1?'s':''}</span>
+          </button>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('') || '<div style="text-align:center;padding:20px;color:var(--text-3);font-size:13px;">Los planes todavía no tienen días cargados.</div>';
+}
+function elegirDiaPlan(planId, diaId){
+  const {pl,dia}=findPlanDia(planId,diaId);
+  if(!pl||!dia) return;
+  const ejercicios=(dia.ejercicios||[]).filter(e=>(e.nombre||'').trim())
+    .map(e=>({nombre:e.nombre,series:e.series,reps:e.reps,kg:e.kg,nota:e.nota,bloque:e.bloque,categoria:e.categoria||''}));
+  if(!ejercicios.length){showToast('Ese día del plan no tiene ejercicios cargados');closeModalCargarPlan();return;}
+  const ref={planId:pl.id, planNombre:pl.nombre||'Plan', diaId:dia.id, diaNombre:dia.nombre||'Día'};
+
+  if(cargarPlanTarget==='nueva'){
+    document.getElementById('ejerciciosList').innerHTML='';
+    ejercicios.forEach(e=>addEjercicioRow(e.nombre,e.series,e.reps,e.kg,e.nota||'',e.bloque||''));
+    sesPlanRefNueva=ref;
+    const box=document.getElementById('sesPlanRefBox');
+    document.getElementById('sesPlanRefLabel').textContent=`🗓️ ${ref.planNombre} — ${ref.diaNombre}`;
+    box.style.display='flex';
+  } else {
+    const sesId=cargarPlanTarget;
+    const p=getPatient(currentPatientId); const epp=getEpData(p);
+    const ses=(epp.sesiones||[]).find(s=>s.id===sesId);
+    if(ses){
+      ses.ejercicios=ejercicios.map(e=>({...e}));
+      ses.planRef=ref;
+      saveDB(); renderTab();
+    }
+  }
+  closeModalCargarPlan();
+  showToast('Ejercicios del plan cargados ✓');
+}
+function quitarPlanRefSesion(){
+  sesPlanRefNueva=null;
+  document.getElementById('sesPlanRefBox').style.display='none';
+}
+function quitarPlanRefDeSes(sesId){
+  const p=getPatient(currentPatientId); const ep=getEpData(p);
+  const ses=(ep.sesiones||[]).find(s=>s.id===sesId);
+  if(!ses) return;
+  delete ses.planRef;
+  saveDB(); renderTab();
+}
 function showToast(msg){
   const el=document.getElementById('saveIndicator');
   el.textContent=msg;el.classList.add('show');
@@ -3302,7 +3419,10 @@ function saveSesion(){
   const fecha=document.getElementById('sFecha').value;
   if(!fecha){alert('La fecha es obligatoria.');return;}
   const p=getPatient(currentPatientId);const ep=getEpData(p);if(!ep.sesiones)ep.sesiones=[];
-  ep.sesiones.push({id:uid(),fecha,fase:document.getElementById('sFase').value,subjetivo:document.getElementById('sSubjetivo').value,ejercicios:getEjercicios(),dolorDiario:document.getElementById('sDolorDiario').value,dolor:document.getElementById('sDolor').value,rpe:document.getElementById('sRpe').value,duracion:document.getElementById('sDuracion').value,objetivo:document.getElementById('sObjetivo').value,plan:document.getElementById('sPlan').value});
+  const nueva={id:uid(),fecha,fase:document.getElementById('sFase').value,subjetivo:document.getElementById('sSubjetivo').value,ejercicios:getEjercicios(),dolorDiario:document.getElementById('sDolorDiario').value,dolor:document.getElementById('sDolor').value,rpe:document.getElementById('sRpe').value,duracion:document.getElementById('sDuracion').value,objetivo:document.getElementById('sObjetivo').value,plan:document.getElementById('sPlan').value};
+  if(sesPlanRefNueva) nueva.planRef=sesPlanRefNueva;
+  ep.sesiones.push(nueva);
+  sesPlanRefNueva=null;
   saveDB();closeModalSesion();renderTab();
 }
 
