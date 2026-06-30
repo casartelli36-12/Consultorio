@@ -173,24 +173,25 @@ input,textarea,select{font-family:'Inter',sans-serif;}
 .ej-cat-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--orange);margin-bottom:6px;display:flex;align-items:center;gap:6px;}
 
 /* Tabla ejercicios editable en sesiones */
-.ej-table-wrap{border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;margin-bottom:8px;}
-.ej-table-head{display:grid;grid-template-columns:40px 2fr 52px 52px 62px 1fr 64px;gap:0;background:var(--surface);padding:7px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3);}
-.ej-row{display:grid;grid-template-columns:40px 2fr 52px 52px 62px 1fr 64px;gap:4px;padding:6px 8px;border-top:1px solid var(--border);align-items:center;}
+.ej-table-wrap{border:1px solid var(--border);border-radius:var(--radius-sm);overflow-x:auto;overflow-y:hidden;margin-bottom:8px;-webkit-overflow-scrolling:touch;}
+.ej-table-head{display:grid;grid-template-columns:36px 1.7fr 46px 46px 56px 46px 1.2fr 64px;gap:4px;background:var(--surface);padding:8px 10px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3);min-width:640px;}
+.ej-row{display:grid;grid-template-columns:36px 1.7fr 46px 46px 56px 46px 1.2fr 64px;gap:4px;padding:8px 8px;border-top:1px solid var(--border);align-items:center;min-width:640px;}
 .ej-row.ej-grouped{background:var(--orange-light);}
 .ej-input.bloque{text-align:center;font-weight:700;text-transform:uppercase;}
+.ej-input.rir{text-align:center;font-weight:600;color:var(--orange);}
 .ej-badge-mini{display:inline-block;background:var(--orange);color:#fff;font-size:9px;font-weight:700;border-radius:4px;padding:1px 5px;margin-right:5px;vertical-align:middle;}
 .ej-row:nth-child(even){background:var(--surface);}
-.ej-input{border:1px solid transparent;border-radius:5px;padding:5px 7px;font-size:13px;font-family:Inter,sans-serif;color:var(--text);background:transparent;outline:none;width:100%;transition:border-color .15s,background .15s;}
+.ej-input{border:1px solid transparent;border-radius:5px;padding:6px 7px;font-size:14px;font-family:Inter,sans-serif;color:var(--text);background:transparent;outline:none;width:100%;transition:border-color .15s,background .15s;}
 .ej-input:focus{border-color:var(--navy);background:#fff;}
 .ej-input.center{text-align:center;}
-.ej-input.nota{font-size:12px;color:var(--text-2);}
+.ej-input.nota{font-size:12.5px;color:var(--text-2);}
 .btn-ej-del{background:none;border:none;color:var(--text-3);cursor:pointer;font-size:16px;padding:0 4px;line-height:1;flex-shrink:0;}
 .btn-ej-del:hover{color:var(--red);}
-.ej-row-actions{display:flex;align-items:center;gap:2px;}
-.btn-ej-move{background:none;border:none;color:var(--text-3);cursor:pointer;font-size:11px;padding:2px;line-height:1;flex-shrink:0;}
+.ej-row-actions{display:flex;align-items:center;gap:1px;flex-wrap:nowrap;}
+.btn-ej-move{background:none;border:none;color:var(--text-3);cursor:pointer;font-size:12px;padding:2px 1px;line-height:1;flex-shrink:0;}
 .btn-ej-move:hover:not(:disabled){color:var(--navy);}
 .btn-ej-move:disabled{opacity:.25;cursor:default;}
-.ej-drag-handle{cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none;font-size:17px;color:var(--text-3);padding:2px 7px;line-height:1;flex-shrink:0;}
+.ej-drag-handle{cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none;font-size:17px;color:var(--text-3);padding:2px 5px;line-height:1;flex-shrink:0;}
 .ej-drag-handle:active{cursor:grabbing;color:var(--navy);}
 .ej-row.ej-dragging{background:var(--blue-chip-light)!important;box-shadow:0 4px 12px rgba(0,0,0,.18);border-radius:6px;position:relative;z-index:5;}
 .btn-add-ej-row{width:100%;padding:7px;border:none;border-top:1px solid var(--border);background:var(--surface);color:var(--text-2);font-size:12px;cursor:pointer;font-family:Inter,sans-serif;text-align:left;padding-left:12px;}
@@ -456,7 +457,7 @@ input,textarea,select{font-family:'Inter',sans-serif;}
   .modal-4col{grid-template-columns:1fr 1fr;}
   .days-chip .num{font-size:18px;}
   .tur-week-grid{grid-template-columns:40px repeat(7,1fr);}
-  .ej-table-head,.ej-row{grid-template-columns:34px 2fr 46px 46px 56px 1fr 64px;}
+  .ej-table-head,.ej-row{grid-template-columns:34px 1.6fr 42px 42px 52px 42px 1.1fr 56px;min-width:580px;}
   .cuest-type-pick{grid-template-columns:1fr;}
 }
 </style>
@@ -1355,10 +1356,12 @@ function calcularScoresCuestionario(tipoId, respuestas) {
           <button type="button" onclick="quitarPlanRefSesion()" style="background:none;border:none;color:var(--navy);cursor:pointer;font-size:13px;font-weight:700;">×</button>
         </div>
         <!-- Header columnas modal nueva sesión -->
-        <div style="display:grid;grid-template-columns:40px 2fr 52px 52px 62px 1fr 64px;gap:4px;padding:5px 8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm) var(--radius-sm) 0 0;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3);">
-          <span style="text-align:center">Sup.</span><span>Ejercicio</span><span style="text-align:center">Series</span><span style="text-align:center">Reps/t</span><span style="text-align:center">Kg/BW</span><span>Notas</span><span></span>
+        <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:8px;">
+          <div style="display:grid;grid-template-columns:36px 1.6fr 46px 46px 56px 46px 1.1fr 88px;gap:4px;padding:7px 10px;background:var(--surface);border-bottom:1px solid var(--border);font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3);min-width:660px;">
+            <span style="text-align:center">Sup.</span><span>Ejercicio</span><span style="text-align:center">Series</span><span style="text-align:center">Reps/t</span><span style="text-align:center">Kg/BW</span><span style="text-align:center">RIR</span><span>Notas</span><span></span>
+          </div>
+          <div id="ejerciciosList"></div>
         </div>
-        <div id="ejerciciosList" style="border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius-sm) var(--radius-sm);overflow:hidden;margin-bottom:8px;"></div>
         <button type="button" onclick="addEjercicioRow()" style="width:100%;padding:8px;border:1.5px dashed var(--border);border-radius:var(--radius-sm);background:transparent;color:var(--text-2);font-size:13px;cursor:pointer;font-family:Inter,sans-serif;">+ Agregar ejercicio</button>
       </div>
       <div class="modal-4col">
@@ -2713,6 +2716,7 @@ function computeBloqueLabels(ejercicios){
 }
 function buildEjTableEditable(sesId, ejercicios) {
   const labels = computeBloqueLabels(ejercicios);
+  const n = ejercicios.length;
   const rows = ejercicios.map((e,i) => `
     <div class="ej-row ${e.bloque?'ej-grouped':''}" id="ejrow_${sesId}_${i}">
       <input class="ej-input bloque" type="text" value="${esc(e.bloque||'')}" placeholder="—" maxlength="2" title="Superserie"
@@ -2725,6 +2729,8 @@ function buildEjTableEditable(sesId, ejercicios) {
         oninput="updateEjField('${sesId}',${i},'reps',this.value)">
       <input class="ej-input center" type="text" value="${esc(e.kg||'')}" placeholder="—"
         oninput="updateEjField('${sesId}',${i},'kg',this.value)">
+      <input class="ej-input rir" type="text" value="${esc(e.rir||'')}" placeholder="—" title="RIR (reps en reserva)"
+        oninput="updateEjField('${sesId}',${i},'rir',this.value)">
       <input class="ej-input nota" type="text" value="${esc(e.nota||'')}" placeholder="notas…"
         oninput="updateEjField('${sesId}',${i},'nota',this.value)">
       <div class="ej-row-actions">
@@ -2740,6 +2746,7 @@ function buildEjTableEditable(sesId, ejercicios) {
       <span style="text-align:center">Series</span>
       <span style="text-align:center">Reps/t</span>
       <span style="text-align:center">Kg/BW</span>
+      <span style="text-align:center">RIR</span>
       <span>Notas</span>
       <span></span>
     </div>
@@ -3201,21 +3208,22 @@ document.addEventListener('focusout', e=>{
 });
 
 
-function addEjercicioRow(nombre='',series='',reps='',kg='',nota='',bloque=''){
+function addEjercicioRow(nombre='',series='',reps='',kg='',nota='',bloque='',rir=''){
   const container=document.getElementById('ejerciciosList');const id='ej_'+uid();const div=document.createElement('div');
   div.id=id;
-  div.style.cssText='display:grid;grid-template-columns:40px 2fr 52px 52px 62px 1fr 64px;gap:4px;align-items:center;padding:4px 6px;border-top:1px solid var(--border);background:#fff;';
+  div.style.cssText='display:grid;grid-template-columns:36px 1.6fr 46px 46px 56px 46px 1.1fr 88px;gap:4px;align-items:center;padding:6px 6px;border-top:1px solid var(--border);background:#fff;min-width:660px;';
   div.innerHTML=`
     <input type="text" value="${esc(bloque)}" placeholder="A" maxlength="2" title="Superserie: poné la misma letra en los ejercicios que van juntos"
-      style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 4px;font-size:13px;font-family:Inter,sans-serif;outline:none;text-align:center;font-weight:700;text-transform:uppercase;">
-    <input type="text" class="ej-name-input" value="${esc(nombre)}" placeholder="Ejercicio / intervención" autocomplete="off" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 9px;font-size:13px;font-family:Inter,sans-serif;outline:none;">
-    <input type="text" value="${esc(series)}" placeholder="—" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 6px;font-size:13px;font-family:Inter,sans-serif;outline:none;text-align:center;">
-    <input type="text" value="${esc(reps)}" placeholder="—" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 6px;font-size:13px;font-family:Inter,sans-serif;outline:none;text-align:center;">
-    <input type="text" value="${esc(kg)}" placeholder="—" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 6px;font-size:13px;font-family:Inter,sans-serif;outline:none;text-align:center;">
-    <input type="text" value="${esc(nota)}" placeholder="notas…" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 8px;font-size:12px;font-family:Inter,sans-serif;outline:none;color:var(--text-2);">
-    <div style="display:flex;align-items:center;gap:2px;">
-      <button type="button" onclick="moveEjRowDOM('${id}',-1)" style="background:none;border:none;color:var(--text-3);cursor:pointer;font-size:11px;padding:2px;line-height:1;" title="Subir">▲</button>
-      <button type="button" onclick="moveEjRowDOM('${id}',1)" style="background:none;border:none;color:var(--text-3);cursor:pointer;font-size:11px;padding:2px;line-height:1;" title="Bajar">▼</button>
+      style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 4px;font-size:14px;font-family:Inter,sans-serif;outline:none;text-align:center;font-weight:700;text-transform:uppercase;">
+    <input type="text" class="ej-name-input" value="${esc(nombre)}" placeholder="Ejercicio / intervención" autocomplete="off" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 9px;font-size:14px;font-family:Inter,sans-serif;outline:none;">
+    <input type="text" value="${esc(series)}" placeholder="—" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 6px;font-size:14px;font-family:Inter,sans-serif;outline:none;text-align:center;">
+    <input type="text" value="${esc(reps)}" placeholder="—" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 6px;font-size:14px;font-family:Inter,sans-serif;outline:none;text-align:center;">
+    <input type="text" value="${esc(kg)}" placeholder="—" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 6px;font-size:14px;font-family:Inter,sans-serif;outline:none;text-align:center;">
+    <input type="text" value="${esc(rir)}" placeholder="—" title="RIR (reps en reserva)" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 4px;font-size:14px;font-family:Inter,sans-serif;outline:none;text-align:center;font-weight:600;color:var(--orange);">
+    <input type="text" value="${esc(nota)}" placeholder="notas…" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 8px;font-size:12.5px;font-family:Inter,sans-serif;outline:none;color:var(--text-2);">
+    <div style="display:flex;align-items:center;gap:1px;">
+      <button type="button" onclick="moveEjRowDOM('${id}',-1)" style="background:none;border:none;color:var(--text-3);cursor:pointer;font-size:12px;padding:2px 1px;line-height:1;" title="Subir">▲</button>
+      <button type="button" onclick="moveEjRowDOM('${id}',1)" style="background:none;border:none;color:var(--text-3);cursor:pointer;font-size:12px;padding:2px 1px;line-height:1;" title="Bajar">▼</button>
       <button onclick="document.getElementById('${id}').remove()" style="background:none;border:none;color:var(--text-3);cursor:pointer;font-size:18px;padding:0 4px;line-height:1;">×</button>
     </div>`;
   container.appendChild(div);
@@ -3236,7 +3244,7 @@ function moveEjRowDOM(id, dir){
 function getEjercicios(){
   return Array.from(document.querySelectorAll('#ejerciciosList > div')).map(row=>{
     const inputs=row.querySelectorAll('input');
-    return{bloque:inputs[0].value,nombre:inputs[1].value,series:inputs[2].value,reps:inputs[3].value,kg:inputs[4].value,nota:inputs[5].value};
+    return{bloque:inputs[0].value,nombre:inputs[1].value,series:inputs[2].value,reps:inputs[3].value,kg:inputs[4].value,rir:inputs[5].value,nota:inputs[6].value};
   }).filter(e=>e.nombre.trim());
 }
 function openNewSesion(){
@@ -3261,7 +3269,7 @@ function copiarUltimaSesion(){
   const faseEl=document.getElementById('sFase');
   if(!faseEl.value && ultima.fase) faseEl.value=ultima.fase;
   document.getElementById('ejerciciosList').innerHTML='';
-  ejercicios.forEach(e=>addEjercicioRow(e.nombre,e.series,e.reps,e.kg,e.nota||'',e.bloque||''));
+  ejercicios.forEach(e=>addEjercicioRow(e.nombre,e.series,e.reps,e.kg,e.nota||'',e.bloque||'',e.rir||''));
   quitarPlanRefSesion();
   showToast('Ejercicios copiados ✓');
 }
@@ -3290,7 +3298,7 @@ function aplicarPlantilla(id){
   const pl=getPlantillas().find(p=>p.id===id);
   if(!pl) return;
   document.getElementById('ejerciciosList').innerHTML='';
-  pl.ejercicios.forEach(e=>addEjercicioRow(e.nombre,e.series,e.reps,e.kg,e.nota||'',e.bloque||''));
+  pl.ejercicios.forEach(e=>addEjercicioRow(e.nombre,e.series,e.reps,e.kg,e.nota||'',e.bloque||'',e.rir||''));
   quitarPlanRefSesion();
   closeModalPlantillas();
   showToast(`Plantilla "${pl.nombre}" aplicada ✓`);
@@ -3375,13 +3383,13 @@ function elegirDiaPlan(planId, diaId){
   const {pl,dia}=findPlanDia(planId,diaId);
   if(!pl||!dia) return;
   const ejercicios=(dia.ejercicios||[]).filter(e=>(e.nombre||'').trim())
-    .map(e=>({nombre:e.nombre,series:e.series,reps:e.reps,kg:e.kg,nota:e.nota,bloque:e.bloque,categoria:e.categoria||''}));
+    .map(e=>({nombre:e.nombre,series:e.series,reps:e.reps,kg:e.kg,rir:e.rir,nota:e.nota,bloque:e.bloque,categoria:e.categoria||''}));
   if(!ejercicios.length){showToast('Ese día del plan no tiene ejercicios cargados');closeModalCargarPlan();return;}
   const ref={planId:pl.id, planNombre:pl.nombre||'Plan', diaId:dia.id, diaNombre:dia.nombre||'Día'};
 
   if(cargarPlanTarget==='nueva'){
     document.getElementById('ejerciciosList').innerHTML='';
-    ejercicios.forEach(e=>addEjercicioRow(e.nombre,e.series,e.reps,e.kg,e.nota||'',e.bloque||''));
+    ejercicios.forEach(e=>addEjercicioRow(e.nombre,e.series,e.reps,e.kg,e.nota||'',e.bloque||'',e.rir||''));
     sesPlanRefNueva=ref;
     const box=document.getElementById('sesPlanRefBox');
     document.getElementById('sesPlanRefLabel').textContent=`🗓️ ${ref.planNombre} — ${ref.diaNombre}`;
@@ -3670,6 +3678,8 @@ function buildPlanEjSectionTable(planId,diaId,ejercicios,catId){
         oninput="updatePlanEjField('${planId}','${diaId}',${i},'reps',this.value)">
       <input class="ej-input center" type="text" value="${esc(e.kg||'')}" placeholder="—"
         oninput="updatePlanEjField('${planId}','${diaId}',${i},'kg',this.value)">
+      <input class="ej-input rir" type="text" value="${esc(e.rir||'')}" placeholder="—" title="RIR (reps en reserva)"
+        oninput="updatePlanEjField('${planId}','${diaId}',${i},'rir',this.value)">
       <input class="ej-input nota" type="text" value="${esc(e.nota||'')}" placeholder="notas…"
         oninput="updatePlanEjField('${planId}','${diaId}',${i},'nota',this.value)">
       <div class="ej-row-actions">
@@ -3680,7 +3690,7 @@ function buildPlanEjSectionTable(planId,diaId,ejercicios,catId){
   }).join('');
   return `<div class="ej-table-wrap" id="pejtable_${planId}_${diaId}_${catId||'sincat'}">
     <div class="ej-table-head">
-      <span style="text-align:center">Sup.</span><span>Ejercicio</span><span style="text-align:center">Series</span><span style="text-align:center">Reps/t</span><span style="text-align:center">Kg/BW</span><span>Notas</span><span></span>
+      <span style="text-align:center">Sup.</span><span>Ejercicio</span><span style="text-align:center">Series</span><span style="text-align:center">Reps/t</span><span style="text-align:center">Kg/BW</span><span style="text-align:center">RIR</span><span>Notas</span><span></span>
     </div>
     ${rows}
     <button class="btn-add-ej-row" onclick="addEjToPlanDia('${planId}','${diaId}','${catId||''}')">+ Agregar ejercicio</button>
@@ -4060,7 +4070,7 @@ function renderEvolucion(panel){
 function rtExRow(e,label){
   return `<div class="rt-ex">
     <div class="rt-ex-name">${label?`<span class="rt-ex-badge">${esc(label)}</span>`:''}${esc(e.nombre||'')}</div>
-    <div class="rt-ex-meta">${[e.series?`${esc(e.series)} series`:'',e.reps?`${esc(e.reps)} reps`:'',e.kg?`${esc(e.kg)}`:''].filter(Boolean).join(' · ')}</div>
+    <div class="rt-ex-meta">${[e.series?`${esc(e.series)} series`:'',e.reps?`${esc(e.reps)} reps`:'',e.kg?`${esc(e.kg)}`:'',e.rir?`RIR ${esc(e.rir)}`:''].filter(Boolean).join(' · ')}</div>
     ${e.nota?`<div class="rt-ex-nota">${esc(e.nota)}</div>`:''}
   </div>`;
 }
