@@ -421,6 +421,10 @@ input,textarea,select{font-family:'Inter',sans-serif;}
 .cuest-fecha{font-size:12px;color:var(--text-2);flex:1;}
 .cuest-scores{display:flex;gap:6px;flex-wrap:wrap;}
 .cuest-score-badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--blue-chip-light);color:var(--blue-chip);}
+.prom-ok{background:var(--green-light);color:var(--green);}
+.prom-leve{background:#FFF8E1;color:#856B00;}
+.prom-mod{background:var(--orange-light);color:var(--orange);}
+.prom-severa{background:var(--red-light);color:var(--red);}
 .cuest-body{padding:14px;display:none;}
 .cuest-body.open{display:block;}
 .cuest-sub{margin-bottom:14px;}
@@ -2039,6 +2043,100 @@ function lsiClass(v) {
   if(isNaN(n)) return '';
   return n>=90?'lsi-ok':n>=75?'lsi-warn':'lsi-bad';
 }
+// Interpretación general del score normalizado de un cuestionario (0-100, mayor = mejor).
+// Son bandas orientativas para lectura rápida, no reemplazan los umbrales específicos
+// de cada PROM en la literatura (PASS, MCID) ni el criterio clínico — sirven para que
+// el número tenga un significado de un vistazo, junto con el resto de la evaluación.
+// Bandas de interpretación específicas por cuestionario, basadas en puntos de corte
+// publicados en la literatura para cada PROM puntual. Todo está convertido a la
+// convención de la app (score 0-100, mayor = mejor función/menos síntoma), aunque la
+// fuente original use la dirección opuesta (ej. NDI/ODI miden discapacidad, no función).
+// Fuentes:
+//  - NDI: Vernon & Mior 1991 (0-4 sin discapacidad, 5-14 leve, 15-24 moderada, 25-34
+//    severa, ≥35 completa, sobre 50 puntos = 0-100% de discapacidad). Invertido a función.
+//  - ODI: Fairbank et al. 1980 (0-20% mínima, 21-40% moderada, 41-60% severa, 61-80%
+//    incapacitante, 81-100% encamado/posible sobrerreporte). Invertido a función.
+//  - Lysholm: bandas clásicas de Lysholm & Tegner — ≥95 excelente, 84-94 bueno,
+//    65-83 regular, <65 malo (ya en dirección "mayor = mejor", sin invertir).
+//  - CAIT: Hiller et al. 2006 — ≥28/30 tobillo estable, ≤27/30 inestabilidad,
+//    ≤23/30 inestabilidad marcada. Convertido proporcionalmente a la escala adaptada
+//    de la app (que no usa los mismos pesos por ítem que el CAIT original).
+//  - VISA-A / VISA-P: no hay bandas categóricas oficiales, pero sí valores de
+//    referencia publicados (asintomático ~96-100, tendinopatía recreativa <70, media
+//    en no operados ~64, prequirúrgicos ~44) — banda orientativa basada en esos datos.
+//  - ACL-RSI: distintos estudios reportan cortes de RTS entre 51 y 65 puntos (Webster
+//    & Feller 2018, Sadeqi et al. 2018) — se usa ~65 como punto alto y ~47 como bajo.
+//  - TSK-11: Dupuis et al. 2022 (tendinopatía aquílea) — mínima ≤22, baja 23-28,
+//    moderada 29-35, alta ≥36 (sobre escala 11-44). Convertido proporcionalmente a la
+//    escala 0-33 que usa la app (ítems de 0 a 3 en vez de 1 a 4) e invertido a función.
+// Para el resto de los cuestionarios (FAAM, FAOS, KOOS, IKDC, DASH, SPADI, PRTEE,
+// LEFS, UEFI, Kujala) NO hay un corte único consensuado en la literatura — el PASS
+// publicado, por ejemplo, varía entre 56% y 93% según el estudio, la subescala y el
+// tiempo de seguimiento — así que se usa una banda genérica orientativa.
+const PROM_BANDAS = {
+  NDI: [
+    {min:90, clase:'prom-ok', label:'Sin discapacidad'},
+    {min:70, clase:'prom-leve', label:'Discapacidad leve'},
+    {min:50, clase:'prom-mod', label:'Discapacidad moderada'},
+    {min:30, clase:'prom-severa', label:'Discapacidad severa'},
+    {min:-Infinity, clase:'prom-severa', label:'Discapacidad completa'},
+  ],
+  ODI: [
+    {min:80, clase:'prom-ok', label:'Discapacidad mínima'},
+    {min:60, clase:'prom-leve', label:'Discapacidad moderada'},
+    {min:40, clase:'prom-mod', label:'Discapacidad severa'},
+    {min:20, clase:'prom-severa', label:'Discapacidad incapacitante'},
+    {min:-Infinity, clase:'prom-severa', label:'Discapacidad extrema'},
+  ],
+  LYSHOLM: [
+    {min:95, clase:'prom-ok', label:'Excelente'},
+    {min:84, clase:'prom-leve', label:'Bueno'},
+    {min:65, clase:'prom-mod', label:'Regular'},
+    {min:-Infinity, clase:'prom-severa', label:'Malo'},
+  ],
+  CAIT: [
+    {min:93, clase:'prom-ok', label:'Tobillo estable'},
+    {min:77, clase:'prom-mod', label:'Inestabilidad leve-moderada'},
+    {min:-Infinity, clase:'prom-severa', label:'Inestabilidad marcada'},
+  ],
+  VISA_A: [
+    {min:90, clase:'prom-ok', label:'Tendón prácticamente asintomático'},
+    {min:70, clase:'prom-leve', label:'Tendinopatía leve'},
+    {min:50, clase:'prom-mod', label:'Tendinopatía moderada'},
+    {min:-Infinity, clase:'prom-severa', label:'Tendinopatía severa'},
+  ],
+  VISA_P: [
+    {min:90, clase:'prom-ok', label:'Tendón prácticamente asintomático'},
+    {min:70, clase:'prom-leve', label:'Tendinopatía leve'},
+    {min:50, clase:'prom-mod', label:'Tendinopatía moderada'},
+    {min:-Infinity, clase:'prom-severa', label:'Tendinopatía severa'},
+  ],
+  ACL_RSI: [
+    {min:65, clase:'prom-ok', label:'Alta preparación psicológica (asociado a RTS en la literatura)'},
+    {min:47, clase:'prom-mod', label:'Preparación psicológica parcial'},
+    {min:-Infinity, clase:'prom-severa', label:'Baja preparación (mayor riesgo de no volver, según la literatura)'},
+  ],
+  TSK11: [
+    {min:67, clase:'prom-ok', label:'Kinesiofobia mínima'},
+    {min:49, clase:'prom-leve', label:'Kinesiofobia baja'},
+    {min:27, clase:'prom-mod', label:'Kinesiofobia moderada'},
+    {min:-Infinity, clase:'prom-severa', label:'Kinesiofobia alta'},
+  ],
+};
+// tipoId es opcional: si se pasa y existe una banda específica para ese cuestionario,
+// se usa esa. Si no, se cae a la banda genérica (mismo criterio que antes).
+function interpretarPROM(pct, tipoId) {
+  const n=parseFloat(pct);
+  if(isNaN(n)) return null;
+  const bandas = tipoId && PROM_BANDAS[tipoId];
+  if(bandas){
+    for(const b of bandas){ if(n>=b.min) return {clase:b.clase, label:b.label}; }
+  }
+  if(n>=90) return {clase:'prom-ok', label:'Función normal'};
+  if(n>=75) return {clase:'prom-leve', label:'Limitación leve'};
+  if(n>=50) return {clase:'prom-mod', label:'Limitación moderada'};
+  return {clase:'prom-severa', label:'Limitación severa'};
+}
 function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
@@ -2377,15 +2475,19 @@ function renderCuestCard(c, fechaInicio){
         <div class="cuest-scores">
           ${def.subescalas.map(sub=>{
             const sc=scores[sub.id];
-            return `<span class="cuest-score-badge">${esc(sub.label)}: ${sc!==null&&sc!==undefined?sc+'%':'—'}</span>`;
+            const interp=interpretarPROM(sc, c.tipoId);
+            return `<span class="cuest-score-badge${interp?' '+interp.clase:''}">${esc(sub.label)}: ${sc!==null&&sc!==undefined?sc+'%':'—'}${interp?' · '+interp.label:''}</span>`;
           }).join('')}
         </div>
         <button class="btn-del-cuest" onclick="event.stopPropagation();deleteCuestionario('${c.id}')">×</button>
       </div>
       <div class="cuest-body" id="cb_${c.id}">
-        ${def.subescalas.map(sub=>`
+        ${def.subescalas.map(sub=>{
+          const sc=scores[sub.id];
+          const interp=interpretarPROM(sc, c.tipoId);
+          return `
           <div class="cuest-sub">
-            <div class="cuest-sub-title">${esc(sub.label)} — ${scores[sub.id]!==null&&scores[sub.id]!==undefined?scores[sub.id]+'%':'sin datos'}</div>
+            <div class="cuest-sub-title">${esc(sub.label)} — ${sc!==null&&sc!==undefined?sc+'%':'sin datos'}${interp?` <span class="cuest-score-badge ${interp.clase}" style="text-transform:none;letter-spacing:0;margin-left:4px;">${interp.label}</span>`:''}</div>
             ${sub.items.map((item,i)=>{
               const key=c.tipoId+'_'+sub.id+'_'+i;
               const val=(c.respuestas||{})[key];
@@ -2393,7 +2495,8 @@ function renderCuestCard(c, fechaInicio){
               const opt=escala.find(e=>String(e.v)===String(val));
               return `<div class="cuest-item-row"><span class="cuest-item-label">${esc(itemTexto(item))}</span><span class="cuest-item-val">${opt?esc(opt.l):'—'}</span></div>`;
             }).join('')}
-          </div>`).join('')}
+          </div>`;
+        }).join('')}
       </div>
     </div>`;
 }
