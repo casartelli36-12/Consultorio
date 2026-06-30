@@ -2000,19 +2000,29 @@ function diasDesde(f) {
   const d = Math.floor((new Date()-new Date(f))/86400000);
   return d>=0?d:null;
 }
-// Formatea un número de días de evolución de forma automática:
-// menos de 2 semanas en días, de ahí hasta 2 meses en semanas, y de ahí en meses.
+// Formatea un número de días de evolución de forma automática, con desglose:
+// menos de 1 semana → días. De 1 semana a ~2 meses → semanas + días sueltos.
+// De ahí en más → meses + semanas sueltas. Ej: 18 días = "2 semanas 4 días".
 function tiempoEvolucion(dias) {
   if(dias===null||dias===undefined) return null;
-  if(dias < 14) {
-    return {valor:dias, unidad:dias===1?'día':'días', corto:dias+'d'};
+  if(dias < 7) {
+    return {valor:dias, unidad:dias===1?'día':'días', corto:dias+'d', compacto:dias+'d'};
   }
   if(dias < 60) {
-    const sem = Math.round(dias/7);
-    return {valor:sem, unidad:sem===1?'semana':'semanas', corto:'sem '+sem};
+    const semanas = Math.floor(dias/7);
+    const restDias = dias % 7;
+    let corto = `${semanas} ${semanas===1?'semana':'semanas'}`;
+    let compacto = `${semanas}sem`;
+    if(restDias>0){ corto += ` ${restDias} ${restDias===1?'día':'días'}`; compacto += ` ${restDias}d`; }
+    return {valor:semanas, unidad:semanas===1?'semana':'semanas', corto, compacto};
   }
-  const mes = Math.round(dias/30.44);
-  return {valor:mes, unidad:mes===1?'mes':'meses', corto:'mes '+mes};
+  const meses = Math.floor(dias/30);
+  const restDias = dias - meses*30;
+  const semanas = Math.floor(restDias/7);
+  let corto = `${meses} ${meses===1?'mes':'meses'}`;
+  let compacto = `${meses}m`;
+  if(semanas>0){ corto += ` ${semanas} ${semanas===1?'semana':'semanas'}`; compacto += ` ${semanas}sem`; }
+  return {valor:meses, unidad:meses===1?'mes':'meses', corto, compacto};
 }
 function formatFecha(s) {
   if(!s) return '—';
@@ -2254,7 +2264,7 @@ function renderPatientList(){
         </div>
         <div class="pi-sub">${p.dx||p.institucion||'—'}</div>
       </div>
-      ${dias!==null&&estado==='tratamiento'?`<div class="pi-days">${tiempoEvolucion(dias).corto}</div>`:''}
+      ${dias!==null&&estado==='tratamiento'?`<div class="pi-days">${tiempoEvolucion(dias).compacto}</div>`:''}
     </div>`;
   }).join('');
 }
@@ -3256,7 +3266,7 @@ function renderSesCard(s,num,fechaInicio){
         <div class="ses-num">${num}</div>
         <div class="ses-fecha">${formatFecha(s.fecha)}</div>
         ${s.fase?`<span style="font-size:11px;color:var(--text-2);background:var(--surface);padding:3px 8px;border-radius:20px;">${esc(s.fase)}</span>`:''}
-        ${dias!==null?`<div class="ses-dias">${tiempoEvolucion(dias).corto}</div>`:''}
+        ${dias!==null?`<div class="ses-dias">${tiempoEvolucion(dias).compacto}</div>`:''}
         ${chip?`<div class="ses-eva">${chip}</div>`:''}
       </div>
       <div class="ses-preview" onclick="toggleSes('${s.id}')">${esc(preview.slice(0,90)+(preview.length>90?'…':''))}</div>
