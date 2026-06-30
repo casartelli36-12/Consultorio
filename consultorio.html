@@ -3722,7 +3722,7 @@ function renderCargarPlanList(){
       <div style="display:flex;flex-direction:column;gap:6px;">
         ${dias.map(d=>{
           const nEj=(d.ejercicios||[]).filter(e=>(e.nombre||'').trim()).length;
-          return `<button onclick="elegirDiaPlan('${pl.id}','${d.id}')"
+          return `<button type="button" onclick="elegirDiaPlan('${pl.id}','${d.id}')"
             style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;text-align:left;font-family:Inter,sans-serif;">
             <span style="font-size:12.5px;color:var(--text);font-weight:600;">${d.lugar==='domicilio'?'🏠':'🏥'} ${esc(d.nombre||'Día')}</span>
             <span style="font-size:11px;color:var(--text-3);">${nEj} ejercicio${nEj!==1?'s':''}</span>
@@ -3733,21 +3733,27 @@ function renderCargarPlanList(){
   }).join('') || '<div style="text-align:center;padding:20px;color:var(--text-3);font-size:13px;">Los planes todavía no tienen días cargados.</div>';
 }
 function elegirDiaPlan(planId, diaId){
-  const {pl,dia}=findPlanDia(planId,diaId);
-  if(!pl||!dia||!cargarPlanTarget) return;
-  const ejercicios=(dia.ejercicios||[]).filter(e=>(e.nombre||'').trim())
-    .map(e=>({nombre:e.nombre,series:e.series,reps:e.reps,kg:e.kg,rir:e.rir,nota:e.nota,bloque:e.bloque,categoria:e.categoria||''}));
-  if(!ejercicios.length){showToast('Ese día del plan no tiene ejercicios cargados');closeModalCargarPlan();return;}
-  const ref={planId:pl.id, planNombre:pl.nombre||'Plan', diaId:dia.id, diaNombre:dia.nombre||'Día'};
-  const p=getPatient(currentPatientId); const ep=getEpData(p);
-  const ses=(ep.sesiones||[]).find(s=>s.id===cargarPlanTarget);
-  if(ses){
+  try {
+    if(!cargarPlanTarget){ console.error('elegirDiaPlan: no hay sesión destino (cargarPlanTarget vacío)'); alert('No se pudo identificar la sesión. Cerrá la ventana e intentá de nuevo desde el botón "Cargar desde plan".'); return; }
+    const {pl,dia}=findPlanDia(planId,diaId);
+    if(!pl){ console.error('elegirDiaPlan: no se encontró el plan', planId); alert('No se encontró ese plan. Cerrá la ventana e intentá de nuevo.'); return; }
+    if(!dia){ console.error('elegirDiaPlan: no se encontró el día del plan', diaId); alert('No se encontró ese día del plan. Cerrá la ventana e intentá de nuevo.'); return; }
+    const ejercicios=(dia.ejercicios||[]).filter(e=>(e.nombre||'').trim())
+      .map(e=>({nombre:e.nombre,series:e.series,reps:e.reps,kg:e.kg,rir:e.rir,nota:e.nota,bloque:e.bloque,categoria:e.categoria||''}));
+    if(!ejercicios.length){showToast('Ese día del plan no tiene ejercicios cargados');closeModalCargarPlan();return;}
+    const ref={planId:pl.id, planNombre:pl.nombre||'Plan', diaId:dia.id, diaNombre:dia.nombre||'Día'};
+    const p=getPatient(currentPatientId); const ep=getEpData(p);
+    const ses=(ep.sesiones||[]).find(s=>s.id===cargarPlanTarget);
+    if(!ses){ console.error('elegirDiaPlan: no se encontró la sesión destino', cargarPlanTarget); alert('No se encontró la sesión donde cargar el plan. Cerrá la ventana e intentá de nuevo.'); return; }
     ses.ejercicios=ejercicios.map(e=>({...e}));
     ses.planRef=ref;
     saveDB(); renderTab();
+    closeModalCargarPlan();
+    showToast('Ejercicios del plan cargados ✓');
+  } catch(err) {
+    console.error('elegirDiaPlan: error inesperado', err);
+    alert('Hubo un error al cargar el plan: '+err.message);
   }
-  closeModalCargarPlan();
-  showToast('Ejercicios del plan cargados ✓');
 }
 function quitarPlanRefDeSes(sesId){
   const p=getPatient(currentPatientId); const ep=getEpData(p);
