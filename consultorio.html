@@ -3898,6 +3898,8 @@ function renderEvolucion(panel){
 
   const dolorDiariaData = sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:getDolorDiarioSesion(s)}));
   const dolorEntrenoData= sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:getDolorSesion(s)}));
+  const rpeData   = sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:getRpeSesion(s)}));
+  const duracionData = sesiones.map(s=>{const d=parseFloat(s.duracion); return {label:formatFechaCorta(s.fecha), value:isNaN(d)?null:d};});
   const ciData    = sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:getCargaInterna(s)}));
   const ceData    = sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:calcVolumenSesion(s.ejercicios||[])}));
 
@@ -3933,6 +3935,14 @@ function renderEvolucion(panel){
           {name:'EVA diaria',color:'var(--blue-chip)',data:dolorDiariaData},
           {name:'EVA entrenamiento',color:'var(--red)',data:dolorEntrenoData}
         ],{min:0,max:10,emptyMsg:'Todavía no hay sesiones registradas.'})}
+      </div>
+      <div class="home-card">
+        <div class="home-card-title">💪 RPE de sesión (esfuerzo percibido)</div>
+        ${buildBarChartSVG([{name:'RPE',color:'var(--red)',data:rpeData}],{min:0,max:10,emptyMsg:'Cargá el RPE en las sesiones para ver este gráfico.'})}
+      </div>
+      <div class="home-card">
+        <div class="home-card-title">⏱️ Duración de sesión (min)</div>
+        ${buildBarChartSVG([{name:'Duración',color:'var(--blue-chip)',data:duracionData}],{emptyMsg:'Cargá la duración en las sesiones para ver este gráfico.'})}
       </div>
       <div class="home-card">
         <div class="home-card-title">🔥 Carga interna (RPE × duración)</div>
