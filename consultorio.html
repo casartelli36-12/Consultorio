@@ -3611,7 +3611,7 @@ function copiarUltimaSesionInline(sesId){
   if(!ejercicios.length){showToast('La última sesión no tiene ejercicios cargados');return;}
   const ses=(ep.sesiones||[]).find(s=>s.id===sesId);
   if(!ses) return;
-  ses.ejercicios=ejercicios.map(e=>({...e}));
+  ses.ejercicios=ejercicios.map(sanitizeEjercicio);
   if(!ses.fase && ultima.fase) ses.fase=ultima.fase;
   delete ses.planRef;
   saveDB(); renderTab();
@@ -3647,7 +3647,7 @@ function aplicarPlantilla(id){
   const p=getPatient(currentPatientId); const ep=getEpData(p);
   const ses=(ep.sesiones||[]).find(s=>s.id===plantillaTarget);
   if(!ses) return;
-  ses.ejercicios=pl.ejercicios.map(e=>({...e}));
+  ses.ejercicios=pl.ejercicios.map(sanitizeEjercicio);
   delete ses.planRef;
   saveDB();
   closeModalPlantillas();
@@ -3732,14 +3732,24 @@ function renderCargarPlanList(){
     </div>`;
   }).join('') || '<div style="text-align:center;padding:20px;color:var(--text-3);font-size:13px;">Los planes todavía no tienen días cargados.</div>';
 }
+// Asegura que un ejercicio nunca tenga campos 'undefined' antes de guardarlo en
+// Firebase (que rechaza el guardado entero si cualquier propiedad es undefined,
+// algo que pasaba con ejercicios viejos o de planes que nunca llegaron a completar
+// alguna columna, ej. RIR).
+function sanitizeEjercicio(e){
+  return {
+    nombre:e.nombre||'', series:e.series||'', reps:e.reps||'', kg:e.kg||'',
+    rir:e.rir||'', nota:e.nota||'', bloque:e.bloque||'', categoria:e.categoria||'',
+  };
+}
+
 function elegirDiaPlan(planId, diaId){
   try {
     if(!cargarPlanTarget){ console.error('elegirDiaPlan: no hay sesión destino (cargarPlanTarget vacío)'); alert('No se pudo identificar la sesión. Cerrá la ventana e intentá de nuevo desde el botón "Cargar desde plan".'); return; }
     const {pl,dia}=findPlanDia(planId,diaId);
     if(!pl){ console.error('elegirDiaPlan: no se encontró el plan', planId); alert('No se encontró ese plan. Cerrá la ventana e intentá de nuevo.'); return; }
     if(!dia){ console.error('elegirDiaPlan: no se encontró el día del plan', diaId); alert('No se encontró ese día del plan. Cerrá la ventana e intentá de nuevo.'); return; }
-    const ejercicios=(dia.ejercicios||[]).filter(e=>(e.nombre||'').trim())
-      .map(e=>({nombre:e.nombre,series:e.series,reps:e.reps,kg:e.kg,rir:e.rir,nota:e.nota,bloque:e.bloque,categoria:e.categoria||''}));
+    const ejercicios=(dia.ejercicios||[]).filter(e=>(e.nombre||'').trim()).map(sanitizeEjercicio);
     if(!ejercicios.length){showToast('Ese día del plan no tiene ejercicios cargados');closeModalCargarPlan();return;}
     const ref={planId:pl.id, planNombre:pl.nombre||'Plan', diaId:dia.id, diaNombre:dia.nombre||'Día'};
     const p=getPatient(currentPatientId); const ep=getEpData(p);
