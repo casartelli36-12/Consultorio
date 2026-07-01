@@ -3178,10 +3178,14 @@ function computeBloqueLabels(ejercicios){
     return b+counts[b];
   });
 }
-function buildEjTableEditable(sesId, ejercicios) {
-  const labels = computeBloqueLabels(ejercicios);
-  const n = ejercicios.length;
-  const rows = ejercicios.map((e,i) => `
+// Sección de una categoría clínica dentro de la tabla editable de ejercicios de una sesión
+// (mismo criterio que buildPlanEjSectionTable, para que sesión y plan compartan el mismo
+// formato visual — así lo que se carga desde el plan no queda "desordenado" en la sesión).
+function buildSesEjSectionTable(sesId, ejercicios, catId){
+  const sub=ejercicios.map((e,i)=>({e,i})).filter(x=>(x.e.categoria||'')===catId);
+  const rows=sub.map(x=>{
+    const e=x.e, i=x.i;
+    return `
     <div class="ej-row ${e.bloque?'ej-grouped':''}" id="ejrow_${sesId}_${i}">
       <input class="ej-input bloque" type="text" value="${esc(e.bloque||'')}" placeholder="—" maxlength="2" title="Superserie"
         oninput="updateEjField('${sesId}',${i},'bloque',this.value)">
@@ -3198,12 +3202,12 @@ function buildEjTableEditable(sesId, ejercicios) {
       <input class="ej-input nota" type="text" value="${esc(e.nota||'')}" placeholder="notas…"
         oninput="updateEjField('${sesId}',${i},'nota',this.value)">
       <div class="ej-row-actions">
-        <span class="ej-drag-handle" data-kind="ses" data-ses="${sesId}" title="Mantené y arrastrá para reordenar">⠿</span>
+        <span class="ej-drag-handle" data-kind="ses" data-ses="${sesId}" data-cat="${catId||''}" title="Mantené y arrastrá para reordenar">⠿</span>
         <button class="btn-ej-del" onclick="removeEjFromSes('${sesId}',${i})" title="Eliminar">×</button>
       </div>
-    </div>`).join('');
-
-  return `<div class="ej-table-wrap" id="ejtable_${sesId}">
+    </div>`;
+  }).join('');
+  return `<div class="ej-table-wrap" id="sejtable_${sesId}_${catId||'sincat'}">
     <div class="ej-table-head">
       <span style="text-align:center">Sup.</span>
       <span>Ejercicio</span>
@@ -3215,8 +3219,27 @@ function buildEjTableEditable(sesId, ejercicios) {
       <span></span>
     </div>
     ${rows}
-    <button class="btn-add-ej-row" onclick="addEjToSes('${sesId}')">+ Agregar ejercicio</button>
+    <button class="btn-add-ej-row" onclick="addEjToSes('${sesId}','${catId||''}')">+ Agregar ejercicio</button>
   </div>`;
+}
+
+// Tabla completa de ejercicios de una sesión, agrupada por categoría clínica —
+// mismo formato que el plan (buildPlanEjTable), para que un día cargado desde el
+// plan se vea igual de ordenado en la sesión.
+function buildSesEjTable(sesId, ejercicios){
+  let html=CATEGORIAS_EJ.map(cat=>`
+    <div class="ej-cat-section">
+      <div class="ej-cat-title">${cat.label}</div>
+      ${buildSesEjSectionTable(sesId,ejercicios,cat.id)}
+    </div>`).join('');
+  const sinCat=ejercicios.filter(e=>!e.categoria);
+  if(sinCat.length){
+    html+=`<div class="ej-cat-section">
+      <div class="ej-cat-title">Sin categoría</div>
+      ${buildSesEjSectionTable(sesId,ejercicios,'')}
+    </div>`;
+  }
+  return html;
 }
 
 function updateEjField(sesId, idx, field, val) {
@@ -3229,18 +3252,18 @@ function updateEjField(sesId, idx, field, val) {
   autoSaveTimer = setTimeout(saveDB, 800);
 }
 
-function addEjToSes(sesId) {
+function addEjToSes(sesId, categoria) {
   const p = getPatient(currentPatientId);
   const ep = getEpData(p);
   const ses = (ep.sesiones||[]).find(s=>s.id===sesId);
   if(!ses) return;
   if(!ses.ejercicios) ses.ejercicios = [];
-  ses.ejercicios.push({nombre:'',series:'',reps:'',kg:'',nota:'',bloque:''});
+  ses.ejercicios.push({nombre:'',series:'',reps:'',kg:'',nota:'',bloque:'',categoria:categoria||''});
   saveDB();
-  // Rebuild solo la tabla, no toda la sesión (evitar perder foco en otros campos)
-  const tableEl = document.getElementById('ejtable_'+sesId);
-  if(tableEl) tableEl.outerHTML = buildEjTableEditable(sesId, ses.ejercicios);
-  // Si no existe el elemento (primera vez), hacer re-render completo
+  // Rebuild solo la sección de esa categoría, no toda la sesión (evitar perder foco en otros campos)
+  const tableEl = document.getElementById('sejtable_'+sesId+'_'+(categoria||'sincat'));
+  if(tableEl) tableEl.outerHTML = buildSesEjSectionTable(sesId, ses.ejercicios, categoria||'');
+  // Si no existe el elemento (primera vez que aparece esa sección), hacer re-render completo
   else renderTab();
 }
 
@@ -3309,8 +3332,10 @@ function ejDragEnd(e){
     const ses=(ep.sesiones||[]).find(s=>s.id===sesId);
     if(!ses||!ses.ejercicios) return;
     const arr=ses.ejercicios;
-    if(finalOrder.length!==arr.length) return;
-    ses.ejercicios=finalOrder.map(rEl=>arr[ejRowRealIdx(rEl)]);
+    const catSlots=[]; arr.forEach((ex,i)=>{ if((ex.categoria||'')===catId) catSlots.push(i); });
+    if(catSlots.length!==finalOrder.length) return;
+    const newItems=finalOrder.map(rEl=>arr[ejRowRealIdx(rEl)]);
+    catSlots.forEach((slotIdx,k)=>{ arr[slotIdx]=newItems[k]; });
     saveDB(); renderTab();
   } else if(kind==='plan'){
     const {dia}=findPlanDia(planId,diaId);
@@ -3338,9 +3363,7 @@ function moveEjInSes(sesId, idx, dir) {
   if(newIdx < 0 || newIdx >= arr.length) return;
   [arr[idx], arr[newIdx]] = [arr[newIdx], arr[idx]];
   saveDB();
-  const tableEl = document.getElementById('ejtable_'+sesId);
-  if(tableEl) tableEl.outerHTML = buildEjTableEditable(sesId, arr);
-  else renderTab();
+  renderTab();
 }
 
 function removeEjFromSes(sesId, idx) {
@@ -3409,7 +3432,7 @@ function renderSesCard(s,num,fechaInicio){
                 </button>
               </div>
             </div>
-            ${buildEjTableEditable(s.id, ejercicios)}
+            ${buildSesEjTable(s.id, ejercicios)}
           </div>
           <div class="ses-field"><label>EVA entrenamiento</label><input type="number" min="0" max="10" value="${esc(s.dolor!=null?s.dolor:'')}" oninput="updateSes('${s.id}','dolor',this.value)"></div>
           <div class="ses-field"><label>RPE (esfuerzo 0-10)</label><input type="number" min="0" max="10" value="${esc(s.rpe!=null?s.rpe:'')}" oninput="updateSes('${s.id}','rpe',this.value)"></div>
@@ -4565,24 +4588,7 @@ function exportRutinaPDF(sesId){
   const s=(ep.sesiones||[]).find(x=>x.id===sesId);
   if(!s) return;
   const ejercicios=s.ejercicios||[];
-  const labels=computeBloqueLabels(ejercicios);
-
-  let rowsHtml='';
-  let i=0;
-  while(i<ejercicios.length){
-    const b=(ejercicios[i].bloque||'').trim().toUpperCase();
-    if(b){
-      let group=[]; let j=i;
-      while(j<ejercicios.length && (ejercicios[j].bloque||'').trim().toUpperCase()===b){
-        group.push(rtExRow(ejercicios[j],labels[j])); j++;
-      }
-      rowsHtml += `<div class="rt-block"><div class="rt-block-tag">Superserie ${esc(b)}</div>${group.join('')}</div>`;
-      i=j;
-    } else {
-      rowsHtml += rtExRow(ejercicios[i],'');
-      i++;
-    }
-  }
+  const rowsHtml=ejercicios.length?buildEjGroupsHTMLPorCategoria(ejercicios):'';
 
   const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
 <title>Rutina · ${esc(p.nombre)}</title>
@@ -4596,6 +4602,8 @@ function exportRutinaPDF(sesId){
   .rt-meta{font-size:10px;color:#5A6373;text-align:right;}
   .rt-patient{font-size:14px;font-weight:700;margin-bottom:1px;}
   .rt-sub{font-size:11px;color:#5A6373;margin-bottom:8px;}
+  .rt-cat-title{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#1A4E8C;margin:6px 0 3px;}
+  .rt-cat-title:first-of-type{margin-top:0;}
   .rt-block{border:1px solid #E2E5EA;border-radius:6px;margin-bottom:5px;padding:5px 10px;background:#F7F8FA;}
   .rt-block-tag{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#E87722;margin-bottom:3px;}
   .rt-ex{padding:4px 0;border-bottom:1px solid #E2E5EA;}
