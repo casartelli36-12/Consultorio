@@ -4451,6 +4451,34 @@ function getCargaInternaTotal(s){
   if(ci==null && cc==null) return null;
   return (ci||0)+(cc||0);
 }
+// Carga aguda:crónica (ACWR, método de promedio móvil de Hulin/Gabbett): agrupa la carga
+// interna total por semana (lunes a domingo) desde el inicio del episodio, y compara la
+// carga de cada semana ("aguda") contra el promedio de esa semana + las 3 anteriores
+// ("crónica"). Zona óptima consensuada en la literatura de ciencias del deporte: 0.8-1.3.
+// Por debajo: probable desentrenamiento. Por encima: pico de carga, mayor riesgo de lesión.
+function computeACWRSemanal(sesiones, fechaInicio){
+  const conFecha=(sesiones||[]).filter(s=>s.fecha);
+  if(!conFecha.length) return [];
+  const inicioRef=fechaInicio?new Date(fechaInicio+'T00:00:00'):new Date(conFecha[0].fecha+'T00:00:00');
+  const ultimaFecha=conFecha.reduce((max,s)=>s.fecha>max?s.fecha:max, conFecha[0].fecha);
+  let cur=getWeekMon(inicioRef);
+  const fin=getWeekMon(new Date(ultimaFecha+'T00:00:00'));
+  const semanas=[];
+  let guard=0;
+  while(cur<=fin && guard<104){ // tope de 2 años para evitar loops infinitos
+    const inicioYmd=ymd(cur), finYmd=ymd(addDays(cur,6));
+    const total=conFecha.filter(s=>s.fecha>=inicioYmd && s.fecha<=finYmd).reduce((sum,s)=>sum+(getCargaInternaTotal(s)||0),0);
+    semanas.push({inicio:inicioYmd, total});
+    cur=addDays(cur,7); guard++;
+  }
+  function acwrColor(v){ if(v==null) return '#9AA0AD'; if(v>1.3) return 'var(--red)'; if(v<0.8) return '#E0A82E'; return 'var(--green)'; }
+  return semanas.map((w,i)=>{
+    const ventana=semanas.slice(Math.max(0,i-3), i+1).map(x=>x.total);
+    const cronica=ventana.reduce((a,b)=>a+b,0)/ventana.length;
+    const ratio=cronica>0?Math.round((w.total/cronica)*100)/100:null;
+    return {label:formatFechaCorta(w.inicio), value:ratio, color:acwrColor(ratio)};
+  });
+}
 // Carga externa (índice de volumen): suma de series×reps×kg (si no hay kg numérico, cuenta como peso corporal = 1)
 function calcVolumenSesion(ejercicios){
   let vol=0, conDatos=false;
@@ -4477,6 +4505,14 @@ function buildBarChartSVG(seriesArr, opts={}){
   const groupPad=groupW*0.16;
   const barGap=m>1?2:0;
   const barW=Math.max((groupW-groupPad*2-barGap*(m-1))/m,2);
+
+  let bandRect='';
+  if(opts.bandMin!=null && opts.bandMax!=null){
+    const byTop=h-padB-((opts.bandMax-min)/range)*plotH;
+    const byBot=h-padB-((opts.bandMin-min)/range)*plotH;
+    const top=Math.max(Math.min(byTop,byBot),padT), bot=Math.min(Math.max(byTop,byBot),h-padB);
+    if(bot>top) bandRect=`<rect x="${padL}" y="${top.toFixed(1)}" width="${(w-padL-padR).toFixed(1)}" height="${(bot-top).toFixed(1)}" fill="var(--green)" opacity="0.12"/><text x="${w-padR}" y="${(top+11).toFixed(1)}" font-size="9" text-anchor="end" fill="var(--green)" font-family="Inter,sans-serif">${esc(opts.bandLabel||'zona óptima')}</text>`;
+  }
 
   let bars='';
   labels.forEach((lab,i)=>{
@@ -4507,6 +4543,7 @@ function buildBarChartSVG(seriesArr, opts={}){
     ${grid}
     <text x="2" y="${padT+4}" font-size="9" fill="var(--text-3)" font-family="Inter,sans-serif">${max}</text>
     <text x="2" y="${h-padB+4}" font-size="9" fill="var(--text-3)" font-family="Inter,sans-serif">${min}</text>
+    ${bandRect}
     ${bars}
     ${thresholdLine}
     ${labelsX}
@@ -4525,13 +4562,11 @@ function renderEvolucion(panel){
   const dolorDiariaData = sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:getDolorDiarioSesion(s)}));
   const dolorEntrenoData= sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:getDolorSesion(s)}));
   const rpeData   = sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:getRpeSesion(s)}));
-  const duracionData = sesiones.map(s=>{const d=parseFloat(s.duracion); return {label:formatFechaCorta(s.fecha), value:isNaN(d)?null:d};});
   const ciData    = sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:getCargaInterna(s)}));
   const rpeClubData = sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:getRpeClub(s)}));
-  const ciTotalData = sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:getCargaInternaTotal(s)}));
-  const ceData    = sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:calcVolumenSesion(s.ejercicios||[])}));
 
   const hayDolor = dolorDiariaData.some(d=>d.value!=null) || dolorEntrenoData.some(d=>d.value!=null);
+  const acwrData = computeACWRSemanal(sesiones, ep.fechaInicio||p.fechaInicio);
 
   const promGroups={};
   cuestionarios.forEach(c=>{
@@ -4569,26 +4604,19 @@ function renderEvolucion(panel){
         ${buildBarChartSVG([{name:'RPE',color:'var(--red)',data:rpeData}],{min:0,max:10,emptyMsg:'Cargá el RPE en las sesiones para ver este gráfico.'})}
       </div>
       <div class="home-card">
-        <div class="home-card-title">⏱️ Duración de sesión (min)</div>
-        ${buildBarChartSVG([{name:'Duración',color:'var(--blue-chip)',data:duracionData}],{emptyMsg:'Cargá la duración en las sesiones para ver este gráfico.'})}
-      </div>
-      <div class="home-card">
         <div class="home-card-title">🔥 Carga interna (RPE × duración)</div>
         ${buildBarChartSVG([{name:'Carga interna',color:'var(--orange)',data:ciData}],{emptyMsg:'Cargá RPE y duración en las sesiones para ver este gráfico.'})}
+      </div>
+      <div class="home-card">
+        <div class="home-card-title">🚦 Carga aguda:crónica (ACWR) — riesgo de sobrecarga</div>
+        <div style="font-size:11px;color:var(--text-3);margin-bottom:8px;">Compara la carga de esta semana contra el promedio de las últimas 4. Verde = zona óptima (0.8-1.3). Amarillo = poca carga. Rojo = pico de carga, más riesgo de lesión.</div>
+        ${buildBarChartSVG([{name:'ACWR',data:acwrData}],{min:0,max:2,bandMin:0.8,bandMax:1.3,bandLabel:'zona óptima',emptyMsg:'Necesitás al menos un par de semanas con RPE y duración cargados para ver este gráfico.'})}
       </div>
       ${p.futbolista?`
       <div class="home-card">
         <div class="home-card-title">⚽ RPE entrenamiento club</div>
         ${buildBarChartSVG([{name:'RPE club',color:'var(--orange)',data:rpeClubData}],{min:0,max:10,emptyMsg:'Cargá el RPE del club en las sesiones para ver este gráfico.'})}
-      </div>
-      <div class="home-card">
-        <div class="home-card-title">🔥 Carga interna total del día (consultorio + club)</div>
-        ${buildBarChartSVG([{name:'Carga total',color:'var(--red)',data:ciTotalData}],{emptyMsg:'Cargá RPE/duración de consultorio y club para ver este gráfico.'})}
       </div>`:''}
-      <div class="home-card">
-        <div class="home-card-title">🏋 Carga externa (volumen series×reps×kg)</div>
-        ${buildBarChartSVG([{name:'Carga externa',color:'var(--blue-chip)',data:ceData}],{emptyMsg:'Cargá series/reps/kg en los ejercicios para ver este gráfico.'})}
-      </div>
       ${lsiKeys.length? lsiKeys.map(key=>`
         <div class="home-card">
           <div class="home-card-title">⚖️ LSI% — ${esc(lsiGroups[key].label)}</div>
