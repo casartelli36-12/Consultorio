@@ -1561,6 +1561,33 @@ const QUESTIONNAIRES = {
     ],
   },
 
+  WELLNESS: {
+    nombre: 'Wellness',
+    nombreCompleto: 'Cuestionario de bienestar diario (adaptado de Hooper / McLean)',
+    region: 'Bienestar / Carga (transversal)',
+    descripcion: 'Sueño, fatiga, dolor muscular, estrés y ánimo. Pensado para completarse seguido (cada sesión o entre sesiones) y ver la tendencia en el tiempo, no como una evaluación única.',
+    escala: [
+      {v:1, l:'1 — Muy malo/a'},
+      {v:2, l:'2 — Malo/a'},
+      {v:3, l:'3 — Regular'},
+      {v:4, l:'4 — Bueno/a'},
+      {v:5, l:'5 — Muy bueno/a'},
+    ],
+    invertido: false, // 5 = mejor bienestar en todos los items
+    subescalas: [
+      {
+        id:'Total', label:'Bienestar general',
+        items:[
+          {t:'Calidad de sueño (anoche)'},
+          {t:'Nivel de energía / fatiga (contrario a fatiga: 5 = sin fatiga)'},
+          {t:'Dolor muscular general (5 = sin dolor muscular)'},
+          {t:'Nivel de estrés (5 = sin estrés)'},
+          {t:'Estado de ánimo / humor'},
+        ],
+      },
+    ],
+  },
+
 };
 
 // Un item de cuestionario puede ser un string simple (usa la escala/dirección por
@@ -1688,6 +1715,10 @@ function calcularScoresCuestionario(tipoId, respuestas) {
       </div>
       <div class="modal-2col">
         <div class="modal-field"><label>Deporte / Posición</label><input type="text" id="mDeporte" placeholder="Fútbol / Defensor"></div>
+        <div class="modal-field full" style="display:flex;align-items:center;gap:8px;">
+          <input type="checkbox" id="mFutbolista" style="width:16px;height:16px;">
+          <label for="mFutbolista" style="margin:0;">⚽ Juega al fútbol / entrena en un club (pedir RPE club en las sesiones)</label>
+        </div>
         <div class="modal-field"><label>Cirujano / Médico</label><input type="text" id="mCirujano" placeholder="Dr. ..."></div>
       </div>
       <div class="modal-field"><label>Diagnóstico principal</label><input type="text" id="mDx" class="dx-input" placeholder="Escribí para buscar en la lista…" autocomplete="off"></div>
@@ -2122,6 +2153,12 @@ const PROM_BANDAS = {
     {min:27, clase:'prom-mod', label:'Kinesiofobia moderada'},
     {min:-Infinity, clase:'prom-severa', label:'Kinesiofobia alta'},
   ],
+  WELLNESS: [
+    {min:80, clase:'prom-ok', label:'Buen bienestar'},
+    {min:60, clase:'prom-leve', label:'Bienestar regular'},
+    {min:40, clase:'prom-mod', label:'Bienestar bajo — seguir de cerca'},
+    {min:-Infinity, clase:'prom-severa', label:'Bienestar muy bajo — señal de alerta'},
+  ],
 };
 // tipoId es opcional: si se pasa y existe una banda específica para ese cuestionario,
 // se usa esa. Si no, se cae a la banda genérica (mismo criterio que antes).
@@ -2517,6 +2554,7 @@ const REGION_COLORS = {
   'Cervical': '#6D4C41',
   'Lumbar': '#795548',
   'Kinesiofobia (transversal)': '#8E44AD',
+  'Bienestar / Carga (transversal)': '#0E9594',
 };
 function regionColor(region){ return REGION_COLORS[region] || '#5A6373'; }
 
@@ -3377,6 +3415,8 @@ function removeEjFromSes(sesId, idx) {
 }
 
 function renderSesCard(s,num,fechaInicio){
+  const pFut=getPatient(currentPatientId);
+  const esFutbolista=!!(pFut&&pFut.futbolista);
   const dias=(s.fecha&&fechaInicio)?Math.floor((new Date(s.fecha)-new Date(fechaInicio))/86400000):null;
   const ejercicios=s.ejercicios||[];
   const labels=computeBloqueLabels(ejercicios);
@@ -3407,13 +3447,13 @@ function renderSesCard(s,num,fechaInicio){
           <div class="ses-field full"><label>Cómo llegó</label><textarea oninput="updateSes('${s.id}','subjetivo',this.value)">${esc(s.subjetivo||'')}</textarea></div>
           <div class="ses-field"><label>EVA diaria (general)</label><input type="number" min="0" max="10" value="${esc(s.dolorDiario!=null?s.dolorDiario:'')}" oninput="updateSes('${s.id}','dolorDiario',this.value)"></div>
           <div class="ses-field"></div>
-          <div class="ses-field full" style="background:var(--orange-light);border:1px solid var(--orange);border-radius:var(--radius-sm);padding:8px 10px;margin:2px 0 4px;">
+          ${esFutbolista?`<div class="ses-field full" style="background:var(--orange-light);border:1px solid var(--orange);border-radius:var(--radius-sm);padding:8px 10px;margin:2px 0 4px;">
             <label style="color:var(--orange);">⚽ Entrenamiento en el club hoy <span style="font-weight:400;text-transform:none;letter-spacing:0;">— preguntarle antes de que arranque</span></label>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px;">
               <div><label style="font-size:10px;">RPE club (0-10)</label><input type="number" min="0" max="10" value="${esc(s.rpeClub!=null?s.rpeClub:'')}" oninput="updateSes('${s.id}','rpeClub',this.value)"></div>
               <div><label style="font-size:10px;">Duración club (min)</label><input type="number" min="0" value="${esc(s.duracionClub!=null?s.duracionClub:'')}" oninput="updateSes('${s.id}','duracionClub',this.value)"></div>
             </div>
-          </div>
+          </div>`:''}
           <div class="ses-field full">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;gap:8px;flex-wrap:wrap;">
               <label style="margin:0">Ejercicios</label>
@@ -4536,6 +4576,7 @@ function renderEvolucion(panel){
         <div class="home-card-title">🔥 Carga interna (RPE × duración)</div>
         ${buildBarChartSVG([{name:'Carga interna',color:'var(--orange)',data:ciData}],{emptyMsg:'Cargá RPE y duración en las sesiones para ver este gráfico.'})}
       </div>
+      ${p.futbolista?`
       <div class="home-card">
         <div class="home-card-title">⚽ RPE entrenamiento club</div>
         ${buildBarChartSVG([{name:'RPE club',color:'var(--orange)',data:rpeClubData}],{min:0,max:10,emptyMsg:'Cargá el RPE del club en las sesiones para ver este gráfico.'})}
@@ -4543,7 +4584,7 @@ function renderEvolucion(panel){
       <div class="home-card">
         <div class="home-card-title">🔥 Carga interna total del día (consultorio + club)</div>
         ${buildBarChartSVG([{name:'Carga total',color:'var(--red)',data:ciTotalData}],{emptyMsg:'Cargá RPE/duración de consultorio y club para ver este gráfico.'})}
-      </div>
+      </div>`:''}
       <div class="home-card">
         <div class="home-card-title">🏋 Carga externa (volumen series×reps×kg)</div>
         ${buildBarChartSVG([{name:'Carga externa',color:'var(--blue-chip)',data:ceData}],{emptyMsg:'Cargá series/reps/kg en los ejercicios para ver este gráfico.'})}
@@ -4643,6 +4684,7 @@ function openNewPatient(){
   editingPatientId=null;document.getElementById('modalTitle').textContent='Nuevo paciente';
   populateCatSelect('');
   ['mNombre','mEdad','mContacto','mInstitucion','mDeporte','mCirujano','mDx','mEstructura','mFechaInicio','mCirugia','mAntecedentes','mObjetivos','mMedicacion','mContra','mAlerta'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('mFutbolista').checked=false;
   renderDxDetailFieldsModal('',{});
   document.getElementById('modalOverlay').classList.add('open');
 }
@@ -4652,6 +4694,7 @@ function openEditPatient(){
   document.getElementById('mNombre').value=p.nombre||'';document.getElementById('mEdad').value=p.edad||'';
   document.getElementById('mContacto').value=p.contacto||'';document.getElementById('mInstitucion').value=p.institucion||'';
   document.getElementById('mDeporte').value=p.deporte||'';document.getElementById('mCirujano').value=p.cirujano||'';
+  document.getElementById('mFutbolista').checked=!!p.futbolista;
   document.getElementById('mDx').value=p.dx||'';document.getElementById('mEstructura').value=p.estructura||'';
   document.getElementById('mFechaInicio').value=p.fechaInicio||'';document.getElementById('mCirugia').value=p.cirugia||'';
   document.getElementById('mAntecedentes').value=p.antecedentes||'';document.getElementById('mObjetivos').value=p.objetivos||'';
@@ -4664,7 +4707,7 @@ function closeModal(){document.getElementById('modalOverlay').classList.remove('
 function savePatient(){
   const nombre=document.getElementById('mNombre').value.trim();if(!nombre){alert('El nombre es obligatorio.');return;}
   const dxVal=document.getElementById('mDx').value;
-  const data={nombre,categoria:document.getElementById('mCategoria').value,edad:document.getElementById('mEdad').value,contacto:document.getElementById('mContacto').value,institucion:document.getElementById('mInstitucion').value,deporte:document.getElementById('mDeporte').value,cirujano:document.getElementById('mCirujano').value,dx:dxVal,estructura:document.getElementById('mEstructura').value,fechaInicio:document.getElementById('mFechaInicio').value,cirugia:document.getElementById('mCirugia').value,antecedentes:document.getElementById('mAntecedentes').value,objetivos:document.getElementById('mObjetivos').value,medicacion:document.getElementById('mMedicacion').value,contra:document.getElementById('mContra').value,alerta:document.getElementById('mAlerta').value,dxDetalles:collectDxDetailsFromDOM(dxVal,'dxd')};
+  const data={nombre,categoria:document.getElementById('mCategoria').value,edad:document.getElementById('mEdad').value,contacto:document.getElementById('mContacto').value,institucion:document.getElementById('mInstitucion').value,deporte:document.getElementById('mDeporte').value,futbolista:document.getElementById('mFutbolista').checked,cirujano:document.getElementById('mCirujano').value,dx:dxVal,estructura:document.getElementById('mEstructura').value,fechaInicio:document.getElementById('mFechaInicio').value,cirugia:document.getElementById('mCirugia').value,antecedentes:document.getElementById('mAntecedentes').value,objetivos:document.getElementById('mObjetivos').value,medicacion:document.getElementById('mMedicacion').value,contra:document.getElementById('mContra').value,alerta:document.getElementById('mAlerta').value,dxDetalles:collectDxDetailsFromDOM(dxVal,'dxd')};
   if(editingPatientId){const idx=DB.patients.findIndex(p=>p.id===editingPatientId);if(idx!==-1)Object.assign(DB.patients[idx],data);}
   else{DB.patients.unshift({id:uid(),sesiones:[],evaluaciones:[],cuestionarios:[],notas:'',...data});currentPatientId=DB.patients[0].id;}
   saveDB();closeModal();renderPatientList();renderPatient();
@@ -4735,6 +4778,7 @@ function renderHomeDashboard(){
     <div class="home-header">
       <h2>Hola, Lucas 👋</h2>
       <p>${hoyStr} · ${enTratamiento.length} paciente${enTratamiento.length!==1?'s':''} en tratamiento</p>
+      <p style="font-size:11px;color:var(--text-3);margin-top:2px;">Última actualización de la app: 4 de julio de 2026</p>
     </div>
 
     <div class="home-stats">
