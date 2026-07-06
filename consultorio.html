@@ -217,19 +217,22 @@ input,textarea,select{font-family:'Inter',sans-serif;}
 .semaforo-verde{background:var(--green-light);color:var(--green);}
 .semaforo-amarillo{background:#FFF8E1;color:#856B00;}
 .semaforo-rojo{background:var(--red-light);color:var(--red);}
-.mov-row{padding:10px 14px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);}
-.mov-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);margin-bottom:6px;}
-.mov-picker{display:flex;gap:6px;align-items:center;}
-.mov-grados{width:54px;border:1px solid var(--border);border-radius:6px;padding:4px 6px;font-size:12px;font-family:Inter,sans-serif;outline:none;text-align:center;}
+.mov-row{padding:12px 14px;border-bottom:1px solid var(--border);}
+.mov-row:last-child{border-bottom:none;}
+.mov-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text-2);margin-bottom:7px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.mov-label-ref{font-size:9.5px;font-weight:500;text-transform:none;letter-spacing:0;color:var(--text-3);}
+.mov-picker{display:flex;gap:8px;align-items:center;}
+.mov-grados{width:62px;border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:14px;font-weight:600;font-family:Inter,sans-serif;outline:none;text-align:center;}
 .mov-grados:focus{border-color:var(--orange);}
-.mov-nota{border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:11px;font-family:Inter,sans-serif;outline:none;color:var(--text-2);}
-.mov-hist{display:flex;gap:3px;align-items:center;margin-top:7px;overflow-x:auto;padding-bottom:2px;}
-.mov-hist-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.mov-nota{border:1px solid var(--border);border-radius:8px;padding:5px 9px;font-size:11.5px;font-family:Inter,sans-serif;outline:none;color:var(--text-2);width:100%;margin-top:7px;}
+.mov-hist{display:flex;gap:4px;align-items:center;margin-top:8px;overflow-x:auto;padding-bottom:2px;}
+.mov-hist-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
 .mov-hist-dot.verde{background:var(--green);}
 .mov-hist-dot.amarillo{background:#E8A400;}
 .mov-hist-dot.rojo{background:var(--red);}
 .mov-hist-dot.vacio{background:var(--border);}
-.mov-hist-empty{font-size:10px;color:var(--text-3);margin-top:6px;}
+.mov-hist-empty{font-size:10.5px;color:var(--text-3);margin-top:7px;}
+.mov-add-extra{font-size:11.5px;font-weight:600;color:var(--orange);background:none;border:none;cursor:pointer;padding:10px 14px;text-align:left;width:100%;}
 .btn-del-eval{background:none;border:none;color:var(--text-3);cursor:pointer;padding:4px;font-size:16px;}
 
 /* ── INICIO (DASHBOARD) ── */
@@ -2636,6 +2639,7 @@ const EVOLUCION_CHARTS = [
   {id:'acwr', label:'Carga aguda:crónica (ACWR)'},
   {id:'rpeClub', label:'RPE entrenamiento club', nota:'Solo aplica a pacientes marcados como futbolistas.'},
   {id:'lsi', label:'LSI% — evaluaciones'},
+  {id:'movilidad', label:'Movilidad articular (ROM) — por movimiento'},
 ];
 const EVO_DISABLED_POR_DEFECTO=['rpe','rpeClub','lsi'];
 function evoChartEnabled(id){
@@ -3133,43 +3137,121 @@ function updateMovArticulacion(val){
   saveDB();
   renderMovCard();
 }
+// Entrada de movilidad para la fecha de una sesión puntual (no necesariamente hoy) —
+// permite cargar movilidad día a día desde la ficha de sesión, no solo desde Resumen.
+function getMovEntryForFecha(ep,fecha){
+  const hist=getMovHistorial(ep);
+  let entry=hist.find(h=>h.fecha===fecha);
+  if(!entry){
+    const anteriores=hist.filter(h=>h.fecha<fecha);
+    const base=anteriores.length?anteriores[anteriores.length-1]:(hist.length?hist[hist.length-1]:null);
+    entry={id:uid(), fecha, valores:base?{...base.valores}:{}, notas:base?{...base.notas}:{}};
+    hist.push(entry);
+    hist.sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  }
+  return entry;
+}
+function updateMovilidadSesion(sesId,movKey,val){
+  const p=getPatient(currentPatientId);const ep=getEpData(p);
+  const ses=(ep.sesiones||[]).find(s=>s.id===sesId);
+  if(!ses||!ses.fecha) return;
+  const entry=getMovEntryForFecha(ep,ses.fecha);
+  if(!entry.valores)entry.valores={};
+  entry.valores[movKey]=val;
+  clearTimeout(autoSaveTimer);autoSaveTimer=setTimeout(saveDB,600);
+}
+let movSesOpenIds=new Set(); // fichas de sesión con la mini-grilla de movilidad expandida
+function toggleMovSes(sesId){
+  const p=getPatient(currentPatientId);const ep=getEpData(p);
+  const ses=(ep.sesiones||[]).find(s=>s.id===sesId);
+  if(!ses) return;
+  const el=document.getElementById('movses_'+sesId);
+  const arrow=document.getElementById('movsesArrow_'+sesId);
+  if(movSesOpenIds.has(sesId)){
+    movSesOpenIds.delete(sesId);
+    if(el) el.style.display='none';
+    if(arrow) arrow.textContent='▾';
+  } else {
+    movSesOpenIds.add(sesId);
+    if(el){ el.innerHTML=buildMovQuickHTML(ep,ses); el.style.display='block'; }
+    if(arrow) arrow.textContent='▴';
+  }
+}
+function buildMovQuickHTML(ep,ses){
+  const art=ep.movilidadArticulacion||'';
+  const fecha=ses.fecha||todayISO();
+  const entry=getMovEntryForFecha(ep,fecha);
+  const relevantKeys=art?MOV_ITEMS.filter(m=>getMovStandard(ep,m.key)).map(m=>m.key):[];
+  const items=MOV_ITEMS.filter(m=>{
+    if(m.key.startsWith('otro')) return (entry.valores||{})[m.key]!=null && (entry.valores||{})[m.key]!=='';
+    return relevantKeys.length?relevantKeys.includes(m.key):true;
+  });
+  if(!items.length) return `<div class="mov-hist-empty">Elegí la articulación en Resumen para cargar movilidad acá.</div>`;
+  return `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;">
+    ${items.map(m=>{
+      const grados=(entry.valores||{})[m.key]??'';
+      const standard=getMovStandard(ep,m.key);
+      const ev=evalMov(grados,standard);
+      const badge=ev?(ev.clase?`<span class="lsi-badge ${ev.clase}" style="font-size:9px;">${ev.label}</span>`:''):'';
+      return `<div>
+        <div style="font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;color:var(--text-3);margin-bottom:4px;">${m.label}</div>
+        <div style="display:flex;align-items:center;gap:5px;">
+          <input type="number" value="${esc(grados)}" placeholder="°" oninput="updateMovilidadSesion('${ses.id}','${m.key}',this.value)" style="width:52px;border:1px solid var(--border);border-radius:8px;padding:5px 6px;font-size:13px;font-weight:600;text-align:center;font-family:Inter,sans-serif;outline:none;">
+          ${badge}
+        </div>
+      </div>`;
+    }).join('')}
+  </div>
+  ${!art?`<div style="font-size:10px;color:var(--text-3);margin-top:8px;">Elegí la articulación en Resumen para ver el semáforo automático.</div>`:''}`;
+}
 const MOV_ITEMS=[{key:'flex',label:'Flexión'},{key:'ext',label:'Extensión'},{key:'rotInt',label:'Rot. interna'},{key:'rotExt',label:'Rot. externa'},{key:'abd',label:'Abducción'},{key:'add',label:'Aducción'},{key:'otro1',label:'Otro 1'},{key:'otro2',label:'Otro 2'}];
+let movExtraForzado=false; // el usuario pidió ver los movimientos "otro1/otro2" aunque no tengan datos todavía
+function mostrarMovExtra(){ movExtraForzado=true; renderMovCard(); }
+function buildMovRowHTML(ep,entry,hist,m,art){
+  const grados=(entry.valores||{})[m.key]??'';
+  const nota=(entry.notas||{})[m.key]||'';
+  const standard=getMovStandard(ep,m.key);
+  const ev=evalMov(grados,standard);
+  const badge=ev?(ev.clase?`<span class="lsi-badge ${ev.clase}">${ev.label}</span>`:`<span style="font-size:11px;color:var(--text-3);">${ev.label}</span>`):`<span style="font-size:11px;color:var(--text-3);">—</span>`;
+  const refTxt=standard?(standard.mode==='deficit'?'déficit ideal ≤3°':`ref. ${standard.value}°`):(art?'sin estándar':'');
+  const histDots=hist.map(h=>{
+    const he=evalMov((h.valores||{})[m.key], standard);
+    const cls=he&&he.clase?(he.clase==='lsi-ok'?'verde':he.clase==='lsi-warn'?'amarillo':'rojo'):'vacio';
+    return `<span class="mov-hist-dot ${cls}" title="${esc(formatFechaCorta(h.fecha))}${he?' — '+he.label:''}"></span>`;
+  }).join('');
+  return `<div class="mov-row">
+    <div class="mov-label"><span>${m.label}</span>${refTxt?`<span class="mov-label-ref">${refTxt}</span>`:''}</div>
+    <div class="mov-picker">
+      <input class="mov-grados" type="number" value="${esc(grados)}" placeholder="°" title="Grados medidos" oninput="updateMovilidad('${m.key}','grados',this.value)">
+      ${badge}
+    </div>
+    <input class="mov-nota" type="text" value="${esc(nota)}" placeholder="nota (opc.)" oninput="updateMovilidad('${m.key}','nota',this.value)">
+    ${hist.length?`<div class="mov-hist">${histDots}</div>`:`<div class="mov-hist-empty">Sin evolución registrada todavía</div>`}
+  </div>`;
+}
 function buildMovCardHTML(ep){
   const entry=getMovEntryActual(ep);
   const hist=getMovHistorial(ep);
   const art=ep.movilidadArticulacion||'';
+  const baseItems=MOV_ITEMS.filter(m=>!m.key.startsWith('otro'));
+  const extraItems=MOV_ITEMS.filter(m=>m.key.startsWith('otro'));
+  const relevantBase=art?baseItems.filter(m=>getMovStandard(ep,m.key)):baseItems;
+  const shownBase=relevantBase.length?relevantBase:baseItems;
+  const extraConDatos=extraItems.filter(m=>movExtraForzado||(entry.valores||{})[m.key]||hist.some(h=>(h.valores||{})[m.key]));
+  const mostrarBotonExtra=extraConDatos.length<extraItems.length;
   return `
     <div style="padding:10px 14px;background:var(--navy);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
-      <span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.06em;">Movilidad</span>
-      <select onchange="updateMovArticulacion(this.value)" style="border:none;border-radius:6px;padding:4px 6px;font-size:11px;font-family:Inter,sans-serif;outline:none;">
+      <span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.06em;">🔄 Movilidad</span>
+      <select onchange="updateMovArticulacion(this.value)" style="border:none;border-radius:6px;padding:5px 8px;font-size:11px;font-family:Inter,sans-serif;outline:none;">
         <option value="">Elegí articulación…</option>
         ${ARTICULACIONES.map(a=>`<option value="${a.id}" ${art===a.id?'selected':''}>${a.label}</option>`).join('')}
       </select>
     </div>
-    ${!art?`<div class="mov-hist-empty" style="padding:10px 14px;">Elegí la articulación arriba para que el semáforo se calcule solo contra valores de referencia. Mientras tanto podés cargar los grados igual, sin color.</div>`:''}
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
-      ${MOV_ITEMS.map(m=>{
-        const grados=(entry.valores||{})[m.key]??'';
-        const nota=(entry.notas||{})[m.key]||'';
-        const standard=getMovStandard(ep,m.key);
-        const ev=evalMov(grados,standard);
-        const badge=ev?(ev.clase?`<span class="lsi-badge ${ev.clase}">${ev.label}</span>`:`<span style="font-size:11px;color:var(--text-3);">${ev.label}</span>`):`<span style="font-size:11px;color:var(--text-3);">—</span>`;
-        const refTxt=standard?(standard.mode==='deficit'?'déficit esperado 0°':`ref. ${standard.value}°`):(art?'sin estándar para este movimiento':'');
-        const histDots=hist.map(h=>{
-          const he=evalMov((h.valores||{})[m.key], standard);
-          const cls=he&&he.clase?(he.clase==='lsi-ok'?'verde':he.clase==='lsi-warn'?'amarillo':'rojo'):'vacio';
-          return `<span class="mov-hist-dot ${cls}" title="${esc(formatFechaCorta(h.fecha))}${he?' — '+he.label:''}"></span>`;
-        }).join('');
-        return `<div class="mov-row">
-          <div class="mov-label">${m.label}${refTxt?` <span style="text-transform:none;opacity:.7;">(${refTxt})</span>`:''}</div>
-          <div class="mov-picker">
-            <input class="mov-grados" type="number" value="${esc(grados)}" placeholder="°" title="Grados medidos" oninput="updateMovilidad('${m.key}','grados',this.value)">
-            ${badge}
-          </div>
-          <input class="mov-nota" type="text" value="${esc(nota)}" placeholder="nota (opc.)" oninput="updateMovilidad('${m.key}','nota',this.value)" style="margin-top:5px;width:100%;">
-          ${hist.length?`<div class="mov-hist">${histDots}</div>`:`<div class="mov-hist-empty">Sin evolución registrada todavía</div>`}
-        </div>`;
-      }).join('')}
+    ${!art?`<div class="mov-hist-empty" style="padding:12px 14px;">Elegí la articulación arriba para que el semáforo se calcule solo contra valores de referencia. Mientras tanto podés cargar los grados igual, sin color.</div>`:''}
+    <div>
+      ${shownBase.map(m=>buildMovRowHTML(ep,entry,hist,m,art)).join('')}
+      ${extraConDatos.map(m=>buildMovRowHTML(ep,entry,hist,m,art)).join('')}
+      ${mostrarBotonExtra?`<button type="button" class="mov-add-extra" onclick="mostrarMovExtra()">+ Agregar otro movimiento</button>`:''}
     </div>`;
 }
 function renderMovCard(){
@@ -3510,6 +3592,15 @@ function renderSesCard(s,num,fechaInicio){
               <div><label style="font-size:10px;">Duración club (min)</label><input type="number" min="0" value="${esc(s.duracionClub!=null?s.duracionClub:'')}" oninput="updateSes('${s.id}','duracionClub',this.value)"></div>
             </div>
           </div>`:''}
+          <div class="ses-field full" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;margin:2px 0 4px;">
+            <label style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;" onclick="toggleMovSes('${s.id}')">
+              <span>🔄 Movilidad de esta sesión</span>
+              <span id="movsesArrow_${s.id}" style="font-size:13px;">${movSesOpenIds.has(s.id)?'▴':'▾'}</span>
+            </label>
+            <div id="movses_${s.id}" style="display:${movSesOpenIds.has(s.id)?'block':'none'};margin-top:8px;">
+              ${movSesOpenIds.has(s.id)?buildMovQuickHTML(pFut&&getEpData(pFut),s):''}
+            </div>
+          </div>
           <div class="ses-field full">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;gap:8px;flex-wrap:wrap;">
               <label style="margin:0">Ejercicios</label>
@@ -4645,6 +4736,24 @@ function renderEvolucion(panel){
   });
   const lsiKeys=Object.keys(lsiGroups);
 
+  // Movilidad (ROM): agrupa el historial por movimiento articular para graficar su evolución
+  function movBarColor(clase){ return clase==='lsi-ok'?'var(--green)':clase==='lsi-warn'?'#E0A82E':clase==='lsi-bad'?'var(--red)':'var(--blue-chip)'; }
+  const movHistEvo=getMovHistorial(ep);
+  const artSel=ep.movilidadArticulacion||'';
+  const artSelLabel=ARTICULACIONES.find(a=>a.id===artSel)?.label||'';
+  const movGroups={};
+  MOV_ITEMS.forEach(m=>{
+    const standard=getMovStandard(ep,m.key);
+    const pts=movHistEvo.filter(h=>(h.valores||{})[m.key]!=null&&(h.valores||{})[m.key]!=='').map(h=>{
+      const g=parseFloat(h.valores[m.key]);
+      const ev=evalMov(h.valores[m.key],standard);
+      const value=(standard&&standard.mode==='rango'&&standard.value)?Math.round((g/standard.value)*100):g;
+      return {label:formatFechaCorta(h.fecha), value, color:ev?movBarColor(ev.clase):'var(--blue-chip)'};
+    });
+    if(pts.length) movGroups[m.key]={label:m.label, data:pts, standard};
+  });
+  const movKeys=Object.keys(movGroups);
+
   panel.innerHTML = `
     <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
       <button class="btn-backup" style="background:transparent;border:1px solid var(--border);color:var(--text-2);" onclick="openEvoManager()" title="Elegir qué gráficos aparecen">⚙ Gestionar gráficos</button>
@@ -4693,6 +4802,20 @@ function renderEvolucion(panel){
       <div class="home-card">
         <div class="home-card-title">⚖️ LSI% — evaluaciones</div>
         <div class="home-empty-mini">Cargá evaluaciones con resultado afectado/sano (dinamómetro, tests funcionales) para ver la evolución del LSI%.</div>
+      </div>`):''}
+      ${evoChartEnabled('movilidad')?(movKeys.length? movKeys.map(key=>{
+        const g=movGroups[key];
+        const esDeficit=g.standard&&g.standard.mode==='deficit';
+        const opts=esDeficit?{min:0,threshold:3,thresholdLabel:'déficit ideal ≤3°',emptyMsg:''}:(g.standard?{min:0,max:110,threshold:90,thresholdLabel:'90% ROM'}:{emptyMsg:''});
+        return `<div class="home-card">
+          <div class="home-card-title">🔄 Movilidad — ${esc(g.label)}${artSelLabel?` (${esc(artSelLabel)})`:''}</div>
+          ${esDeficit?`<div style="font-size:11px;color:var(--text-3);margin-bottom:8px;">Acá el número es el déficit en grados respecto a la extensión completa — cuanto más bajo, mejor.</div>`:''}
+          ${buildBarChartSVG([{name:g.label,data:g.data}],opts)}
+        </div>`;
+      }).join('') : `
+      <div class="home-card">
+        <div class="home-card-title">🔄 Movilidad articular (ROM)</div>
+        <div class="home-empty-mini">Cargá los grados medidos en Resumen o directamente desde cada sesión para ver acá la evolución.</div>
       </div>`):''}
       ${promKeys.length? promKeys.map(tipoId=>`
         <div class="home-card">
