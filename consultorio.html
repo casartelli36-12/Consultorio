@@ -126,6 +126,17 @@ input,textarea,select{font-family:'Inter',sans-serif;}
 .dx-detail-block .modal-2col{margin-bottom:0;}
 .dx-detail-block select,.dx-detail-block input{background:#fff;border:1px solid var(--border)!important;border-radius:var(--radius-sm);padding:8px 9px!important;font-size:13px!important;}
 
+.rsum-header{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:14px;}
+.rsum-estado-row{display:flex;align-items:center;gap:8px;padding:12px 14px 8px;flex-wrap:wrap;}
+.rsum-actions-row{display:flex;gap:8px;flex-wrap:wrap;padding:8px 14px 12px;}
+.rsum-section{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:10px;overflow:hidden;}
+.rsum-section-head{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;cursor:pointer;user-select:none;background:var(--surface);}
+.rsum-section-head .title{font-size:12px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:.04em;}
+.rsum-section-head .chevron{font-size:11px;color:var(--text-3);transition:transform .15s;}
+.rsum-section.open .chevron{transform:rotate(180deg);}
+.rsum-section-body{display:none;}
+.rsum-section.open .rsum-section-body{display:block;}
+.rsum-section-body .resumen-grid{border:none;border-radius:0;margin-bottom:0;}
 .resumen-layout{display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start;}
 .notas-libres{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
 .notas-header{padding:10px 14px;background:var(--navy);font-size:11px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.06em;}
@@ -188,6 +199,12 @@ input,textarea,select{font-family:'Inter',sans-serif;}
 .ej-input.center{text-align:center;}
 .ej-input.nota{font-size:12.5px;color:var(--text-2);}
 .btn-ej-del{background:none;border:none;color:var(--text-3);cursor:pointer;font-size:16px;padding:0 4px;line-height:1;flex-shrink:0;}
+.btn-ej-star{background:none;border:none;cursor:pointer;font-size:14px;padding:0 2px;line-height:1;flex-shrink:0;color:var(--text-3);}
+.btn-ej-star.active{color:var(--orange);}
+.ej-hist-line{font-size:10.5px;color:var(--text-3);padding:1px 0 8px 6px;}
+.prog-badge-wrap{font-size:12px;flex-shrink:0;cursor:help;}
+.ej-rir-wrap{display:flex;align-items:center;gap:2px;min-width:0;}
+.ej-rir-wrap .ej-input.rir{flex:1;min-width:0;}
 .btn-ej-del:hover{color:var(--red);}
 .ej-row-actions{display:flex;align-items:center;gap:1px;flex-wrap:nowrap;}
 .btn-ej-move{background:none;border:none;color:var(--text-3);cursor:pointer;font-size:12px;padding:2px 1px;line-height:1;flex-shrink:0;}
@@ -383,6 +400,10 @@ input,textarea,select{font-family:'Inter',sans-serif;}
 
 /* Category filter pills */
 .cat-filters{padding:10px 12px 4px;display:flex;flex-wrap:wrap;gap:6px;}
+.pat-search-wrap{padding:10px 12px 0;}
+.pat-search-wrap input{width:100%;padding:8px 10px;border-radius:var(--radius-sm);border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:#fff;font-size:12.5px;font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;}
+.pat-search-wrap input::placeholder{color:rgba(255,255,255,.4);}
+.pat-search-wrap input:focus{border-color:var(--orange);}
 .cat-pill{padding:5px 10px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid transparent;transition:all .15s;white-space:nowrap;}
 .cat-pill.all{background:rgba(255,255,255,.15);color:rgba(255,255,255,.7);border-color:rgba(255,255,255,.2);}
 .cat-pill.all.active{background:var(--orange);color:#fff;border-color:var(--orange);}
@@ -500,6 +521,7 @@ const DEFAULT_CATS = [
 ];
 let currentCatFilter = 'all';
 let currentEstadoFilter = 'tratamiento';
+let currentPatSearch = '';
 
 // ── Librería de ejercicios (sugerencias categorizadas, no restrictivo) ──────
 const EXERCISE_LIBRARY = {
@@ -1651,6 +1673,7 @@ function calcularScoresCuestionario(tipoId, respuestas) {
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
       Nuevo paciente
     </button>
+    <div class="pat-search-wrap"><input type="text" id="patSearch" placeholder="🔎 Buscar por nombre, dx o zona…" oninput="setPatSearch(this.value)"></div>
     <div class="cat-filters" id="catFilters"></div>
     <div class="estado-filters" id="estadoFilters"></div>
     <div class="patient-list" id="patientList">
@@ -2019,7 +2042,7 @@ function calcularScoresCuestionario(tipoId, respuestas) {
 let DB = { patients: [] };
 let currentPatientId = null;
 let currentTab = 'resumen';
-let openCardIds = new Set(); // recuerda qué fichas (sesión/plan) quedaron abiertas entre re-renders
+let openCardIds = new Set(['rsClinico']); // recuerda qué fichas (sesión/plan/secciones de resumen) quedaron abiertas entre re-renders
 let cargarPlanTarget = null; // id de la sesión sobre la que opera, mientras está abierto modalCargarPlan
 const TAB_ORDER=['resumen','sesiones','plan','evaluaciones','cuestionarios','evolucion','turnos'];
 let editingPatientId = null;
@@ -2070,12 +2093,14 @@ function tiempoEvolucion(dias) {
     if(restDias>0){ corto += ` ${restDias} ${restDias===1?'día':'días'}`; compacto += ` ${restDias}d`; }
     return {valor:semanas, unidad:semanas===1?'semana':'semanas', corto, compacto};
   }
-  const meses = Math.floor(dias/30);
-  const restDias = dias - meses*30;
-  const semanas = Math.floor(restDias/7);
+  const meses = Math.floor(dias/30.44); // mes promedio real (365.25/12), más preciso que bloques de 30 días fijos
+  const restDiasTotal = dias - Math.round(meses*30.44);
+  const semanas = Math.floor(restDiasTotal/7);
+  const diasSueltos = restDiasTotal - semanas*7;
   let corto = `${meses} ${meses===1?'mes':'meses'}`;
   let compacto = `${meses}m`;
   if(semanas>0){ corto += ` ${semanas} ${semanas===1?'semana':'semanas'}`; compacto += ` ${semanas}sem`; }
+  if(diasSueltos>0){ corto += ` ${diasSueltos} ${diasSueltos===1?'día':'días'}`; compacto += ` ${diasSueltos}d`; }
   return {valor:meses, unidad:meses===1?'mes':'meses', corto, compacto};
 }
 function formatFecha(s) {
@@ -2397,11 +2422,19 @@ function getAllEpisodios(p){
   if(p.episodios&&p.episodios.length) return p.episodios;
   return [{sesiones:p.sesiones||[],evaluaciones:p.evaluaciones||[],cuestionarios:p.cuestionarios||[],estudios:p.estudios||[],movilidad:p.movilidad||{},estado:p.estado||'tratamiento',fechaInicio:p.fechaInicio||''}];
 }
+function setPatSearch(v){ currentPatSearch=(v||'').toLowerCase().trim(); renderPatientList(); }
 function renderPatientList(){
   const list=document.getElementById('patientList');
   let pts=DB.patients||[];
   if(currentCatFilter!=='all') pts=pts.filter(p=>p.categoria===currentCatFilter);
   if(currentEstadoFilter!=='todos') pts=pts.filter(p=>getPatientEstado(p)===currentEstadoFilter);
+  if(currentPatSearch){
+    pts=pts.filter(p=>{
+      const meta=getDxMeta(p.dx);
+      const hay=[p.nombre,p.dx,p.estructura,p.institucion,meta?meta.region:'',meta?meta.tipo:''].filter(Boolean).join(' ').toLowerCase();
+      return hay.includes(currentPatSearch);
+    });
+  }
   if(!pts.length){list.innerHTML='<div class="empty-list">No hay pacientes aquí</div>';return;}
   list.innerHTML=pts.map(p=>{
     const dias=diasDesde(p.fechaInicio);
@@ -2980,24 +3013,57 @@ function renderResumen(panel) {
   const p=getPatient(currentPatientId);
   const ep=getEpData(p);
   const estudios=ep.estudios||[];
+  const secPersonal=openCardIds.has('rsPersonal');
+  const secClinico=openCardIds.has('rsClinico');
+  const secAnt=openCardIds.has('rsAntecedentes');
   panel.innerHTML=`
     <div class="alerta-field">
       <span class="alerta-icon">⚡</span>
       <input type="text" id="rAlerta" value="${esc(p.alerta||'')}" placeholder="Alerta / nota clave" oninput="updateField('alerta',this.value)">
     </div>
+    <div class="rsum-header">
+      <div class="rsum-estado-row">
+        <div style="display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 12px;">
+          <span style="font-size:11px;font-weight:600;color:var(--text-2);">Estado:</span>
+          <select onchange="updateEpEstado(this.value)" style="border:none;background:transparent;font-size:12px;font-weight:700;font-family:Inter,sans-serif;color:var(--text);outline:none;cursor:pointer;">
+            <option value="tratamiento" ${(ep.estado||'tratamiento')==='tratamiento'?'selected':''}>🟢 En tratamiento</option>
+            <option value="alta"        ${ep.estado==='alta'?'selected':''}>✓ Alta</option>
+            <option value="abandono"    ${ep.estado==='abandono'?'selected':''}>— Abandono</option>
+          </select>
+        </div>
+      </div>
+      <div class="rsum-actions-row">
+        <button onclick="openEditPatient()" style="padding:8px 16px;background:transparent;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;color:var(--text-2);cursor:pointer;font-family:Inter,sans-serif;">Editar datos del paciente</button>
+        <button onclick="openExportPaciente()" style="padding:8px 16px;background:transparent;border:1px solid var(--navy);border-radius:var(--radius-sm);font-size:12px;color:var(--navy);cursor:pointer;font-family:Inter,sans-serif;font-weight:600;">📤 Exportar para Claude</button>
+        <button onclick="deletePatient()" style="padding:8px 16px;background:transparent;border:1px solid var(--red-light);border-radius:var(--radius-sm);font-size:12px;color:var(--red);cursor:pointer;font-family:Inter,sans-serif;">Eliminar paciente</button>
+      </div>
+    </div>
     <div class="resumen-layout">
       <div>
-        <div class="resumen-grid">
-          ${rField('Nombre completo','rNombre',p.nombre,'nombre','text',false)}
-          ${rField2('Edad','rEdad',p.edad,'edad','Contacto / WhatsApp','rContacto',p.contacto,'contacto')}
-          ${rField2('Institución / Club','rInstitucion',p.institucion,'institucion','Deporte / Posición','rDeporte',p.deporte,'deporte')}
-          ${rFieldDx(p.dx)}
-          ${rField2('Estructura / Lado','rEstructura',p.estructura,'estructura','Cirujano / Médico','rCirujano',p.cirujano,'cirujano')}
-          ${rField2('Fecha inicio / lesión','rFechaInicio',p.fechaInicio,'fechaInicio','Estado / Fase','rEstado',p.estado,'estado','date')}
-          ${rField('Cirugía / Injerto / Técnica','rCirugia',p.cirugia,'cirugia','text',false)}
-          ${rField('Antecedentes relevantes','rAntecedentes',p.antecedentes,'antecedentes','textarea',true)}
-          ${rField('Objetivos del paciente','rObjetivos',p.objetivos,'objetivos','textarea',true)}
-          ${rField2('Medicación','rMedicacion',p.medicacion,'medicacion','Contraindicaciones','rContra',p.contra,'contra')}
+        <div class="rsum-section ${secPersonal?'open':''}" id="rs_rsPersonal">
+          <div class="rsum-section-head" onclick="toggleRsumSection('rsPersonal')"><span class="title">👤 Datos personales</span><span class="chevron">▾</span></div>
+          <div class="rsum-section-body"><div class="resumen-grid">
+            ${rField('Nombre completo','rNombre',p.nombre,'nombre','text',false)}
+            ${rField2('Edad','rEdad',p.edad,'edad','Contacto / WhatsApp','rContacto',p.contacto,'contacto')}
+            ${rField2('Institución / Club','rInstitucion',p.institucion,'institucion','Deporte / Posición','rDeporte',p.deporte,'deporte')}
+          </div></div>
+        </div>
+        <div class="rsum-section ${secClinico?'open':''}" id="rs_rsClinico">
+          <div class="rsum-section-head" onclick="toggleRsumSection('rsClinico')"><span class="title">🩺 Diagnóstico y clínica</span><span class="chevron">▾</span></div>
+          <div class="rsum-section-body"><div class="resumen-grid">
+            ${rFieldDx(p.dx)}
+            ${rField2('Estructura / Lado','rEstructura',p.estructura,'estructura','Cirujano / Médico','rCirujano',p.cirujano,'cirujano')}
+            ${rField2('Fecha inicio / lesión','rFechaInicio',p.fechaInicio,'fechaInicio','Estado / Fase','rEstado',p.estado,'estado','date')}
+            ${rField('Cirugía / Injerto / Técnica','rCirugia',p.cirugia,'cirugia','text',false)}
+            ${rField2('Medicación','rMedicacion',p.medicacion,'medicacion','Contraindicaciones','rContra',p.contra,'contra')}
+          </div></div>
+        </div>
+        <div class="rsum-section ${secAnt?'open':''}" id="rs_rsAntecedentes">
+          <div class="rsum-section-head" onclick="toggleRsumSection('rsAntecedentes')"><span class="title">📝 Antecedentes y objetivos</span><span class="chevron">▾</span></div>
+          <div class="rsum-section-body"><div class="resumen-grid">
+            ${rField('Antecedentes relevantes','rAntecedentes',p.antecedentes,'antecedentes','textarea',true)}
+            ${rField('Objetivos del paciente','rObjetivos',p.objetivos,'objetivos','textarea',true)}
+          </div></div>
         </div>
         <div style="margin-top:16px;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;" id="movCard">
           ${buildMovCardHTML(ep)}
@@ -3011,25 +3077,17 @@ function renderResumen(panel) {
             ${!estudios.length?'<div style="padding:14px;font-size:13px;color:var(--text-3);text-align:center;">Sin estudios cargados</div>':estudios.map((e,i)=>renderEstudioRow(e,i)).join('')}
           </div>
         </div>
-        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-          <div style="display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 12px;">
-            <span style="font-size:11px;font-weight:600;color:var(--text-2);">Estado:</span>
-            <select onchange="updateEpEstado(this.value)" style="border:none;background:transparent;font-size:12px;font-weight:700;font-family:Inter,sans-serif;color:var(--text);outline:none;cursor:pointer;">
-              <option value="tratamiento" ${(ep.estado||'tratamiento')==='tratamiento'?'selected':''}>🟢 En tratamiento</option>
-              <option value="alta"        ${ep.estado==='alta'?'selected':''}>✓ Alta</option>
-              <option value="abandono"    ${ep.estado==='abandono'?'selected':''}>— Abandono</option>
-            </select>
-          </div>
-          <button onclick="openEditPatient()" style="padding:8px 16px;background:transparent;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;color:var(--text-2);cursor:pointer;font-family:Inter,sans-serif;">Editar datos del paciente</button>
-          <button onclick="openExportPaciente()" style="padding:8px 16px;background:transparent;border:1px solid var(--navy);border-radius:var(--radius-sm);font-size:12px;color:var(--navy);cursor:pointer;font-family:Inter,sans-serif;font-weight:600;">📤 Exportar para Claude</button>
-          <button onclick="deletePatient()" style="padding:8px 16px;background:transparent;border:1px solid var(--red-light);border-radius:var(--radius-sm);font-size:12px;color:var(--red);cursor:pointer;font-family:Inter,sans-serif;">Eliminar paciente</button>
-        </div>
       </div>
       <div class="notas-libres">
         <div class="notas-header">Notas libres</div>
         <textarea id="rNotas" placeholder="Escribí acá lo que quieras…" oninput="updateField('notas',this.value)">${esc(p.notas||'')}</textarea>
       </div>
     </div>`;
+}
+function toggleRsumSection(key){
+  if(openCardIds.has(key)) openCardIds.delete(key); else openCardIds.add(key);
+  const el=document.getElementById('rs_'+key);
+  if(el) el.classList.toggle('open', openCardIds.has(key));
 }
 
 function updateEpEstado(val){
@@ -3357,7 +3415,24 @@ function computeBloqueLabels(ejercicios){
 // Sección de una categoría clínica dentro de la tabla editable de ejercicios de una sesión
 // (mismo criterio que buildPlanEjSectionTable, para que sesión y plan compartan el mismo
 // formato visual — así lo que se carga desde el plan no queda "desordenado" en la sesión).
-function buildSesEjSectionTable(sesId, ejercicios, catId){
+function progresionBadgeHTML(rir, eva){
+  const r=parseFloat(rir);
+  const hasR=!isNaN(r);
+  if(!hasR && (eva===null||eva===undefined)) return '';
+  if((hasR && r<=1) || (eva!=null && eva>=6)) return '<span class="prog-badge-wrap" title="RIR bajo y/o dolor alto: no convendría subir carga la próxima vez">⚠️</span>';
+  if(hasR && r>=3 && (eva==null || eva<=3)) return '<span class="prog-badge-wrap" title="RIR alto y poco dolor: se podría progresar la próxima vez">✅</span>';
+  return '';
+}
+function refreshProgBadgesForSes(sesId){
+  const p=getPatient(currentPatientId); const ep=getEpData(p);
+  const ses=(ep.sesiones||[]).find(s=>s.id===sesId); if(!ses) return;
+  const eva=getDolorSesion(ses);
+  (ses.ejercicios||[]).forEach((e,i)=>{
+    const el=document.getElementById('progbadge_'+sesId+'_'+i);
+    if(el) el.outerHTML=`<span id="progbadge_${sesId}_${i}" class="prog-badge-wrap-outer">${progresionBadgeHTML(e.rir, eva)}</span>`;
+  });
+}
+function buildSesEjSectionTable(sesId, ejercicios, catId, sesEva){
   const sub=ejercicios.map((e,i)=>({e,i})).filter(x=>(x.e.categoria||'')===catId);
   const rows=sub.map(x=>{
     const e=x.e, i=x.i;
@@ -3373,8 +3448,11 @@ function buildSesEjSectionTable(sesId, ejercicios, catId){
         oninput="updateEjField('${sesId}',${i},'reps',this.value)">
       <input class="ej-input center" type="text" value="${esc(e.kg||'')}" placeholder="—"
         oninput="updateEjField('${sesId}',${i},'kg',this.value)">
-      <input class="ej-input rir" type="text" value="${esc(e.rir||'')}" placeholder="—" title="RIR (reps en reserva)"
-        oninput="updateEjField('${sesId}',${i},'rir',this.value)">
+      <div class="ej-rir-wrap">
+        <input class="ej-input rir" type="text" value="${esc(e.rir||'')}" placeholder="—" title="RIR (reps en reserva)"
+          oninput="updateEjField('${sesId}',${i},'rir',this.value)">
+        <span id="progbadge_${sesId}_${i}" class="prog-badge-wrap-outer">${progresionBadgeHTML(e.rir, sesEva)}</span>
+      </div>
       <input class="ej-input nota" type="text" value="${esc(e.nota||'')}" placeholder="notas…"
         oninput="updateEjField('${sesId}',${i},'nota',this.value)">
       <div class="ej-row-actions">
@@ -3402,30 +3480,60 @@ function buildSesEjSectionTable(sesId, ejercicios, catId){
 // Tabla completa de ejercicios de una sesión, agrupada por categoría clínica —
 // mismo formato que el plan (buildPlanEjTable), para que un día cargado desde el
 // plan se vea igual de ordenado en la sesión.
-function buildSesEjTable(sesId, ejercicios){
+function buildSesEjTable(sesId, ejercicios, sesEva){
   let html=CATEGORIAS_EJ.map(cat=>`
     <div class="ej-cat-section">
       <div class="ej-cat-title">${cat.label}</div>
-      ${buildSesEjSectionTable(sesId,ejercicios,cat.id)}
+      ${buildSesEjSectionTable(sesId,ejercicios,cat.id,sesEva)}
     </div>`).join('');
   const sinCat=ejercicios.filter(e=>!e.categoria);
   if(sinCat.length){
     html+=`<div class="ej-cat-section">
       <div class="ej-cat-title">Sin categoría</div>
-      ${buildSesEjSectionTable(sesId,ejercicios,'')}
+      ${buildSesEjSectionTable(sesId,ejercicios,'',sesEva)}
     </div>`;
   }
   return html;
 }
 
+// Cuando una sesión fue cargada "desde el plan" (tiene planRef), cualquier cambio que se
+// haga acá (kg, series, reps, RIR, nota) se refleja también en el día del plan de origen —
+// así el plan queda siempre con la última prescripción realmente usada, sin tener que
+// entrar a editarlo a mano. Si el ejercicio está marcado con ⭐ (track), además guardamos
+// un historial acotado (últimas 20 entradas) para poder ver su progresión.
+function syncEjSesionAPlan(ses, idx, field, val){
+  if(!ses.planRef) return;
+  const ej = ses.ejercicios && ses.ejercicios[idx];
+  if(!ej || !ej.id) return;
+  const {dia} = findPlanDia(ses.planRef.planId, ses.planRef.diaId);
+  if(!dia || !dia.ejercicios) return;
+  const planEj = dia.ejercicios.find(e=>e.id===ej.id);
+  if(!planEj) return;
+  planEj[field] = val;
+  dia.actualizado = new Date().toISOString();
+  if(planEj.track && ['kg','reps','series','rir'].indexOf(field)!==-1){
+    if(!planEj.historial) planEj.historial=[];
+    const snap = {fecha:todayISO(), kg:planEj.kg||'', reps:planEj.reps||'', series:planEj.series||'', rir:planEj.rir||''};
+    const last = planEj.historial[planEj.historial.length-1];
+    if(!last || last.fecha!==snap.fecha || last.kg!==snap.kg || last.reps!==snap.reps || last.series!==snap.series || last.rir!==snap.rir){
+      planEj.historial.push(snap);
+      if(planEj.historial.length>20) planEj.historial.shift();
+    }
+  }
+}
 function updateEjField(sesId, idx, field, val) {
   const p = getPatient(currentPatientId);
   const ep = getEpData(p);
   const ses = (ep.sesiones||[]).find(s=>s.id===sesId);
   if(!ses || !ses.ejercicios || !ses.ejercicios[idx]) return;
   ses.ejercicios[idx][field] = val;
+  syncEjSesionAPlan(ses, idx, field, val);
   clearTimeout(autoSaveTimer);
   autoSaveTimer = setTimeout(saveDB, 800);
+  if(field==='rir'){
+    const el=document.getElementById('progbadge_'+sesId+'_'+idx);
+    if(el){ const eva=getDolorSesion(ses); el.innerHTML=progresionBadgeHTML(val, eva); }
+  }
 }
 
 function addEjToSes(sesId, categoria) {
@@ -3434,7 +3542,12 @@ function addEjToSes(sesId, categoria) {
   const ses = (ep.sesiones||[]).find(s=>s.id===sesId);
   if(!ses) return;
   if(!ses.ejercicios) ses.ejercicios = [];
-  ses.ejercicios.push({nombre:'',series:'',reps:'',kg:'',nota:'',bloque:'',categoria:categoria||''});
+  const nuevo = {id:uid(), nombre:'',series:'',reps:'',kg:'',nota:'',bloque:'',categoria:categoria||''};
+  ses.ejercicios.push(nuevo);
+  if(ses.planRef){
+    const {dia}=findPlanDia(ses.planRef.planId, ses.planRef.diaId);
+    if(dia){ if(!dia.ejercicios) dia.ejercicios=[]; dia.ejercicios.push({...nuevo}); dia.actualizado=new Date().toISOString(); }
+  }
   saveDB();
   // Rebuild solo la sección de esa categoría, no toda la sesión (evitar perder foco en otros campos)
   const tableEl = document.getElementById('sejtable_'+sesId+'_'+(categoria||'sincat'));
@@ -3547,7 +3660,15 @@ function removeEjFromSes(sesId, idx) {
   const ep = getEpData(p);
   const ses = (ep.sesiones||[]).find(s=>s.id===sesId);
   if(!ses || !ses.ejercicios) return;
+  const removido = ses.ejercicios[idx];
   ses.ejercicios.splice(idx, 1);
+  if(ses.planRef && removido && removido.id){
+    const {dia}=findPlanDia(ses.planRef.planId, ses.planRef.diaId);
+    if(dia && dia.ejercicios){
+      const pIdx=dia.ejercicios.findIndex(e=>e.id===removido.id);
+      if(pIdx!==-1){ dia.ejercicios.splice(pIdx,1); dia.actualizado=new Date().toISOString(); }
+    }
+  }
   saveDB();
   renderTab();
 }
@@ -3619,9 +3740,9 @@ function renderSesCard(s,num,fechaInicio){
                 </button>
               </div>
             </div>
-            ${buildSesEjTable(s.id, ejercicios)}
+            ${buildSesEjTable(s.id, ejercicios, dolor)}
           </div>
-          <div class="ses-field"><label>EVA entrenamiento</label><input type="number" min="0" max="10" value="${esc(s.dolor!=null?s.dolor:'')}" oninput="updateSes('${s.id}','dolor',this.value)"></div>
+          <div class="ses-field"><label>EVA entrenamiento</label><input type="number" min="0" max="10" value="${esc(s.dolor!=null?s.dolor:'')}" oninput="updateSes('${s.id}','dolor',this.value);refreshProgBadgesForSes('${s.id}')"></div>
           <div class="ses-field"><label>RPE (esfuerzo 0-10)</label><input type="number" min="0" max="10" value="${esc(s.rpe!=null?s.rpe:'')}" oninput="updateSes('${s.id}','rpe',this.value)"></div>
           <div class="ses-field"><label>Duración (min)</label><input type="number" min="0" value="${esc(s.duracion!=null?s.duracion:'')}" oninput="updateSes('${s.id}','duracion',this.value)"></div>
           <div class="ses-field full"><label>Lo que observé</label><textarea oninput="updateSes('${s.id}','objetivo',this.value)">${esc(s.objetivo||'')}</textarea></div>
@@ -4018,6 +4139,20 @@ function closeModalCargarPlan(){
   document.getElementById('modalCargarPlan').classList.remove('open');
   cargarPlanTarget=null;
 }
+function getUltimoDiaPlanUsado(ep, planId){
+  const sesiones=(ep.sesiones||[]).filter(s=>s.planRef && s.planRef.planId===planId && s.fecha).sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  if(!sesiones.length) return null;
+  return sesiones[sesiones.length-1].planRef.diaId;
+}
+function getDiaPlanSugerido(pl, ep){
+  const dias=(pl.dias||[]).filter(d=>(d.ejercicios||[]).some(e=>(e.nombre||'').trim()));
+  if(!dias.length) return null;
+  const ultimoId=getUltimoDiaPlanUsado(ep, pl.id);
+  if(!ultimoId) return dias[0];
+  const idx=dias.findIndex(d=>d.id===ultimoId);
+  if(idx===-1) return dias[0];
+  return dias[(idx+1)%dias.length];
+}
 function renderCargarPlanList(){
   const p=getPatient(currentPatientId); const ep=getEpData(p);
   const planes=getPlanes(ep).slice().reverse();
@@ -4029,9 +4164,14 @@ function renderCargarPlanList(){
   el.innerHTML=planes.map(pl=>{
     const dias=pl.dias||[];
     if(!dias.length) return '';
+    const sugerido=getDiaPlanSugerido(pl, ep);
     return `
     <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:8px;">
       <div style="font-size:13px;font-weight:700;margin-bottom:6px;">${esc(pl.nombre||'Plan')}${pl.semanas?` · ${esc(pl.semanas)} sem.`:''}</div>
+      ${sugerido?`<button type="button" onclick="elegirDiaPlan('${pl.id}','${sugerido.id}')"
+        style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 10px;background:var(--orange-light);border:1.5px solid var(--orange);border-radius:var(--radius-sm);cursor:pointer;text-align:left;font-family:Inter,sans-serif;margin-bottom:6px;width:100%;">
+        <span style="font-size:12.5px;color:var(--orange);font-weight:700;">⭐ Sugerido: ${sugerido.lugar==='domicilio'?'🏠':'🏥'} ${esc(sugerido.nombre||'Día')}</span>
+      </button>`:''}
       <div style="display:flex;flex-direction:column;gap:6px;">
         ${dias.map(d=>{
           const nEj=(d.ejercicios||[]).filter(e=>(e.nombre||'').trim()).length;
@@ -4050,10 +4190,13 @@ function renderCargarPlanList(){
 // algo que pasaba con ejercicios viejos o de planes que nunca llegaron a completar
 // alguna columna, ej. RIR).
 function sanitizeEjercicio(e){
-  return {
-    nombre:e.nombre||'', series:e.series||'', reps:e.reps||'', kg:e.kg||'',
+  const out={
+    id:e.id||uid(), nombre:e.nombre||'', series:e.series||'', reps:e.reps||'', kg:e.kg||'',
     rir:e.rir||'', nota:e.nota||'', bloque:e.bloque||'', categoria:e.categoria||'',
+    track:!!e.track,
   };
+  if(e.historial && e.historial.length) out.historial=e.historial;
+  return out;
 }
 
 function elegirDiaPlan(planId, diaId){
@@ -4062,7 +4205,10 @@ function elegirDiaPlan(planId, diaId){
     const {pl,dia}=findPlanDia(planId,diaId);
     if(!pl){ console.error('elegirDiaPlan: no se encontró el plan', planId); alert('No se encontró ese plan. Cerrá la ventana e intentá de nuevo.'); return; }
     if(!dia){ console.error('elegirDiaPlan: no se encontró el día del plan', diaId); alert('No se encontró ese día del plan. Cerrá la ventana e intentá de nuevo.'); return; }
-    const ejercicios=(dia.ejercicios||[]).filter(e=>(e.nombre||'').trim()).map(sanitizeEjercicio);
+    // Aseguramos que cada ejercicio del plan tenga un id estable ANTES de copiarlo — es lo que
+    // permite después sincronizar cambios hechos en la sesión de vuelta hacia este mismo día del plan.
+    (dia.ejercicios||[]).forEach(e=>{ if(!e.id) e.id=uid(); });
+    const ejercicios=(dia.ejercicios||[]).filter(e=>(e.nombre||'').trim()).map(e=>{ const o=sanitizeEjercicio(e); delete o.historial; delete o.track; return o; });
     if(!ejercicios.length){showToast('Ese día del plan no tiene ejercicios cargados');closeModalCargarPlan();return;}
     const ref={planId:pl.id, planNombre:pl.nombre||'Plan', diaId:dia.id, diaNombre:dia.nombre||'Día'};
     const p=getPatient(currentPatientId); const ep=getEpData(p);
@@ -4295,9 +4441,11 @@ function renderPlanCard(pl){
 }
 
 function renderDiaPlan(planId,d){
+  const actTxt = d.actualizado ? `Act. ${formatFecha(d.actualizado.slice(0,10))}` : '';
   return `<div class="dia-card" id="dia_${planId}_${d.id}">
     <div class="dia-header">
       <input type="text" class="dia-nombre" value="${esc(d.nombre||'')}" placeholder="Día 1" oninput="updateDiaField('${planId}','${d.id}','nombre',this.value)">
+      ${actTxt?`<span style="font-size:10px;color:var(--text-3);white-space:nowrap;flex-shrink:0;">${actTxt}</span>`:''}
       <div class="lugar-toggle">
         <button type="button" class="lugar-btn ${d.lugar!=='domicilio'?'active':''}" onclick="updateDiaField('${planId}','${d.id}','lugar','consultorio')">🏥 Consultorio</button>
         <button type="button" class="lugar-btn ${d.lugar==='domicilio'?'active':''}" onclick="updateDiaField('${planId}','${d.id}','lugar','domicilio')">🏠 Domicilio</button>
@@ -4340,10 +4488,11 @@ function buildPlanEjSectionTable(planId,diaId,ejercicios,catId){
       <input class="ej-input nota" type="text" value="${esc(e.nota||'')}" placeholder="notas…"
         oninput="updatePlanEjField('${planId}','${diaId}',${i},'nota',this.value)">
       <div class="ej-row-actions">
+        <button class="btn-ej-star ${e.track?'active':''}" onclick="toggleEjTrack('${planId}','${diaId}',${i})" title="${e.track?'Dejar de trackear la progresión de este ejercicio':'Trackear la progresión de este ejercicio'}">${e.track?'⭐':'☆'}</button>
         <span class="ej-drag-handle" data-kind="plan" data-plan="${planId}" data-dia="${diaId}" data-cat="${catId||''}" title="Mantené y arrastrá para reordenar">⠿</span>
         <button class="btn-ej-del" onclick="removeEjFromPlanDia('${planId}','${diaId}',${i})" title="Eliminar">×</button>
       </div>
-    </div>`;
+    </div>${e.track&&e.historial&&e.historial.length?`<div class="ej-hist-line">📈 ${e.historial.slice(-4).map(h=>`${formatFechaCorta(h.fecha)}: ${h.series||'—'}×${h.reps||'—'} ${h.kg?h.kg+'kg':''}${h.rir?' RIR'+h.rir:''}`).join(' · ')}</div>`:''}`;
   }).join('');
   return `<div class="ej-table-wrap" id="pejtable_${planId}_${diaId}_${catId||'sincat'}">
     <div class="ej-table-head">
@@ -4352,6 +4501,11 @@ function buildPlanEjSectionTable(planId,diaId,ejercicios,catId){
     ${rows}
     <button class="btn-add-ej-row" onclick="addEjToPlanDia('${planId}','${diaId}','${catId||''}')">+ Agregar ejercicio</button>
   </div>`;
+}
+function toggleEjTrack(planId,diaId,idx){
+  const {dia}=findPlanDia(planId,diaId); if(!dia||!dia.ejercicios||!dia.ejercicios[idx]) return;
+  dia.ejercicios[idx].track = !dia.ejercicios[idx].track;
+  saveDB(); renderTab();
 }
 
 function buildPlanEjTable(planId,diaId,ejercicios){
@@ -4375,12 +4529,14 @@ function updatePlanEjField(planId,diaId,idx,field,val){
   const {dia}=findPlanDia(planId,diaId);
   if(!dia||!dia.ejercicios||!dia.ejercicios[idx]) return;
   dia.ejercicios[idx][field]=val;
+  dia.actualizado=new Date().toISOString();
   clearTimeout(autoSaveTimer); autoSaveTimer=setTimeout(saveDB,800);
 }
 function addEjToPlanDia(planId,diaId,categoria){
   const {dia}=findPlanDia(planId,diaId); if(!dia) return;
   if(!dia.ejercicios) dia.ejercicios=[];
-  dia.ejercicios.push({nombre:'',series:'',reps:'',kg:'',nota:'',bloque:'',categoria:categoria||''});
+  dia.ejercicios.push({id:uid(),nombre:'',series:'',reps:'',kg:'',nota:'',bloque:'',categoria:categoria||''});
+  dia.actualizado=new Date().toISOString();
   saveDB();
   const tableEl=document.getElementById('pejtable_'+planId+'_'+diaId+'_'+(categoria||'sincat'));
   if(tableEl) tableEl.outerHTML=buildPlanEjSectionTable(planId,diaId,dia.ejercicios,categoria||'');
@@ -4401,11 +4557,13 @@ function moveEjInPlanDia(planId,diaId,idx,dir){
 function removeEjFromPlanDia(planId,diaId,idx){
   const {dia}=findPlanDia(planId,diaId); if(!dia||!dia.ejercicios) return;
   dia.ejercicios.splice(idx,1);
+  dia.actualizado=new Date().toISOString();
   saveDB(); renderTab();
 }
 function updateDiaField(planId,diaId,key,val){
   const {dia}=findPlanDia(planId,diaId); if(!dia) return;
   dia[key]=val;
+  dia.actualizado=new Date().toISOString();
   if(key==='lugar'){ saveDB(); renderTab(); }
   else { clearTimeout(autoSaveTimer); autoSaveTimer=setTimeout(saveDB,800); }
 }
@@ -4964,6 +5122,19 @@ function renderHomeDashboard(){
   // Alertas activas (pacientes en tratamiento con alerta cargada)
   const conAlerta = enTratamiento.filter(p=>p.alerta&&p.alerta.trim());
 
+  // Adherencia: pacientes en tratamiento sin sesión hace ADHERENCIA_DIAS días o más (o sin ninguna sesión registrada)
+  const ADHERENCIA_DIAS=14;
+  function getUltimaSesionFecha(p){
+    let last=null;
+    getAllEpisodios(p).forEach(ep=>(ep.sesiones||[]).forEach(s=>{ if(s.fecha && (!last||s.fecha>last)) last=s.fecha; }));
+    return last;
+  }
+  const sinAdherencia = enTratamiento.map(p=>{
+    const last=getUltimaSesionFecha(p);
+    const dias=last?diasDesde(last):null;
+    return {p,last,dias};
+  }).filter(x=>x.dias===null||x.dias>=ADHERENCIA_DIAS).sort((a,b)=>(b.dias===null?9999:b.dias)-(a.dias===null?9999:a.dias));
+
   // Donut por categoría (solo pacientes en tratamiento)
   const cats=getCats();
   const porCat={};
@@ -5011,6 +5182,10 @@ function renderHomeDashboard(){
       <div class="home-stat-tile ${conAlerta.length?'hst-warn':''}">
         <div class="hst-num">${conAlerta.length}</div>
         <div class="hst-lbl">Alertas activas</div>
+      </div>
+      <div class="home-stat-tile ${sinAdherencia.length?'hst-warn':''}" style="grid-column:1/-1">
+        <div class="hst-num">${sinAdherencia.length}</div>
+        <div class="hst-lbl">Sin sesión hace ${ADHERENCIA_DIAS}+ días</div>
       </div>
     </div>
 
@@ -5083,6 +5258,19 @@ function renderHomeDashboard(){
               <div style="flex:1;min-width:0;">
                 <div class="hai-nombre-bold">${esc(p.nombre)}</div>
                 <div class="hai-alerta-txt">${esc(p.alerta)}</div>
+              </div>
+            </div>`).join('')}
+      </div>
+
+      <div class="home-card" style="grid-column:1/-1">
+        <div class="home-card-title">⏰ Adherencia — sin sesión hace ${ADHERENCIA_DIAS}+ días</div>
+        ${!sinAdherencia.length?'<div class="home-empty-mini">Todos los pacientes en tratamiento tuvieron sesión recientemente 🎉</div>':
+          sinAdherencia.map(x=>`
+            <div class="home-alert-item" onclick="selectPatient('${x.p.id}')">
+              <div class="hai-avatar">${initials(x.p.nombre)}</div>
+              <div style="flex:1;min-width:0;">
+                <div class="hai-nombre-bold">${esc(x.p.nombre)}</div>
+                <div class="hai-alerta-txt">${x.last?`Última sesión: ${formatFecha(x.last)} (${tiempoEvolucion(x.dias).corto})`:'Sin sesiones registradas todavía'}</div>
               </div>
             </div>`).join('')}
       </div>
