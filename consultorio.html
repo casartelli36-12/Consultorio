@@ -2411,7 +2411,7 @@ function renderEstadoFilters(){
 function setEstadoFilter(e){currentEstadoFilter=e;renderEstadoFilters();renderPatientList();}
 
 function getEpisodio(p,idx){
-  if(!p.episodios||!p.episodios.length) return {sesiones:p.sesiones||[],evaluaciones:p.evaluaciones||[],estudios:p.estudios||[],cuestionarios:p.cuestionarios||[],movilidad:p.movilidad||{},estado:'tratamiento',nombre:'Episodio 1',fechaInicio:p.fechaInicio||'',fechaAlta:''};
+  if(!p.episodios||!p.episodios.length) return {sesiones:p.sesiones||[],evaluaciones:p.evaluaciones||[],estudios:p.estudios||[],cuestionarios:p.cuestionarios||[],movilidad:p.movilidad||{},estado:p.estado||'tratamiento',nombre:'Episodio 1',fechaInicio:p.fechaInicio||'',fechaAlta:''};
   return p.episodios[idx]||p.episodios[0];
 }
 function getPatientEstado(p){
@@ -2487,13 +2487,11 @@ function renderPatient(){
   });
   const epBar=document.getElementById('epBar');
   const eps=p.episodios||[];
-  if(eps.length>0){
-    epBar.style.display='flex';
-    epBar.innerHTML=eps.map((e,i)=>{
-      const cls=e.estado==='alta'?'ep-alta':e.estado==='abandono'?'ep-abandono':'';
-      return `<div class="ep-chip ${cls} ${i===currentEpisodioIdx?'active':''}" onclick="switchEpisodio(${i})">${esc(e.nombre||'Ep. '+(i+1))}</div>`;
-    }).join('')+`<button class="btn-new-ep" onclick="addEpisodio()">+ Nuevo episodio</button>`;
-  } else{epBar.style.display='none';}
+  epBar.style.display='flex';
+  epBar.innerHTML=eps.map((e,i)=>{
+    const cls=e.estado==='alta'?'ep-alta':e.estado==='abandono'?'ep-abandono':'';
+    return `<div class="ep-chip ${cls} ${i===currentEpisodioIdx?'active':''}" onclick="switchEpisodio(${i})">${esc(e.nombre||'Ep. '+(i+1))}</div>`;
+  }).join('')+`<button class="btn-new-ep" onclick="addEpisodio()">+ Nuevo episodio</button>`;
   renderTab();
 }
 
@@ -3053,7 +3051,8 @@ function renderResumen(panel) {
           <div class="rsum-section-body"><div class="resumen-grid">
             ${rFieldDx(p.dx)}
             ${rField2('Estructura / Lado','rEstructura',p.estructura,'estructura','Cirujano / Médico','rCirujano',p.cirujano,'cirujano')}
-            ${rField2('Fecha inicio / lesión','rFechaInicio',p.fechaInicio,'fechaInicio','Estado / Fase','rEstado',p.estado,'estado','date')}
+            ${rField('Fecha inicio / lesión','rFechaInicio',p.fechaInicio,'fechaInicio','date')}
+            ${rField('Estado / Fase','rFase',p.fase,'fase','text')}
             ${rField('Cirugía / Injerto / Técnica','rCirugia',p.cirugia,'cirugia','text',false)}
             ${rField2('Medicación','rMedicacion',p.medicacion,'medicacion','Contraindicaciones','rContra',p.contra,'contra')}
           </div></div>
@@ -5362,6 +5361,20 @@ dbRef.once('value').then(snapshot=>{
     DB.patients.unshift({id:uid(),nombre:'Kruszewski',edad:'67',contacto:'1154964003',institucion:'Abril',deporte:'Gym · Tenis · Stretching',cirujano:'',dx:'Síndrome meniscal',estructura:'Menisco interno y externo · Derecho',fechaInicio:'2026-06-01',estado:'Fase 1',cirugia:'',antecedentes:'Rotura degenerativa cuerno posterior y cuerpo del menisco interno (trazo oblicuo). Rotura degenerativa cuerno anterior y cuerpo del menisco externo. Artrosis.',objetivos:'Volver a hacer deporte y evitar dolor',medicacion:'',contra:'',alerta:'Artrosis, varias veces se inyectó plasma',notas:'',categoria:'privado',sesiones:[{id:uid(),fecha:'2026-06-09',fase:'Fase 1',subjetivo:'Menos dolor cada día, leve dolor al caminar y al subir y bajar escaleras',ejercicios:[{nombre:'SLR',series:'3',reps:'8',kg:'BW',nota:''},{nombre:'Puente glúteo',series:'3',reps:'8',kg:'BW',nota:''},{nombre:'Abducción y aducción',series:'3',reps:'8',kg:'BW',nota:''},{nombre:'Sentadillas',series:'3',reps:'6',kg:'BW',nota:''}],eva:'4',objetivo:'Extensión y flexión FINAL limitada con dolor, sentadillas bien realizadas',plan:'Agregar banda elástica y peso para próximas sesiones'}],evaluaciones:[],estudios:[],cuestionarios:[],movilidad:{flex:{estado:'limitada',grados:'dolor en FINAL del rango'},ext:{estado:'limitada',grados:'dolor en FINAL del rango'}}});
     saveDB();
   }
+
+  // Migración: 'estado' se usaba antes como texto libre de Fase (ej. "Fase 1") y ahora también
+  // representa tratamiento/alta/abandono. Separamos: si el valor guardado no es uno de los 3
+  // estados válidos, lo pasamos al campo 'fase' (nuevo) sin perderlo, y dejamos 'estado' limpio.
+  const ESTADOS_VALIDOS=['tratamiento','alta','abandono'];
+  let migrado=false;
+  DB.patients.forEach(p=>{
+    if((!p.episodios||!p.episodios.length) && p.estado && ESTADOS_VALIDOS.indexOf(p.estado)===-1){
+      if(!p.fase) p.fase=p.estado;
+      p.estado='tratamiento';
+      migrado=true;
+    }
+  });
+  if(migrado) saveDB();
 
   renderCatFilters();renderEstadoFilters();renderPatientList();
   renderHomeDashboard();
