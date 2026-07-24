@@ -153,6 +153,11 @@ input,textarea,select{font-family:'Inter',sans-serif;}
 .rts-tile{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 6px;text-align:center;}
 .rts-num{font-size:19px;font-weight:700;color:var(--text);line-height:1.1;}
 .rts-lbl{font-size:10px;color:var(--text-3);margin-top:2px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;}
+.proto-mini{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--navy);color:#fff;border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:16px;cursor:pointer;transition:opacity .12s;}
+.proto-mini:active{opacity:.85;}
+.proto-mini-title{font-size:13px;font-weight:700;}
+.proto-mini-estado{font-size:12px;color:rgba(255,255,255,.7);margin-top:2px;}
+.proto-mini-arrow{font-size:12px;font-weight:600;color:rgba(255,255,255,.85);white-space:nowrap;flex-shrink:0;}
 .tur-hist-wrap{border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:16px;overflow:hidden;}
 .tur-hist-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3);background:var(--surface);padding:8px 12px;}
 .tur-hist-row{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;border-top:1px solid var(--border);cursor:pointer;transition:background .12s;}
@@ -432,6 +437,12 @@ input,textarea,select{font-family:'Inter',sans-serif;}
 .tur-modal-footer .btn-secondary{flex:1;}
 .tur-link-hint{font-size:11px;color:var(--text-3);margin-top:5px;min-height:14px;}
 .tur-link-hint.linked{color:var(--green);font-weight:600;}
+.rec-days{display:flex;flex-direction:column;gap:6px;border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;}
+.rec-day-row{display:flex;align-items:center;justify-content:space-between;padding:4px 0;}
+.rec-day-row label{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-2);font-weight:500;cursor:pointer;}
+.rec-day-row input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--orange);}
+.rec-day-row input[type=time]{border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:13px;font-family:'Inter',sans-serif;outline:none;width:110px;}
+.rec-day-row input[type=time]:disabled{opacity:.35;background:var(--surface);}
 
 /* Category filter pills */
 .cat-filters{padding:10px 12px 4px;display:flex;flex-wrap:wrap;gap:6px;}
@@ -468,6 +479,7 @@ input,textarea,select{font-family:'Inter',sans-serif;}
 .btn-del-foto{background:none;border:none;color:var(--text-3);cursor:pointer;font-size:16px;float:right;}
 .save-indicator{position:fixed;bottom:20px;right:20px;background:var(--navy);color:#fff;padding:8px 16px;border-radius:20px;font-size:12px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:500;}
 .save-indicator.show{opacity:1;}
+.save-indicator.error{background:var(--red);}
 .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:99;}
 .sidebar-overlay.open{display:block;}
 
@@ -1751,6 +1763,7 @@ function calcularScoresCuestionario(tipoId, respuestas) {
       <div class="tab" onclick="switchTab('evaluaciones')">Evaluaciones</div>
       <div class="tab" onclick="switchTab('cuestionarios')">Cuestionarios</div>
       <div class="tab" onclick="switchTab('evolucion')">📈 Evolución</div>
+      <div class="tab" onclick="switchTab('protocolo')">🎯 Protocolo</div>
     </div>
     <div class="ep-bar" id="epBar" style="display:none"></div>
 
@@ -2077,7 +2090,57 @@ function calcularScoresCuestionario(tipoId, respuestas) {
   </div>
 </div>
 
+<!-- ═══════════════════ MODAL TURNO RECURRENTE ═══════════════════ -->
+<div class="tur-modal-overlay" id="modalTurnoRecurrente">
+  <div class="tur-modal">
+    <div class="tur-modal-handle"></div>
+    <div class="tur-modal-header">
+      <h2>Turno recurrente</h2>
+      <button class="btn-close" onclick="closeRecModal()">×</button>
+    </div>
+    <div class="tur-modal-body">
+      <div class="modal-field">
+        <label>Paciente</label>
+        <input type="text" id="trPaciente" placeholder="Nombre o buscá un paciente…" list="turPacientesList" autocomplete="off" oninput="onTrPacienteInput(this.value)">
+        <input type="hidden" id="trPacienteId">
+        <div id="trPacienteLinkHint" class="tur-link-hint"></div>
+      </div>
+      <div class="modal-2col">
+        <div class="modal-field"><label>Semana de inicio</label><input type="date" id="trFechaInicio"></div>
+        <div class="modal-field"><label>Cantidad de semanas</label><input type="number" id="trSemanas" value="4" min="1" max="26"></div>
+      </div>
+      <div class="modal-field">
+        <label>Duración de cada sesión</label>
+        <select id="trDuracion">
+          <option value="30">30 min</option>
+          <option value="45">45 min</option>
+          <option value="60" selected>1 hora</option>
+          <option value="90">1 h 30 m</option>
+        </select>
+      </div>
+      <div class="modal-field">
+        <label>Días y horarios (podés poner una hora distinta por día)</label>
+        <div class="rec-days">
+          <div class="rec-day-row"><label><input type="checkbox" id="recDia0" onchange="toggleRecHora(0)"> Lunes</label><input type="time" id="recHora0" step="900" disabled></div>
+          <div class="rec-day-row"><label><input type="checkbox" id="recDia1" onchange="toggleRecHora(1)"> Martes</label><input type="time" id="recHora1" step="900" disabled></div>
+          <div class="rec-day-row"><label><input type="checkbox" id="recDia2" onchange="toggleRecHora(2)"> Miércoles</label><input type="time" id="recHora2" step="900" disabled></div>
+          <div class="rec-day-row"><label><input type="checkbox" id="recDia3" onchange="toggleRecHora(3)"> Jueves</label><input type="time" id="recHora3" step="900" disabled></div>
+          <div class="rec-day-row"><label><input type="checkbox" id="recDia4" onchange="toggleRecHora(4)"> Viernes</label><input type="time" id="recHora4" step="900" disabled></div>
+          <div class="rec-day-row"><label><input type="checkbox" id="recDia5" onchange="toggleRecHora(5)"> Sábado</label><input type="time" id="recHora5" step="900" disabled></div>
+          <div class="rec-day-row"><label><input type="checkbox" id="recDia6" onchange="toggleRecHora(6)"> Domingo</label><input type="time" id="recHora6" step="900" disabled></div>
+        </div>
+      </div>
+      <div class="modal-field"><label>Nota (opcional, se copia a todos los turnos)</label><textarea id="trNota" style="min-height:50px;"></textarea></div>
+    </div>
+    <div class="tur-modal-footer">
+      <button class="btn-secondary" onclick="closeRecModal()">Cancelar</button>
+      <button class="btn-primary" onclick="crearTurnosRecurrentes()">Crear turnos</button>
+    </div>
+  </div>
+</div>
+
 <div class="save-indicator" id="saveIndicator">Guardado ✓</div>
+<div class="save-indicator" id="turToast"></div>
 
 <!-- ═══════════════════ SCRIPT PRINCIPAL ═══════════════════ -->
 <script>
@@ -2087,7 +2150,7 @@ let currentPatientId = null;
 let currentTab = 'resumen';
 let openCardIds = new Set(['rsClinico']); // recuerda qué fichas (sesión/plan/secciones de resumen) quedaron abiertas entre re-renders
 let cargarPlanTarget = null; // id de la sesión sobre la que opera, mientras está abierto modalCargarPlan
-const TAB_ORDER=['resumen','sesiones','plan','evaluaciones','cuestionarios','evolucion'];
+const TAB_ORDER=['resumen','sesiones','plan','evaluaciones','cuestionarios','evolucion','protocolo'];
 let currentView='home'; // 'home' | 'agenda' | 'patient'
 let editingPatientId = null;
 let autoSaveTimer = null;
@@ -2562,6 +2625,7 @@ function renderTab(){
   else if(currentTab==='evaluaciones') renderEvaluaciones(panel);
   else if(currentTab==='cuestionarios')renderCuestionarios(panel);
   else if(currentTab==='evolucion')    renderEvolucion(panel);
+  else if(currentTab==='protocolo')    renderProtocolo(panel);
 }
 
 function switchEpisodio(idx){currentEpisodioIdx=idx;renderPatient();}
@@ -2873,7 +2937,8 @@ function renderTurnosShell() {
         <button class="tur-arrow" onclick="turNavNext()">›</button>
       </div>
       <button class="tur-today-btn" onclick="turGoToday()">Hoy</button>
-      <button onclick="openNewTurno('${today}','09:00')" style="padding:8px 16px;background:var(--orange);color:#fff;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;">+ Turno</button>
+      <button onclick="openNewTurno('${ymd(turPivot)}','09:00')" style="padding:8px 16px;background:var(--orange);color:#fff;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;">+ Turno</button>
+      <button onclick="openRecModal()" style="padding:8px 14px;background:transparent;border:1px solid var(--border);color:var(--text-2);border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;">🔁 Recurrente</button>
     </div>`;
   let viewHtml = '';
   if(turView==='semana')     viewHtml = buildWeekGrid(days, today);
@@ -3024,6 +3089,83 @@ function onTPacienteInput(v){
   hint.textContent = m ? `✓ Vinculado a la ficha de ${m.nombre}` : (v.trim() ? 'Paciente nuevo (sin ficha) — se guarda solo el nombre' : '');
   hint.classList.toggle('linked', !!m);
 }
+
+// ── Turnos recurrentes ──────────────────────────────────────────────────────
+function toggleRecHora(i){
+  const cb=document.getElementById('recDia'+i);
+  const t=document.getElementById('recHora'+i);
+  t.disabled=!cb.checked;
+  if(cb.checked && !t.value) t.value='09:00';
+}
+function onTrPacienteInput(v){
+  const m=(DB.patients||[]).find(p=>p.nombre===v);
+  document.getElementById('trPacienteId').value = m?m.id:'';
+  const hint=document.getElementById('trPacienteLinkHint');
+  hint.textContent = m ? `✓ Vinculado a la ficha de ${m.nombre}` : (v.trim() ? 'Paciente nuevo (sin ficha) — se guarda solo el nombre' : '');
+  hint.classList.toggle('linked', !!m);
+}
+function openRecModal(){
+  document.getElementById('trPaciente').value='';
+  document.getElementById('trPacienteId').value='';
+  document.getElementById('trPacienteLinkHint').textContent='';
+  document.getElementById('trPacienteLinkHint').classList.remove('linked');
+  document.getElementById('trFechaInicio').value=ymd(turPivot||new Date());
+  document.getElementById('trSemanas').value='4';
+  document.getElementById('trDuracion').value='60';
+  document.getElementById('trNota').value='';
+  for(let i=0;i<7;i++){
+    document.getElementById('recDia'+i).checked=false;
+    document.getElementById('recHora'+i).disabled=true;
+    document.getElementById('recHora'+i).value='';
+  }
+  const dl = document.getElementById('turPacientesList');
+  dl.innerHTML = (DB.patients||[]).map(p=>`<option value="${esc(p.nombre)}">`).join('');
+  document.getElementById('modalTurnoRecurrente').classList.add('open');
+}
+function closeRecModal(){
+  document.getElementById('modalTurnoRecurrente').classList.remove('open');
+}
+function crearTurnosRecurrentes(){
+  const paciente=document.getElementById('trPaciente').value.trim();
+  const pacienteId=document.getElementById('trPacienteId').value||null;
+  const fechaInicio=document.getElementById('trFechaInicio').value;
+  const semanas=parseInt(document.getElementById('trSemanas').value)||0;
+  const duracion=parseInt(document.getElementById('trDuracion').value);
+  const nota=document.getElementById('trNota').value.trim();
+  if(!paciente||!fechaInicio){ showToastTur('Completá paciente y semana de inicio',true); return; }
+  if(semanas<1){ showToastTur('La cantidad de semanas tiene que ser al menos 1',true); return; }
+  const dias=[];
+  for(let i=0;i<7;i++){
+    const cb=document.getElementById('recDia'+i);
+    if(cb.checked){
+      const hora=document.getElementById('recHora'+i).value;
+      if(hora) dias.push({offset:i, hora});
+    }
+  }
+  if(!dias.length){ showToastTur('Elegí al menos un día con horario',true); return; }
+  const monday=getWeekMon(new Date(fechaInicio+'T12:00:00'));
+  const updates={};
+  let count=0;
+  for(let w=0; w<semanas; w++){
+    const baseMonday=addDays(monday, w*7);
+    dias.forEach(d=>{
+      const fecha=ymd(addDays(baseMonday, d.offset));
+      const id=turnosRef.push().key;
+      updates[id]={paciente,pacienteId,fecha,hora:d.hora,duracion,estado:'confirmado',nota};
+      count++;
+    });
+  }
+  turnosRef.update(updates).then(()=>{
+    closeRecModal();
+    showToastTur(`${count} turnos creados ✓`);
+    if(currentView==='agenda') renderTurnosShell();
+  }).catch(err=>{
+    console.error('Error creando turnos recurrentes:',err);
+    showToastTur('No se pudieron crear los turnos. Intentá de nuevo.',true);
+  });
+}
+document.getElementById('modalTurnoRecurrente').addEventListener('click',function(e){if(e.target===this)closeRecModal();});
+
 function openNewTurno(fecha, hora){
   turEditId=null;
   document.getElementById('turModalTitle').textContent='Nuevo turno';
@@ -3095,7 +3237,7 @@ function saveTurno(){
   const paciente=document.getElementById('tPaciente').value.trim();
   const fecha=document.getElementById('tFecha').value;
   const hora=document.getElementById('tHora').value;
-  if(!paciente||!fecha||!hora){showToastTur('Completá paciente, fecha y hora');return;}
+  if(!paciente||!fecha||!hora){showToastTur('Completá paciente, fecha y hora',true);return;}
   const pacienteId=document.getElementById('tPacienteId').value||null;
   const data={paciente,pacienteId,fecha,hora,duracion:parseInt(document.getElementById('tDuracion').value),estado:document.getElementById('tEstado').value,nota:document.getElementById('tNota').value.trim()};
   const ref=turEditId?turnosRef.child(turEditId):turnosRef.push();
@@ -3103,6 +3245,9 @@ function saveTurno(){
     closeTurModal();
     showToastTur(turEditId?'Turno actualizado ✓':'Turno guardado ✓');
     turEditId=null;
+  }).catch(err=>{
+    console.error('Error guardando turno:',err);
+    showToastTur('No se pudo guardar. Revisá tu conexión e intentá de nuevo.',true);
   });
 }
 function deleteTurno(){
@@ -3110,6 +3255,9 @@ function deleteTurno(){
   if(!confirm('¿Eliminar este turno?')) return;
   turnosRef.child(turEditId).remove().then(()=>{
     closeTurModal();showToastTur('Turno eliminado');turEditId=null;
+  }).catch(err=>{
+    console.error('Error eliminando turno:',err);
+    showToastTur('No se pudo eliminar. Intentá de nuevo.',true);
   });
 }
 function deleteTurnoFromDetail(){
@@ -3118,6 +3266,9 @@ function deleteTurnoFromDetail(){
   turnosRef.child(turDetailId).remove().then(()=>{
     document.getElementById('modalTurnoDetalle').classList.remove('open');
     showToastTur('Turno eliminado');turDetailId=null;
+  }).catch(err=>{
+    console.error('Error eliminando turno:',err);
+    showToastTur('No se pudo eliminar. Intentá de nuevo.',true);
   });
 }
 function marcarRealizado(){
@@ -3126,6 +3277,9 @@ function marcarRealizado(){
   turnosRef.child(turDetailId).set(t).then(()=>{
     document.getElementById('modalTurnoDetalle').classList.remove('open');
     showToastTur('Marcado como realizado ✓');
+  }).catch(err=>{
+    console.error('Error:',err);
+    showToastTur('No se pudo actualizar. Intentá de nuevo.',true);
   });
 }
 function marcarAusente(){
@@ -3134,11 +3288,204 @@ function marcarAusente(){
   turnosRef.child(turDetailId).set(t).then(()=>{
     document.getElementById('modalTurnoDetalle').classList.remove('open');
     showToastTur('Marcado como ausente');
+  }).catch(err=>{
+    console.error('Error:',err);
+    showToastTur('No se pudo actualizar. Intentá de nuevo.',true);
   });
 }
-function showToastTur(msg){showSaveIndicator();}
+function showToastTur(msg,isError){
+  const el=document.getElementById('turToast');
+  if(!el) return;
+  el.textContent=msg;
+  el.classList.toggle('error',!!isError);
+  el.classList.add('show');
+  clearTimeout(el._hideTimer);
+  el._hideTimer=setTimeout(()=>el.classList.remove('show'), isError?2800:1600);
+}
 document.getElementById('modalTurno').addEventListener('click',function(e){if(e.target===this)closeTurModal();});
 document.getElementById('modalTurnoDetalle').addEventListener('click',function(e){if(e.target===this)document.getElementById('modalTurnoDetalle').classList.remove('open');});
+
+// ── PROTOCOLOS POR FASES (hitos tildables) ──────────────────────────────────
+const PROTOCOLOS_FASES = {
+  lca: {
+    nombre:'LCA — Reconstrucción de ligamento cruzado anterior',
+    dxKeywords:['lca','ligamento cruzado anterior','cruzado anterior','ligamentoplastia'],
+    fases:[
+      {numero:1, criterios:['Extensión completa (comparación contralateral)','Alcanzar flexión de 90°','Restablecer el control del cuádriceps','Deambulación sin alteraciones ni ayuda'], objetivos:['Disminuir la inflamación'], ejercicios:['Movilidad pasiva, activa y activa reforzada','Isométricos en camilla ± electroestimulación','Marcha']},
+      {numero:2, criterios:['Extensión completa','Flexión próxima a 90°','Sin signos de inflamación','Buena movilidad de rótula','Buen control del cuádriceps'], objetivos:['Mantener la extensión completa','Progresar la flexión','Marcha normal sin compensaciones','Aumentar la activación del cuádriceps','Buen patrón de CCC bipodal'], ejercicios:['Movilidad pasiva, activa y activa reforzada','Isométricos e isotónicos de CCA de 0 a 90°','CCC de 0 a 30° progresando a 0-90°']},
+      {numero:3, criterios:['Movilidad pasiva de rodilla de 0 a 120°','Fuerza ISO de cuádriceps a 60° ≥60% del contralateral','Fuerza de isquiosurales a 90° simétrica'], objetivos:['Restablecer la movilidad completa','Aumentar la fuerza del miembro inferior','Buen patrón de CCC monopodal','Comenzar progresión de saltos a dos piernas'], ejercicios:['Movilidad activa','CCC bipodal de 0 a 90°, CCA a necesidad','Equilibrio bipodal (proactivo y reactivo)','Progresión de saltos a dos piernas']},
+      {numero:4, criterios:['Fuerza ISO de cuádriceps a 60° ≥60% del contralateral','Fuerza de isquiosurales a 90° simétrica','Movilidad pasiva de rodilla de 0 a 120°'], objetivos:['Normalizar la fuerza del miembro inferior','Progresar la CCC monopodal hacia saltos y carrera','Mayor dificultad en control neuromuscular','Aumentar volumen/intensidad de carrera sin dolor'], ejercicios:['Ejercicios monopodales > bipodales','Saltos bipodales y salto monopodal','Equilibrio monopodal','Carrera lineal — intensidades bajas y medias']},
+      {numero:5, criterios:['Fuerza de cuádriceps LSI ≥90% del contralateral','Fuerza de isquiosurales LSI ≥90% del contralateral','Hop tests (single, triple, cross-over) LSI ≥90%','Sin dolor ni derrame con la actividad completa','ACL-RSI con puntaje adecuado para el retorno'], objetivos:['Retorno progresivo al entrenamiento con el equipo y a la competencia'], ejercicios:['Entrenamiento pliométrico completo','Cambios de dirección y gestos específicos del deporte','Reintegración progresiva a la práctica con el equipo']},
+    ]
+  },
+  tendinopatia_rotuliana: {
+    nombre:'Tendinopatía rotuliana',
+    dxKeywords:['tendinopatia rotuliana','tendon rotuliano','rodilla de saltador','jumper'],
+    fases:[
+      {numero:1, criterios:['Dolor ≤3/10 con las actividades de la vida diaria','Isometrías toleradas sin aumento de dolor >24h','Buen control de la contracción de cuádriceps'], objetivos:['Reducir el dolor tendinoso','Mantener capacidad de carga sin sobrecargar'], ejercicios:['Isometrías de cuádriceps (ej. sentadilla en pared) 30-45 seg','Trabajo de control motor de cadera y core','Modificación temporal de la carga deportiva']},
+      {numero:2, criterios:['Dolor ≤3/10 durante y 24h después del ejercicio','Fuerza de cuádriceps mejorando en isotónicos','Tolerancia a step-down/sentadilla sin aumento de síntomas'], objetivos:['Aumentar la capacidad de carga del tendón','Mejorar fuerza y control excéntrico-concéntrico'], ejercicios:['Sentadilla isotónica progresiva','Prensa/leg press bilateral a unilateral','Step-down controlado','Trabajo excéntrico de cuádriceps']},
+      {numero:3, criterios:['Sin dolor significativo con carga isotónica pesada','Fuerza de cuádriceps LSI ≥80% del contralateral','Tolerancia a saltos submáximos sin dolor >24h'], objetivos:['Introducir carga elástica/pliométrica de baja intensidad','Progresar la tolerancia al almacenamiento y liberación de energía del tendón'], ejercicios:['Saltos bipodales submáximos','Pliometría de baja amplitud','Progresión de carga en sentadilla/prensa con mayor velocidad']},
+      {numero:4, criterios:['Fuerza de cuádriceps LSI ≥90% del contralateral','Tolerancia completa a pliometría específica del deporte sin dolor','VISA-P con puntaje adecuado para el retorno'], objetivos:['Retorno progresivo al entrenamiento completo y a la competencia'], ejercicios:['Pliometría específica del deporte','Entrenamiento de cambios de dirección','Reintegración progresiva a la práctica']},
+    ]
+  },
+  tendinopatia_aquiles: {
+    nombre:'Tendinopatía de Aquiles',
+    dxKeywords:['tendinopatia de aquiles','tendinopatia aquilea','tendon de aquiles','aquiles'],
+    fases:[
+      {numero:1, criterios:['Dolor ≤3/10 con las actividades de la vida diaria','Isometrías de flexión plantar toleradas sin aumento de dolor >24h','Marcha sin claudicación'], objetivos:['Reducir el dolor tendinoso','Mantener capacidad de carga del tríceps sural'], ejercicios:['Isometrías de flexión plantar (bipodal)','Modificación temporal de la carga deportiva','Movilidad de tobillo sin forzar el dolor']},
+      {numero:2, criterios:['Dolor ≤3/10 durante y 24h después del ejercicio','Buena tolerancia a elevación de talones bipodal con carga','Fuerza de flexión plantar mejorando'], objetivos:['Aumentar la capacidad de carga del tendón','Progresar de bipodal a unipodal'], ejercicios:['Elevación de talones bipodal progresando a unipodal','Excéntricos de gemelos (tipo Alfredson)','Fuerza de tríceps sural con carga progresiva']},
+      {numero:3, criterios:['Fuerza de flexión plantar LSI ≥50-70% del contralateral','Sin dolor con las actividades de fortalecimiento'], objetivos:['Simetrizar la fuerza de flexión plantar','Iniciar el trote'], ejercicios:['Pliometría liviana bipodal','Trote en superficie plana','Excéntricos de gemelos']},
+      {numero:4, criterios:['Fuerza de flexión plantar LSI ≥90% del contralateral','Salto monopodal simétrico','VISA-A con puntaje adecuado para el retorno'], objetivos:['Retorno progresivo a la carrera, cambios de dirección y el deporte'], ejercicios:['Carrera progresiva en volumen e intensidad','Pliometría completa','Agilidad y gestos deportivos específicos']},
+    ]
+  },
+  hombro: {
+    nombre:'Hombro — Cirugía / luxación',
+    dxKeywords:['luxacion de hombro','inestabilidad de hombro','cirugia de hombro','reparacion de manguito rotador','manguito rotador','bankart','latarjet','estabilizacion de hombro'],
+    fases:[
+      {numero:1, criterios:['Sin dolor en reposo','Herida/cicatrización en buen estado (si es post-quirúrgico)','Rango pasivo de flexión ≥90° sin dolor','Buena activación de isométricos submáximos'], objetivos:['Proteger la reparación/estructura','Controlar el dolor y la inflamación','Prevenir la rigidez'], ejercicios:['Movilidad pasiva asistida dentro del rango permitido','Isométricos submáximos de rotadores y deltoides','Movilidad de codo, muñeca y mano']},
+      {numero:2, criterios:['Rango activo de flexión ≥120°','Rotación externa/interna dentro de los límites según técnica quirúrgica','Sin dolor con movilidad activa asistida','Buen control escapular'], objetivos:['Recuperar el rango de movimiento activo completo','Mejorar el control neuromuscular escapular'], ejercicios:['Movilidad activa asistida y activa','Ejercicios de estabilización escapular','Isotónicos livianos de manguito rotador']},
+      {numero:3, criterios:['Rango de movimiento activo completo y simétrico','Fuerza de manguito rotador ≥70% del contralateral','Sin dolor con ejercicios de fuerza submáxima'], objetivos:['Fortalecer el manguito rotador y la cintura escapular','Mejorar la resistencia muscular'], ejercicios:['Fortalecimiento isotónico progresivo de manguito rotador','Ejercicios de cadena cinética cerrada para el hombro','Fortalecimiento de dorsal ancho y trapecio']},
+      {numero:4, criterios:['Fuerza de manguito rotador LSI ≥90% del contralateral','Sin dolor ni aprensión con gestos por encima de la cabeza','Buen control dinámico en posiciones de riesgo (abducción + rotación externa)'], objetivos:['Retorno progresivo a gestos deportivos y a la actividad completa'], ejercicios:['Ejercicios pliométricos para miembro superior','Gestos deportivos específicos (lanzamiento, remate, etc.)','Reintegración progresiva al entrenamiento']},
+    ]
+  }
+};
+function detectProtocoloTipo(p){
+  const dxN=normDx(p.dx||'');
+  if(!dxN) return '';
+  for(const key in PROTOCOLOS_FASES){
+    if(PROTOCOLOS_FASES[key].dxKeywords.some(k=>dxN.includes(normDx(k)))) return key;
+  }
+  return '';
+}
+function getProtocoloFase(ep){ if(!ep.protocoloFase) ep.protocoloFase={hitos:{}}; if(!ep.protocoloFase.hitos) ep.protocoloFase.hitos={}; return ep.protocoloFase; }
+function setProtocoloTipo(tipo){
+  const p=getPatient(currentPatientId); const ep=getEpData(p);
+  ep.protocoloFase={tipo:tipo||'__none__', hitos:{}};
+  saveDB(); renderTab();
+}
+function toggleProtocoloHito(faseNum, idx){
+  const p=getPatient(currentPatientId); const ep=getEpData(p);
+  const pf=getProtocoloFase(ep);
+  const key=faseNum+'_'+idx;
+  pf.hitos[key]=!pf.hitos[key];
+  saveDB(); renderTab();
+}
+function getFaseActualProtocolo(protocolo, hitos){
+  for(const fase of protocolo.fases){
+    const completos=fase.criterios.every((_,i)=>hitos[fase.numero+'_'+i]);
+    if(!completos) return fase;
+  }
+  return protocolo.fases[protocolo.fases.length-1];
+}
+
+// ── PROTOCOLO (pestaña propia, revelado progresivo de fases) ────────────────
+function renderProtocolo(panel){
+  const p=getPatient(currentPatientId);
+  const ep=getEpData(p);
+  const pf=getProtocoloFase(ep);
+  const autodetect=detectProtocoloTipo(p);
+  const tipo=pf.tipo!==undefined?pf.tipo:autodetect;
+  const selectorHTML=`<select onchange="setProtocoloTipo(this.value)" style="border:1px solid var(--border);background:var(--bg);border-radius:var(--radius-sm);padding:8px 10px;font-size:13px;font-family:Inter,sans-serif;outline:none;color:var(--text);font-weight:600;">
+    <option value="__none__" ${(!tipo||tipo==='__none__')?'selected':''}>Sin protocolo asignado</option>
+    ${Object.entries(PROTOCOLOS_FASES).map(([k,v])=>`<option value="${k}" ${tipo===k?'selected':''}>${esc(v.nombre)}</option>`).join('')}
+  </select>`;
+
+  if(!tipo || tipo==='__none__'){
+    panel.innerHTML=`<div style="max-width:480px;">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);margin-bottom:8px;">🎯 Protocolo por fases</div>
+      ${selectorHTML}
+      ${autodetect?`<div style="margin-top:10px;font-size:12px;color:var(--text-2);">Sugerido según el diagnóstico: <b>${esc(PROTOCOLOS_FASES[autodetect].nombre)}</b> — <button onclick="setProtocoloTipo('${autodetect}')" style="background:none;border:none;color:var(--navy);font-weight:700;cursor:pointer;padding:0;text-decoration:underline;font-size:12px;">usar este</button></div>`:''}
+      <p style="font-size:12.5px;color:var(--text-3);margin-top:14px;">Elegí un protocolo para hacer seguimiento de las fases y los criterios de progresión de este paciente.</p>
+    </div>`;
+    return;
+  }
+
+  const protocolo=PROTOCOLOS_FASES[tipo];
+  const hitos=pf.hitos||{};
+  const faseActual=getFaseActualProtocolo(protocolo,hitos);
+  const ultimaFase=protocolo.fases[protocolo.fases.length-1].numero;
+
+  const bloques=protocolo.fases.map(fase=>{
+    const completos=fase.criterios.filter((_,i)=>hitos[fase.numero+'_'+i]).length;
+    const todoCompleto=completos===fase.criterios.length;
+    const esActual=fase.numero===faseActual.numero;
+    const key='proto_fase_'+fase.numero;
+    const abierta=esActual||openCardIds.has(key);
+    let estadoTag;
+    if(todoCompleto) estadoTag=`<span style="font-size:10px;font-weight:700;color:var(--green);background:var(--green-light);padding:2px 8px;border-radius:20px;flex-shrink:0;">✓ Completa</span>`;
+    else if(esActual) estadoTag=`<span style="font-size:10px;font-weight:700;color:var(--orange);background:var(--orange-light);padding:2px 8px;border-radius:20px;flex-shrink:0;">EN CURSO</span>`;
+    else estadoTag=`<span style="font-size:10px;font-weight:700;color:var(--text-3);background:var(--surface);padding:2px 8px;border-radius:20px;flex-shrink:0;">Pendiente</span>`;
+
+    const cuerpo = abierta ? `
+      <div style="padding:12px 14px;">
+        <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;">
+          ${fase.criterios.map((c,i)=>{
+            const checked=!!hitos[fase.numero+'_'+i];
+            return `<label style="display:flex;align-items:flex-start;gap:8px;font-size:12.5px;color:var(--text);cursor:pointer;">
+              <input type="checkbox" ${checked?'checked':''} onchange="toggleProtocoloHito(${fase.numero},${i})" style="margin-top:2px;">
+              <span>${esc(c)}</span>
+            </label>`;
+          }).join('')}
+        </div>
+        ${fase.objetivos&&fase.objetivos.length?`<div style="margin-bottom:8px;"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3);margin-bottom:4px;">Objetivos de la fase</div><div style="font-size:12px;color:var(--text-2);">${fase.objetivos.map(o=>esc(o)).join(' · ')}</div></div>`:''}
+        ${fase.ejercicios&&fase.ejercicios.length?`<div><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3);margin-bottom:4px;">Tipos de ejercicio sugeridos</div><div style="font-size:12px;color:var(--text-2);">${fase.ejercicios.map(o=>esc(o)).join(' · ')}</div></div>`:''}
+      </div>` : '';
+
+    return `<div style="border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:10px;${!esActual&&!todoCompleto?'opacity:.7;':''}">
+      <div style="padding:10px 14px;background:${esActual?'var(--navy)':'var(--surface)'};display:flex;justify-content:space-between;align-items:center;cursor:pointer;gap:8px;" onclick="toggleProtoFaseOpen(${fase.numero})">
+        <span style="font-size:13px;font-weight:700;color:${esActual?'#fff':'var(--text)'};">Fase ${fase.numero}${fase.numero===ultimaFase?' (última)':''} · ${completos}/${fase.criterios.length}</span>
+        ${estadoTag}
+      </div>
+      ${cuerpo}
+    </div>`;
+  }).join('');
+
+  const esUltima=faseActual.numero===ultimaFase;
+  const completosActual=faseActual.criterios.filter((_,i)=>hitos[faseActual.numero+'_'+i]).length;
+  const todoCompletoActual=completosActual===faseActual.criterios.length;
+  let mensaje;
+  if(esUltima&&todoCompletoActual) mensaje=`<div style="background:var(--green-light);border:1px solid var(--green);border-radius:var(--radius-sm);padding:10px 12px;font-size:13px;color:var(--green);font-weight:600;margin-bottom:14px;">🏁 Cumple todos los criterios de la última fase — protocolo completo.</div>`;
+  else if(todoCompletoActual) mensaje=`<div style="background:var(--orange-light);border:1px solid var(--orange);border-radius:var(--radius-sm);padding:10px 12px;font-size:13px;color:var(--orange);font-weight:600;margin-bottom:14px;">✅ Cumple los criterios de esta fase — se podría avanzar a la Fase ${faseActual.numero+1}.</div>`;
+  else mensaje=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-size:13px;color:var(--text-2);margin-bottom:14px;">Faltan ${faseActual.criterios.length-completosActual} criterio${faseActual.criterios.length-completosActual!==1?'s':''} para avanzar de fase.</div>`;
+
+  panel.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+      <div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);margin-bottom:3px;">🎯 Protocolo por fases</div>
+        <div style="font-size:15px;font-weight:700;">${esc(protocolo.nombre)}</div>
+      </div>
+      ${selectorHTML}
+    </div>
+    ${mensaje}
+    ${bloques}`;
+}
+function toggleProtoFaseOpen(numero){
+  const key='proto_fase_'+numero;
+  if(openCardIds.has(key)) openCardIds.delete(key); else openCardIds.add(key);
+  renderTab();
+}
+function buildProtocoloResumenMiniHTML(p, ep){
+  const pf=getProtocoloFase(ep);
+  const autodetect=detectProtocoloTipo(p);
+  const tipo=pf.tipo!==undefined?pf.tipo:autodetect;
+  if(!tipo||tipo==='__none__') return '';
+  const protocolo=PROTOCOLOS_FASES[tipo];
+  if(!protocolo) return '';
+  const hitos=pf.hitos||{};
+  const faseActual=getFaseActualProtocolo(protocolo,hitos);
+  const ultimaFase=protocolo.fases[protocolo.fases.length-1].numero;
+  const completos=faseActual.criterios.filter((_,i)=>hitos[faseActual.numero+'_'+i]).length;
+  const esUltima=faseActual.numero===ultimaFase;
+  const todoCompleto=completos===faseActual.criterios.length;
+  const estado = (esUltima&&todoCompleto) ? '🏁 Protocolo completo' : `Fase ${faseActual.numero} de ${ultimaFase} · ${completos}/${faseActual.criterios.length} criterios`;
+  return `<div class="proto-mini" onclick="switchTab('protocolo')">
+    <div>
+      <div class="proto-mini-title">🎯 ${esc(protocolo.nombre)}</div>
+      <div class="proto-mini-estado">${estado}</div>
+    </div>
+    <span class="proto-mini-arrow">Ver detalle →</span>
+  </div>`;
+}
 
 // ── RESUMEN ───────────────────────────────────────────────────────────────────
 function buildTurHistorialHTML(patientId){
@@ -3177,11 +3524,13 @@ function renderResumen(panel) {
   const secAnt=openCardIds.has('rsAntecedentes');
   const turStats=getPatientTurnoStats(currentPatientId);
   const turHistHTML=buildTurHistorialHTML(currentPatientId);
+  const protoMiniHTML=buildProtocoloResumenMiniHTML(p, ep);
   panel.innerHTML=`
     <div class="alerta-field">
       <span class="alerta-icon">⚡</span>
       <input type="text" id="rAlerta" value="${esc(p.alerta||'')}" placeholder="Alerta / nota clave" oninput="updateField('alerta',this.value)">
     </div>
+    ${protoMiniHTML}
     <div class="rsum-tur-stats">
       <div class="rts-tile"><div class="rts-num">${turStats.total}</div><div class="rts-lbl">Turnos</div></div>
       <div class="rts-tile"><div class="rts-num" style="color:var(--green)">${turStats.realizados}</div><div class="rts-lbl">Realizados</div></div>
