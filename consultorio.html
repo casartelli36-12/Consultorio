@@ -25,6 +25,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const dbRef = firebase.database().ref('consultorio');
 const turnosRef = firebase.database().ref('turnos');
+const pendRef = firebase.database().ref('consultorio_pendientes');
 </script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -513,6 +514,11 @@ input,textarea,select{font-family:'Inter',sans-serif;}
 .cuest-form-sub-header:first-child{margin-top:0;}
 .cuest-type-pick{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .cuest-type-card{border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:14px;cursor:pointer;text-align:center;transition:all .15s;}
+.cuest-share-btn{position:absolute;top:6px;right:6px;width:26px;height:26px;border:none;background:var(--bg-2,#F0F1F0);border-radius:50%;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;}
+.cuest-share-btn:active{background:var(--border);}
+.hai-actions{display:flex;gap:6px;margin-top:6px;}
+.hai-btn-ok{background:var(--green,#2E7D4F);color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11.5px;font-weight:600;cursor:pointer;}
+.hai-btn-x{background:transparent;color:var(--text-3);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:11.5px;cursor:pointer;}
 .cuest-type-card:hover{border-color:var(--blue-chip);background:var(--blue-chip-light);}
 .cuest-type-card .ctc-name{font-size:14px;font-weight:700;color:var(--navy);}
 .cuest-type-card .ctc-region{font-size:11px;color:var(--text-3);margin-top:3px;}
@@ -2159,6 +2165,8 @@ let editingCuestId = null;
 
 // ── TURNOS estado ──────────────────────────────────────────────────────────────
 let TURNOS = {};
+let PENDIENTES = {};
+let pendientesLoaded = false;
 let dbPatientsLoaded=false, turnosLoaded=false, turnosMigrados=false;
 let turView = 'semana';
 let turPivot = new Date();
@@ -2736,7 +2744,8 @@ function openCuestPick(){
   el.innerHTML = Object.entries(porRegion).map(([region,defs])=>`
     <div style="grid-column:1/-1;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:${regionColor(region)};margin:10px 0 2px;">${esc(region)}</div>
     ${defs.map(([id,def])=>`
-      <div class="cuest-type-card" style="border-left:4px solid ${regionColor(region)}" onclick="pickCuestType('${id}')">
+      <div class="cuest-type-card" style="border-left:4px solid ${regionColor(region)};position:relative;" onclick="pickCuestType('${id}')">
+        <button class="cuest-share-btn" onclick="event.stopPropagation();shareCuestLink('${id}')" title="Enviar a distancia">🔗</button>
         <div class="ctc-name">${esc(def.nombre)}</div>
         <div class="ctc-region">${esc(def.nombreCompleto)}</div>
         ${def.descripcion?`<div class="ctc-desc">${esc(def.descripcion)}</div>`:''}
@@ -2744,6 +2753,53 @@ function openCuestPick(){
   document.getElementById('modalCuestPick').classList.add('open');
 }
 function closeModalCuestPick(){document.getElementById('modalCuestPick').classList.remove('open');}
+
+// ── Cuestionario a distancia (link para que el paciente complete solo) ────────
+// NOTA: ajustar CUESTIONARIO_BASE_URL si la URL de GitHub Pages difiere.
+const CUESTIONARIO_BASE_URL = 'https://casartelli36-12.github.io/Consultorio/cuestionario.html';
+function shareCuestLink(tipoId){
+  const p = getPatient(currentPatientId);
+  if(!p) return;
+  const def = QUESTIONNAIRES[tipoId];
+  const url = `${CUESTIONARIO_BASE_URL}?p=${encodeURIComponent(p.id)}&t=${encodeURIComponent(tipoId)}&n=${encodeURIComponent(p.nombre||'')}`;
+  const texto = `Hola${p.nombre?' '+p.nombre.split(' ')[0]:''}! Por favor completá este cuestionario (${def?def.nombre:tipoId}) desde tu celular, se envía solo: ${url}`;
+  if(navigator.share){
+    navigator.share({title:'Cuestionario '+(def?def.nombre:''), text:texto}).catch(()=>{});
+  } else if(navigator.clipboard){
+    navigator.clipboard.writeText(texto).then(()=>showToast('Link copiado ✓')).catch(()=>{ prompt('Copiá este link:', url); });
+  } else {
+    prompt('Copiá este link:', url);
+  }
+}
+
+// Cuestionarios completados a distancia por el paciente, pendientes de revisar/incorporar
+function pendientesList(){
+  return Object.entries(PENDIENTES).map(([id,x])=>({id,...x})).sort((a,b)=>(b.ts||0)-(a.ts||0));
+}
+function incorporarPendiente(pendId){
+  const pend = PENDIENTES[pendId];
+  if(!pend){ showToast('Ese cuestionario ya no está disponible.'); return; }
+  const p = getPatient(pend.pacienteId);
+  if(!p){
+    alert(`No se encontró ningún paciente con ese ID en la app (venía marcado como "${pend.pacienteNombre||'—'}"). Puede que se haya borrado o cambiado. Podés descartarlo desde acá.`);
+    return;
+  }
+  // Se incorpora siempre al episodio más reciente del paciente (el "activo"),
+  // no al que esté abierto en pantalla en ese momento — getEpData() usa el
+  // índice de episodio actual de la UI, que puede pertenecer a otro paciente.
+  const ep = (p.episodios && p.episodios.length) ? p.episodios[p.episodios.length-1] : p;
+  if(!ep.cuestionarios) ep.cuestionarios=[];
+  ep.cuestionarios.push({id:uid(), tipoId:pend.tipoId, fecha:pend.fecha, respuestas:pend.respuestas||{}, scores:pend.scores||{}});
+  saveDB();
+  pendRef.child(pendId).remove();
+  showToast('Cuestionario incorporado ✓');
+  if(currentView==='home') renderHomeDashboard();
+}
+function descartarPendiente(pendId){
+  if(!confirm('¿Descartar este cuestionario recibido? No se puede deshacer.')) return;
+  pendRef.child(pendId).remove();
+  showToast('Descartado');
+}
 
 function openCuestManager(){
   const el=document.getElementById('cuestManagerList');
@@ -5653,6 +5709,9 @@ function renderHomeDashboard(){
   let cuestMes=0;
   pts.forEach(p=>getAllEpisodios(p).forEach(ep=>(ep.cuestionarios||[]).forEach(c=>{ if(c.fecha&&c.fecha.startsWith(ym)) cuestMes++; })));
 
+  // Cuestionarios completados a distancia por el paciente, pendientes de incorporar
+  const pendList = pendientesList().map(x=>({...x, p:getPatient(x.pacienteId)}));
+
   // Alertas activas (pacientes en tratamiento con alerta cargada)
   const conAlerta = enTratamiento.filter(p=>p.alerta&&p.alerta.trim());
 
@@ -5793,6 +5852,27 @@ function renderHomeDashboard(){
         </div>`}
       </div>
 
+      ${pendList.length?`
+      <div class="home-card" style="grid-column:1/-1">
+        <div class="home-card-title">📨 Cuestionarios recibidos a distancia</div>
+        ${pendList.map(x=>{
+          const def=QUESTIONNAIRES[x.tipoId];
+          const nombre = x.p ? x.p.nombre : (x.pacienteNombre||'Paciente no identificado');
+          return `
+            <div class="home-alert-item">
+              <div class="hai-avatar">${initials(nombre)}</div>
+              <div style="flex:1;min-width:0;">
+                <div class="hai-nombre-bold">${esc(nombre)}</div>
+                <div class="hai-alerta-txt">${esc(def?def.nombre:x.tipoId)} · ${formatFecha(x.fecha)}${!x.p?' · ⚠ paciente no encontrado':''}</div>
+                <div class="hai-actions">
+                  <button class="hai-btn-ok" onclick="incorporarPendiente('${x.id}')">✓ Incorporar</button>
+                  <button class="hai-btn-x" onclick="descartarPendiente('${x.id}')">Descartar</button>
+                </div>
+              </div>
+            </div>`;
+        }).join('')}
+      </div>`:''}
+
       <div class="home-card" style="grid-column:1/-1">
         <div class="home-card-title">⚡ Alertas activas</div>
         ${!conAlerta.length?'<div class="home-empty-mini">Ningún paciente en tratamiento tiene una alerta cargada.</div>':
@@ -5910,6 +5990,12 @@ turnosRef.on('value', snap=>{
   turnosLoaded=true;
   tryMigrarTurnos();
   if(currentView==='agenda') renderTurnosShell();
+  if(currentView==='home' && DB.patients) renderHomeDashboard();
+});
+
+pendRef.on('value', snap=>{
+  PENDIENTES=snap.val()||{};
+  pendientesLoaded=true;
   if(currentView==='home' && DB.patients) renderHomeDashboard();
 });
 
