@@ -463,7 +463,9 @@ input,textarea,select{font-family:'Inter',sans-serif;}
 .estado-pill.active{color:#fff;background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.35);}
 .ep-bar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto;}
 .ep-bar::-webkit-scrollbar{height:0;}
-.ep-chip{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:var(--bg);color:var(--text-2);white-space:nowrap;transition:all .15s;}
+.ep-chip{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:var(--bg);color:var(--text-2);white-space:nowrap;transition:all .15s;display:inline-flex;align-items:center;gap:6px;}
+.ep-chip-del{font-size:14px;line-height:1;color:var(--text-3);padding:0 2px;}
+.ep-chip-del:hover{color:#B03A2E;}
 .ep-chip.active{background:var(--navy);color:#fff;border-color:var(--navy);}
 .ep-chip.ep-alta{color:#1B5E3B;border-color:#1B5E3B;}
 .ep-chip.ep-alta.active{background:#1B5E3B;color:#fff;}
@@ -2608,7 +2610,10 @@ function renderPatient(){
   epBar.style.display='flex';
   epBar.innerHTML=eps.map((e,i)=>{
     const cls=e.estado==='alta'?'ep-alta':e.estado==='abandono'?'ep-abandono':'';
-    return `<div class="ep-chip ${cls} ${i===currentEpisodioIdx?'active':''}" onclick="switchEpisodio(${i})">${esc(e.nombre||'Ep. '+(i+1))}</div>`;
+    return `<div class="ep-chip ${cls} ${i===currentEpisodioIdx?'active':''}" onclick="switchEpisodio(${i})">
+      ${esc(e.nombre||'Ep. '+(i+1))}
+      <span class="ep-chip-del" onclick="event.stopPropagation();deleteEpisodio(${i})" title="Eliminar episodio">×</span>
+    </div>`;
   }).join('')+`<button class="btn-new-ep" onclick="addEpisodio()">+ Nuevo episodio</button>`;
   renderTab();
 }
@@ -2637,6 +2642,22 @@ function renderTab(){
 }
 
 function switchEpisodio(idx){currentEpisodioIdx=idx;renderPatient();}
+function deleteEpisodio(idx){
+  const p=getPatient(currentPatientId);
+  if(!p||!p.episodios||!p.episodios[idx])return;
+  const ep=p.episodios[idx];
+  const nombre=ep.nombre||`Episodio ${idx+1}`;
+  const tieneData=(ep.sesiones&&ep.sesiones.length)||(ep.evaluaciones&&ep.evaluaciones.length)||(ep.cuestionarios&&ep.cuestionarios.length)||(ep.estudios&&ep.estudios.length);
+  const msg=tieneData
+    ? `"${nombre}" ya tiene sesiones, evaluaciones o cuestionarios cargados. Si lo eliminás se pierde todo eso y no se puede deshacer. ¿Eliminar igual?`
+    : `¿Eliminar "${nombre}"?`;
+  if(!confirm(msg))return;
+  p.episodios.splice(idx,1);
+  if(currentEpisodioIdx>=p.episodios.length) currentEpisodioIdx=Math.max(0,p.episodios.length-1);
+  saveDB();
+  renderPatient();
+  showToast('Episodio eliminado');
+}
 function addEpisodio(){
   const p=getPatient(currentPatientId);
   if(!p.episodios){
