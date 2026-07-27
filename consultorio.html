@@ -4115,6 +4115,7 @@ function buildSesEjTable(sesId, ejercicios, sesEva){
       <input class="ej-input nota" type="text" value="${esc(e.nota||'')}" placeholder="notas…"
         oninput="updateEjField('${sesId}',${i},'nota',this.value)">
       <div class="ej-row-actions">
+        <button class="btn-ej-star ${e.track?'active':''}" onclick="toggleEjTrackSes('${sesId}',${i})" title="${e.track?'Dejar de trackear la progresión de este ejercicio':'Trackear la progresión de este ejercicio'}">${e.track?'⭐':'☆'}</button>
         <span class="ej-drag-handle" data-kind="ses" data-ses="${sesId}" title="Mantené y arrastrá para reordenar">⠿</span>
         <button class="btn-ej-del" onclick="removeEjFromSes('${sesId}',${i})" title="Eliminar">×</button>
       </div>
@@ -4159,6 +4160,34 @@ function syncEjSesionAPlan(ses, idx, field, val){
       if(planEj.historial.length>20) planEj.historial.shift();
     }
   }
+}
+function toggleEjTrackSes(sesId, idx){
+  const p = getPatient(currentPatientId);
+  const ep = getEpData(p);
+  const ses = (ep.sesiones||[]).find(s=>s.id===sesId);
+  if(!ses || !ses.ejercicios || !ses.ejercicios[idx]) return;
+  const ej = ses.ejercicios[idx];
+  ej.track = !ej.track;
+  // Si viene de un día de plan, sincronizamos el track (y sembramos el historial si hace falta)
+  // directo en el ejercicio del plan para que "Progresión de ejercicios clave" lo tome.
+  if(ses.planRef && ej.id){
+    const {dia} = findPlanDia(ses.planRef.planId, ses.planRef.diaId);
+    const planEj = dia && dia.ejercicios && dia.ejercicios.find(e=>e.id===ej.id);
+    if(planEj){
+      planEj.track = ej.track;
+      dia.actualizado = new Date().toISOString();
+      if(planEj.track){
+        if(!planEj.historial) planEj.historial=[];
+        const snap={fecha:todayISO(), kg:planEj.kg||'', reps:planEj.reps||'', series:planEj.series||'', rir:planEj.rir||''};
+        const last=planEj.historial[planEj.historial.length-1];
+        if(!last || last.fecha!==snap.fecha || last.kg!==snap.kg || last.reps!==snap.reps || last.series!==snap.series || last.rir!==snap.rir){
+          planEj.historial.push(snap);
+          if(planEj.historial.length>20) planEj.historial.shift();
+        }
+      }
+    }
+  }
+  saveDB(); renderTab();
 }
 function updateEjField(sesId, idx, field, val) {
   const p = getPatient(currentPatientId);
