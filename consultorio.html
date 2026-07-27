@@ -4142,13 +4142,13 @@ function buildSesEjTable(sesId, ejercicios, sesEva){
 // entrar a editarlo a mano. Si el ejercicio está marcado con ⭐ (track), además guardamos
 // un historial acotado (últimas 20 entradas) para poder ver su progresión.
 function syncEjSesionAPlan(ses, idx, field, val){
-  if(!ses.planRef) return;
+  if(!ses.planRef) return false;
   const ej = ses.ejercicios && ses.ejercicios[idx];
-  if(!ej || !ej.id) return;
+  if(!ej || !ej.id) return false;
   const {dia} = findPlanDia(ses.planRef.planId, ses.planRef.diaId);
-  if(!dia || !dia.ejercicios) return;
+  if(!dia || !dia.ejercicios) return false;
   const planEj = dia.ejercicios.find(e=>e.id===ej.id);
-  if(!planEj) return;
+  if(!planEj) return false;
   planEj[field] = val;
   dia.actualizado = new Date().toISOString();
   if(planEj.track && ['kg','reps','series','rir'].indexOf(field)!==-1){
@@ -4160,6 +4160,20 @@ function syncEjSesionAPlan(ses, idx, field, val){
       if(planEj.historial.length>20) planEj.historial.shift();
     }
   }
+  return true;
+}
+// Guarda un snapshot (fecha, kg, series, reps, rir) directo en el propio ejercicio de la
+// sesión. Se usa para ejercicios trackeados (⭐) que NO vienen de un día de plan (sueltos),
+// ya que esos no tienen otro lugar donde acumular su progresión.
+function snapshotEjHistorialLocal(ej){
+  if(!ej.track) return;
+  if(!ej.historial) ej.historial=[];
+  const snap={fecha:todayISO(), kg:ej.kg||'', reps:ej.reps||'', series:ej.series||'', rir:ej.rir||''};
+  const last=ej.historial[ej.historial.length-1];
+  if(!last || last.fecha!==snap.fecha || last.kg!==snap.kg || last.reps!==snap.reps || last.series!==snap.series || last.rir!==snap.rir){
+    ej.historial.push(snap);
+    if(ej.historial.length>20) ej.historial.shift();
+  }
 }
 function toggleEjTrackSes(sesId, idx){
   const p = getPatient(currentPatientId);
@@ -4170,10 +4184,12 @@ function toggleEjTrackSes(sesId, idx){
   ej.track = !ej.track;
   // Si viene de un día de plan, sincronizamos el track (y sembramos el historial si hace falta)
   // directo en el ejercicio del plan para que "Progresión de ejercicios clave" lo tome.
+  let syncedToPlan=false;
   if(ses.planRef && ej.id){
     const {dia} = findPlanDia(ses.planRef.planId, ses.planRef.diaId);
     const planEj = dia && dia.ejercicios && dia.ejercicios.find(e=>e.id===ej.id);
     if(planEj){
+      syncedToPlan=true;
       planEj.track = ej.track;
       dia.actualizado = new Date().toISOString();
       if(planEj.track){
@@ -4187,6 +4203,8 @@ function toggleEjTrackSes(sesId, idx){
       }
     }
   }
+  // Ejercicio suelto (no viene de un plan): guardamos la progresión directo en la sesión.
+  if(!syncedToPlan) snapshotEjHistorialLocal(ej);
   saveDB(); renderTab();
 }
 function updateEjField(sesId, idx, field, val) {
@@ -4195,7 +4213,10 @@ function updateEjField(sesId, idx, field, val) {
   const ses = (ep.sesiones||[]).find(s=>s.id===sesId);
   if(!ses || !ses.ejercicios || !ses.ejercicios[idx]) return;
   ses.ejercicios[idx][field] = val;
-  syncEjSesionAPlan(ses, idx, field, val);
+  const synced = syncEjSesionAPlan(ses, idx, field, val);
+  if(!synced && ['kg','reps','series','rir'].indexOf(field)!==-1){
+    snapshotEjHistorialLocal(ses.ejercicios[idx]);
+  }
   clearTimeout(autoSaveTimer);
   autoSaveTimer = setTimeout(saveDB, 800);
   if(field==='rir'){
@@ -5257,7 +5278,21 @@ function getEjerciciosTrackeados(ep){
       });
     });
   });
-  const out=[...grupos.values()];
+  // Ejercicios trackeados sueltos: agregados directo en una sesión, sin venir de un día
+  // de plan. Guardan su propio historial local (ver snapshotEjHistorialLocal) y se agrupan
+  // acá por nombre normalizado, separados de los grupos de plan.
+  const sueltos=new Map(); // key: nombreNorm -> {nombre, planNombre, dias:[], historial:[]}
+  (ep.sesiones||[]).forEach(ses=>{
+    (ses.ejercicios||[]).forEach(e=>{
+      const nombre=(e.nombre||'').trim();
+      if(!e.track || !nombre || !e.historial || !e.historial.length) return;
+      const key=normEjNombre(nombre);
+      if(!sueltos.has(key)) sueltos.set(key,{nombre, planNombre:'Sesiones sueltas', dias:[], historial:[]});
+      const g=sueltos.get(key);
+      e.historial.forEach(h=>g.historial.push(h));
+    });
+  });
+  const out=[...grupos.values(), ...sueltos.values()];
   out.forEach(g=>g.historial.sort((a,b)=>(a.fecha||'').localeCompare(b.fecha||'')));
   return out;
 }
