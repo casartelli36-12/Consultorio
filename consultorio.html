@@ -1873,6 +1873,47 @@ function calcularScoresCuestionario(tipoId, respuestas) {
   </div>
 </div>
 
+<div class="modal-overlay" id="modalValdPaste">
+  <div class="modal" style="max-width:540px;">
+    <div class="modal-header">
+      <h2>Pegar datos de VALD Hub</h2>
+      <button class="btn-close" onclick="closeModalValdPaste()">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:var(--text-2);margin-bottom:10px;">
+        En VALD Hub, seleccioná y copiá la tabla "Individual exercise details" completa (desde "Exercise Name" hasta el último ejercicio) y pegala acá abajo.
+      </div>
+      <textarea id="valdPasteText" placeholder="Pegá acá la tabla completa…"
+        style="width:100%;min-height:200px;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;font-size:12px;font-family:monospace;outline:none;resize:vertical;"></textarea>
+      <div id="valdPastePreview" style="margin-top:10px;font-size:12px;color:var(--text-2);"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModalValdPaste()">Cancelar</button>
+      <button class="btn-primary" onclick="procesarValdPaste()">Procesar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalValdProgramPaste">
+  <div class="modal" style="max-width:540px;">
+    <div class="modal-header">
+      <h2>Importar rutina desde VALD</h2>
+      <button class="btn-close" onclick="closeModalValdProgramPaste()">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:var(--text-2);margin-bottom:10px;">
+        Exportá el programa como PDF desde VALD Hub (o MoveHealth), abrilo, seleccioná todo el texto y pegalo acá. Reconoce automáticamente los ejercicios, series, reps y superseries.
+      </div>
+      <textarea id="valdProgramPasteText" placeholder="Pegá acá el texto del PDF de VALD…"
+        style="width:100%;min-height:220px;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;font-size:12px;font-family:monospace;outline:none;resize:vertical;"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModalValdProgramPaste()">Cancelar</button>
+      <button class="btn-primary" onclick="procesarValdProgramPaste()">Procesar</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modalEval">
   <div class="modal">
     <div class="modal-header"><h2>Nueva evaluación</h2><button class="btn-close" onclick="closeModalEval()">×</button></div>
@@ -4305,6 +4346,14 @@ function renderSesCard(s,num,fechaInicio){
                   style="padding:4px 9px;border:1px solid var(--orange);border-radius:var(--radius-sm);background:var(--orange-light);color:var(--orange);font-size:10.5px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap;">
                   📋 Plantillas
                 </button>
+                <button type="button" onclick="openModalValdPaste('${s.id}')"
+                  style="padding:4px 9px;border:1px solid #5E35B1;border-radius:var(--radius-sm);background:#F1EDFB;color:#5E35B1;font-size:10.5px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap;">
+                  📊 VALD: dolor/RPE
+                </button>
+                <button type="button" onclick="openModalValdProgramPaste({kind:'ses',sesId:'${s.id}'})"
+                  style="padding:4px 9px;border:1px solid #5E35B1;border-radius:var(--radius-sm);background:#F1EDFB;color:#5E35B1;font-size:10.5px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap;">
+                  📥 VALD: rutina
+                </button>
               </div>
             </div>
             ${buildSesEjTable(s.id, ejercicios, dolor)}
@@ -4617,6 +4666,161 @@ function copiarUltimaSesionInline(sesId){
   delete ses.planRef;
   saveDB(); renderTab();
   showToast('Ejercicios copiados ✓');
+}
+
+// ── Importar datos de VALD Hub (pegado manual, no hay export CSV de esta vista) ──
+let valdPasteTargetSes=null;
+function openModalValdPaste(sesId){
+  valdPasteTargetSes=sesId;
+  document.getElementById('valdPasteText').value='';
+  document.getElementById('valdPastePreview').textContent='';
+  document.getElementById('modalValdPaste').classList.add('open');
+}
+function closeModalValdPaste(){
+  document.getElementById('modalValdPaste').classList.remove('open');
+  valdPasteTargetSes=null;
+}
+// Espera filas tipo: Nombre <tab> dolorProm <tab> dolorMax <tab> rpeProm <tab> rpeMax <tab> cumplProm% <tab> cumplMin%
+// (exactamente el formato de la tabla "Individual exercise details" de VALD Hub al copiarla).
+function parseValdPaste(text){
+  const lines=(text||'').split(/\r?\n/).map(l=>l.trim()).filter(l=>l.length);
+  const rows=[];
+  lines.forEach(line=>{
+    const cols=line.split('\t').map(c=>c.trim());
+    if(cols.length<7) return;
+    const [name,painAvg,painMax,rpeAvg,rpeMax,complAvg,complMin]=cols;
+    if(/^exercise name$/i.test(name)||/^average$/i.test(name)) return;
+    const row={
+      name,
+      painAvg:parseFloat(painAvg), painMax:parseFloat(painMax),
+      rpeAvg:parseFloat(rpeAvg), rpeMax:parseFloat(rpeMax),
+      complAvg:parseFloat(complAvg), complMin:parseFloat(complMin),
+    };
+    if(isNaN(row.painAvg)&&isNaN(row.rpeAvg)) return;
+    rows.push(row);
+  });
+  return rows;
+}
+function procesarValdPaste(){
+  const text=document.getElementById('valdPasteText').value;
+  const rows=parseValdPaste(text);
+  if(!rows.length){
+    alert('No reconocí ninguna fila. Fijate que hayas copiado la tabla completa de VALD Hub (con las columnas separadas por tabulaciones, tal como aparece ahí).');
+    return;
+  }
+  const p=getPatient(currentPatientId); const ep=getEpData(p);
+  const ses=(ep.sesiones||[]).find(s=>s.id===valdPasteTargetSes);
+  if(!ses){ closeModalValdPaste(); return; }
+  if(!ses.ejercicios) ses.ejercicios=[];
+  let actualizados=0, agregados=0;
+  const painVals=[], rpeVals=[];
+  rows.forEach(r=>{
+    if(!isNaN(r.painAvg)) painVals.push(r.painAvg);
+    if(!isNaN(r.rpeAvg)) rpeVals.push(r.rpeAvg);
+    const resumen=`VALD: dolor ${isNaN(r.painAvg)?'—':r.painAvg} (máx ${isNaN(r.painMax)?'—':r.painMax}) · RPE ${isNaN(r.rpeAvg)?'—':r.rpeAvg} (máx ${isNaN(r.rpeMax)?'—':r.rpeMax}) · cumplimiento ${isNaN(r.complAvg)?'—':r.complAvg+'%'}`;
+    const nn=normEjNombre(r.name);
+    const existente=ses.ejercicios.find(e=>normEjNombre(e.nombre||'')===nn);
+    if(existente){
+      actualizados++;
+      // Si ya había un resumen VALD de un pegado anterior, lo reemplaza en vez de acumularlo
+      let nota=(existente.nota||'').replace(/VALD:[^|]*/,'').replace(/\s*\|\s*$/,'').trim();
+      existente.nota = nota ? `${nota} | ${resumen}` : resumen;
+    } else {
+      agregados++;
+      ses.ejercicios.push({id:uid(), nombre:r.name, series:'', reps:'', kg:'', rir:'', nota:resumen, bloque:''});
+    }
+  });
+  let huboPrefill=false;
+  if(painVals.length && (ses.dolor===undefined||ses.dolor===null||ses.dolor==='')){
+    ses.dolor=Math.round((painVals.reduce((a,b)=>a+b,0)/painVals.length)*10)/10;
+    huboPrefill=true;
+  }
+  if(rpeVals.length && (ses.rpe===undefined||ses.rpe===null||ses.rpe==='')){
+    ses.rpe=Math.round((rpeVals.reduce((a,b)=>a+b,0)/rpeVals.length)*10)/10;
+    huboPrefill=true;
+  }
+  saveDB();
+  closeModalValdPaste();
+  renderTab();
+  showToast(`VALD: ${actualizados} actualizado${actualizados!==1?'s':''}, ${agregados} agregado${agregados!==1?'s':''}${huboPrefill?' · EVA/RPE precargados':''} ✓`);
+}
+
+// ── Importar rutina/programa completo desde VALD (texto del PDF exportado) ───
+// A diferencia de procesarValdPaste (que solo trae dolor/RPE/cumplimiento de una
+// sesión ya completada), esto lee la ESTRUCTURA de un programa exportado como PDF
+// desde VALD Hub/MoveHealth (ejercicios, series, reps, superseries) y la usa para
+// completar un día del plan o una sesión, tal como si se hubiera tipeado a mano.
+let valdProgramTarget=null; // {kind:'ses',sesId} | {kind:'plan',planId,diaId}
+function openModalValdProgramPaste(target){
+  valdProgramTarget=target;
+  document.getElementById('valdProgramPasteText').value='';
+  document.getElementById('modalValdProgramPaste').classList.add('open');
+}
+function closeModalValdProgramPaste(){
+  document.getElementById('modalValdProgramPaste').classList.remove('open');
+  valdProgramTarget=null;
+}
+function parseValdProgramText(text){
+  const lines=(text||'').split(/\r?\n/).map(l=>l.trim()).filter(l=>l.length);
+  const rows=[];
+  let bloqueActual='', setsActual='';
+  for(let i=0;i<lines.length;i++){
+    const line=lines[i];
+    let m;
+    if(m=line.match(/^Superset:\s*Superset\s*([A-Za-z0-9]+)/i)){ bloqueActual=m[1].toUpperCase(); continue; }
+    if(/^No rest after Superset/i.test(line)){ bloqueActual=''; setsActual=''; continue; }
+    if(m=line.match(/^(\d+)\s*sets?\b/i)){ setsActual=m[1]; continue; }
+    if(m=line.match(/^\d+\.\d+\s+(.+)$/)){
+      const nombre=m[1].trim();
+      const detalle=lines[i+1]||'';
+      let reps='';
+      const repsM=detalle.match(/^(\d+)\s*(reps?|seconds?\s*rep)/i);
+      if(repsM) reps = /second/i.test(repsM[2]) ? repsM[1]+'s' : repsM[1];
+      let equipo='';
+      const eqM=detalle.match(/No rest\s+(.+)$/i);
+      if(eqM) equipo=eqM[1].trim();
+      if(reps || equipo){
+        rows.push({nombre, series:setsActual, reps, nota:equipo, bloque:bloqueActual});
+        i++; // ya consumimos la línea de detalle
+      }
+      continue;
+    }
+  }
+  return rows;
+}
+function procesarValdProgramPaste(){
+  const text=document.getElementById('valdProgramPasteText').value;
+  const rows=parseValdProgramText(text);
+  if(!rows.length){
+    alert('No reconocí ningún ejercicio. Fijate que hayas pegado el texto completo del PDF exportado desde VALD (con las superseries y los "X reps" de cada ejercicio).');
+    return;
+  }
+  const ejercicios=rows.map(r=>({id:uid(), nombre:r.nombre, series:r.series||'', reps:r.reps||'', kg:'', rir:'', nota:r.nota||'', bloque:r.bloque||''}));
+  const target=valdProgramTarget;
+  if(!target) return;
+
+  if(target.kind==='ses'){
+    const p=getPatient(currentPatientId); const ep=getEpData(p);
+    const ses=(ep.sesiones||[]).find(s=>s.id===target.sesId);
+    if(!ses) return;
+    if(ses.ejercicios && ses.ejercicios.length){
+      if(!confirm(`Esta sesión ya tiene ${ses.ejercicios.length} ejercicio(s) cargado(s). ¿Reemplazarlos con los ${ejercicios.length} de la rutina de VALD?`)) return;
+    }
+    ses.ejercicios=ejercicios;
+    delete ses.planRef;
+    saveDB(); closeModalValdProgramPaste(); renderTab();
+    showToast(`Rutina de VALD importada: ${ejercicios.length} ejercicios ✓`);
+  } else if(target.kind==='plan'){
+    const {dia}=findPlanDia(target.planId, target.diaId);
+    if(!dia) return;
+    if(dia.ejercicios && dia.ejercicios.length){
+      if(!confirm(`Este día ya tiene ${dia.ejercicios.length} ejercicio(s) cargado(s). ¿Reemplazarlos con los ${ejercicios.length} de la rutina de VALD?`)) return;
+    }
+    dia.ejercicios=ejercicios;
+    dia.actualizado=new Date().toISOString();
+    saveDB(); closeModalValdProgramPaste(); renderTab();
+    showToast(`Rutina de VALD importada: ${ejercicios.length} ejercicios ✓`);
+  }
 }
 
 // ── Plantillas ────────────────────────────────────────────────────────────────
@@ -5069,6 +5273,12 @@ function renderDiaPlan(planId,d){
         <button type="button" class="lugar-btn ${d.lugar==='domicilio'?'active':''}" onclick="updateDiaField('${planId}','${d.id}','lugar','domicilio')">🏠 Domicilio</button>
       </div>
       <button class="btn-ej-del" title="Eliminar día" onclick="removeDiaFromPlan('${planId}','${d.id}')">×</button>
+    </div>
+    <div style="padding:6px 10px 0;">
+      <button type="button" onclick="openModalValdProgramPaste({kind:'plan',planId:'${planId}',diaId:'${d.id}'})"
+        style="padding:4px 9px;border:1px solid #5E35B1;border-radius:var(--radius-sm);background:#F1EDFB;color:#5E35B1;font-size:10.5px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap;">
+        📥 Importar rutina de VALD
+      </button>
     </div>
     ${buildPlanEjTable(planId,d.id,d.ejercicios||[])}
   </div>`;
