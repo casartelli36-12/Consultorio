@@ -4748,8 +4748,7 @@ function procesarValdPaste(){
       rpeAvg:isNaN(r.rpeAvg)?null:r.rpeAvg, rpeMax:isNaN(r.rpeMax)?null:r.rpeMax,
       complAvg:isNaN(r.complAvg)?null:r.complAvg,
     };
-    const nn=normEjNombre(r.name);
-    const existente=ses.ejercicios.find(e=>normEjNombre(e.nombre||'')===nn);
+    const existente=ses.ejercicios.find(e=>ejerciciosCoinciden(e.nombre, r.name));
     if(existente){
       actualizados++;
       existente.vald=valdData;
@@ -5196,6 +5195,20 @@ function normEjNombre(s){
   return (s||'').toString().trim().toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g,'') // sin acentos
     .replace(/\s+/g,' ');
+}
+// VALD usa nombres largos en la rutina ("Back squat with a barbell") pero nombres
+// cortos en la tabla de cumplimiento ("Back squat"). Esto los reconoce como el
+// mismo ejercicio cuando uno es el inicio del otro, cortando en un espacio (no a
+// mitad de palabra), sin exigir coincidencia exacta.
+function ejerciciosCoinciden(a,b){
+  const na=normEjNombre(a), nb=normEjNombre(b);
+  if(!na||!nb) return false;
+  if(na===nb) return true;
+  const corta = na.length<=nb.length?na:nb;
+  const larga = na.length<=nb.length?nb:na;
+  if(!larga.startsWith(corta)) return false;
+  const siguiente = larga.charAt(corta.length);
+  return siguiente===''||siguiente===' ';
 }
 // Agrupa los ejercicios trackeados (⭐) por plan + nombre normalizado, así el mismo
 // ejercicio cargado en Día 1, Día 2, etc. del mismo plan se ve como UNA sola progresión
