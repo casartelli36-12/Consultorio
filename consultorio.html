@@ -845,8 +845,9 @@ function collectDxDetailsFromDOM(dxNombre, idPrefix){
 }
 function updateDxDetail(key,val){
   const p=getPatient(currentPatientId);if(!p)return;
-  if(!p.dxDetalles)p.dxDetalles={};
-  p.dxDetalles[key]=val;
+  const ep=getEpData(p);
+  if(!ep.dxDetalles)ep.dxDetalles={};
+  ep.dxDetalles[key]=val;
   clearTimeout(autoSaveTimer);autoSaveTimer=setTimeout(saveDB,600);
 }
 // Se llama cuando el diagnóstico cambia de verdad (al elegir de la lista o confirmar al salir del campo).
@@ -862,7 +863,7 @@ function onDxConfirmed(nombre){
   const resWrap=document.getElementById('rDxDetailWrap');
   if(resWrap){
     const p=getPatient(currentPatientId);
-    if(p) p.dxDetalles={};
+    if(p) getEpData(p).dxDetalles={};
     resWrap.innerHTML=buildDxDetailFieldsHTML(nombre,{},'rdxd',true);
     clearTimeout(autoSaveTimer);autoSaveTimer=setTimeout(saveDB,600);
   }
@@ -2409,15 +2410,15 @@ function openExportPaciente() {
   lines.push(`Contacto: ${p.contacto || '—'}`);
   lines.push(`Institución: ${p.institucion || '—'}`);
   lines.push(`Deporte/posición: ${p.deporte || '—'}`);
-  lines.push(`Diagnóstico: ${p.dx || '—'}`);
-  lines.push(`Estructura/lado: ${p.estructura || '—'}`);
-  lines.push(`Fecha inicio: ${formatFecha(p.fechaInicio)}`);
-  lines.push(`Cirugía/técnica: ${p.cirugia || '—'}`);
-  lines.push(`Cirujano/médico: ${p.cirujano || '—'}`);
-  if(p.antecedentes) lines.push(`Antecedentes: ${p.antecedentes}`);
-  if(p.objetivos)    lines.push(`Objetivos: ${p.objetivos}`);
-  if(p.medicacion)   lines.push(`Medicación: ${p.medicacion}`);
-  if(p.contra)       lines.push(`Contraindicaciones: ${p.contra}`);
+  lines.push(`Diagnóstico: ${ep.dx || '—'}`);
+  lines.push(`Estructura/lado: ${ep.estructura || '—'}`);
+  lines.push(`Fecha inicio: ${formatFecha(ep.fechaInicio||p.fechaInicio)}`);
+  lines.push(`Cirugía/técnica: ${ep.cirugia || '—'}`);
+  lines.push(`Cirujano/médico: ${ep.cirujano || '—'}`);
+  if(ep.antecedentes) lines.push(`Antecedentes: ${ep.antecedentes}`);
+  if(ep.objetivos)    lines.push(`Objetivos: ${ep.objetivos}`);
+  if(ep.medicacion)   lines.push(`Medicación: ${ep.medicacion}`);
+  if(ep.contra)       lines.push(`Contraindicaciones: ${ep.contra}`);
   if(p.alerta)       lines.push(`⚡ ALERTA: ${p.alerta}`);
 
   // Movilidad
@@ -2446,7 +2447,7 @@ function openExportPaciente() {
   if(evaluaciones.length) {
     lines.push(''); lines.push('=== EVALUACIONES ===');
     evaluaciones.forEach(e => {
-      const diasEv = (e.fecha && p.fechaInicio) ? Math.floor((new Date(e.fecha)-new Date(p.fechaInicio))/86400000) : null;
+      const diasEv = (e.fecha && (ep.fechaInicio||p.fechaInicio)) ? Math.floor((new Date(e.fecha)-new Date(ep.fechaInicio||p.fechaInicio))/86400000) : null;
       lines.push(`[${formatFecha(e.fecha)}${diasEv!==null?' · '+tiempoEvolucion(diasEv).corto:''}] ${e.test||'Test'}`);
       if(e.afectado || e.sano) lines.push(`  Afectado: ${e.afectado||'—'} | Sano/Ref: ${e.sano||'—'}`);
       if(e.lsi) lines.push(`  LSI: ${e.lsi}% (umbral: ${e.umbral||'—'})`);
@@ -2459,7 +2460,7 @@ function openExportPaciente() {
     lines.push(''); lines.push('=== CUESTIONARIOS (PROMs) ===');
     cuestionarios.forEach(c => {
       const def = QUESTIONNAIRES[c.tipoId];
-      const diasC = (c.fecha && p.fechaInicio) ? Math.floor((new Date(c.fecha)-new Date(p.fechaInicio))/86400000) : null;
+      const diasC = (c.fecha && (ep.fechaInicio||p.fechaInicio)) ? Math.floor((new Date(c.fecha)-new Date(ep.fechaInicio||p.fechaInicio))/86400000) : null;
       lines.push(`[${formatFecha(c.fecha)}${diasC!==null?' · '+tiempoEvolucion(diasC).corto:''}] ${def?def.nombre:c.tipoId}`);
       Object.entries(c.scores||{}).forEach(([subId,score])=>{
         const subLabel = def?.subescalas.find(s=>s.id===subId)?.label || subId;
@@ -2472,7 +2473,7 @@ function openExportPaciente() {
   if(sesiones.length) {
     lines.push(''); lines.push('=== SESIONES ===');
     sesiones.forEach((s, i) => {
-      const diasSes = (s.fecha && p.fechaInicio) ? Math.floor((new Date(s.fecha)-new Date(p.fechaInicio))/86400000) : null;
+      const diasSes = (s.fecha && (ep.fechaInicio||p.fechaInicio)) ? Math.floor((new Date(s.fecha)-new Date(ep.fechaInicio||p.fechaInicio))/86400000) : null;
       lines.push(`\n[Sesión ${i+1} · ${formatFecha(s.fecha)}${diasSes!==null?' · '+tiempoEvolucion(diasSes).corto:''}${s.fase?' · '+s.fase:''}]`);
       if(s.subjetivo) lines.push(`  Cómo llegó: ${s.subjetivo}`);
       const ejercicios = s.ejercicios || [];
@@ -2572,9 +2573,13 @@ function renderEstadoFilters(){
 }
 function setEstadoFilter(e){currentEstadoFilter=e;renderEstadoFilters();renderPatientList();}
 
+const CLINICAL_EP_KEYS=['dx','estructura','cirugia','cirujano','fase','antecedentes','objetivos','medicacion','contra'];
 function getEpisodio(p,idx){
-  if(!p.episodios||!p.episodios.length) return {sesiones:p.sesiones||[],evaluaciones:p.evaluaciones||[],estudios:p.estudios||[],cuestionarios:p.cuestionarios||[],movilidad:p.movilidad||{},estado:p.estado||'tratamiento',nombre:'Episodio 1',fechaInicio:p.fechaInicio||'',fechaAlta:''};
+  if(!p.episodios||!p.episodios.length) return {sesiones:p.sesiones||[],evaluaciones:p.evaluaciones||[],estudios:p.estudios||[],cuestionarios:p.cuestionarios||[],movilidad:p.movilidad||{},estado:p.estado||'tratamiento',nombre:'Episodio 1',fechaInicio:p.fechaInicio||'',fechaAlta:'',dx:p.dx||'',estructura:p.estructura||'',cirugia:p.cirugia||'',cirujano:p.cirujano||'',fase:p.fase||'',antecedentes:p.antecedentes||'',objetivos:p.objetivos||'',medicacion:p.medicacion||'',contra:p.contra||'',dxDetalles:p.dxDetalles||{}};
   return p.episodios[idx]||p.episodios[0];
+}
+function getUltimoEpisodio(p){
+  return getEpisodio(p, (p.episodios&&p.episodios.length)?p.episodios.length-1:0);
 }
 function getPatientEstado(p){
   if(!p.episodios||!p.episodios.length) return p.estado||'tratamiento';
@@ -2582,7 +2587,7 @@ function getPatientEstado(p){
 }
 function getAllEpisodios(p){
   if(p.episodios&&p.episodios.length) return p.episodios;
-  return [{sesiones:p.sesiones||[],evaluaciones:p.evaluaciones||[],cuestionarios:p.cuestionarios||[],estudios:p.estudios||[],movilidad:p.movilidad||{},estado:p.estado||'tratamiento',fechaInicio:p.fechaInicio||''}];
+  return [{sesiones:p.sesiones||[],evaluaciones:p.evaluaciones||[],cuestionarios:p.cuestionarios||[],estudios:p.estudios||[],movilidad:p.movilidad||{},estado:p.estado||'tratamiento',fechaInicio:p.fechaInicio||'',dx:p.dx||'',estructura:p.estructura||'',cirugia:p.cirugia||'',cirujano:p.cirujano||'',fase:p.fase||'',antecedentes:p.antecedentes||'',objetivos:p.objetivos||'',medicacion:p.medicacion||'',contra:p.contra||'',dxDetalles:p.dxDetalles||{}}];
 }
 function setPatSearch(v){ currentPatSearch=(v||'').toLowerCase().trim(); renderPatientList(); }
 function renderPatientList(){
@@ -2592,14 +2597,16 @@ function renderPatientList(){
   if(currentEstadoFilter!=='todos') pts=pts.filter(p=>getPatientEstado(p)===currentEstadoFilter);
   if(currentPatSearch){
     pts=pts.filter(p=>{
-      const meta=getDxMeta(p.dx);
-      const hay=[p.nombre,p.dx,p.estructura,p.institucion,meta?meta.region:'',meta?meta.tipo:''].filter(Boolean).join(' ').toLowerCase();
+      const epUlt=getUltimoEpisodio(p);
+      const meta=getDxMeta(epUlt.dx);
+      const hay=[p.nombre,epUlt.dx,epUlt.estructura,p.institucion,meta?meta.region:'',meta?meta.tipo:''].filter(Boolean).join(' ').toLowerCase();
       return hay.includes(currentPatSearch);
     });
   }
   if(!pts.length){list.innerHTML='<div class="empty-list">No hay pacientes aquí</div>';return;}
   list.innerHTML=pts.map(p=>{
-    const dias=diasDesde(p.fechaInicio);
+    const epUlt=getUltimoEpisodio(p);
+    const dias=diasDesde(epUlt.fechaInicio||p.fechaInicio);
     const dotColor=catDotColor(p.categoria);
     const estado=getPatientEstado(p);
     return `<div class="patient-item ${p.id===currentPatientId?'active':''}" onclick="selectPatient('${p.id}')">
@@ -2611,7 +2618,7 @@ function renderPatientList(){
           ${estado==='alta'?'<span style="font-size:10px;color:#1B5E3B;font-weight:700">✓</span>':''}
           ${estado==='abandono'?'<span style="font-size:10px;color:#aaa">—</span>':''}
         </div>
-        <div class="pi-sub">${p.dx||p.institucion||'—'}</div>
+        <div class="pi-sub">${epUlt.dx||p.institucion||'—'}</div>
       </div>
       ${dias!==null&&estado==='tratamiento'?`<div class="pi-days">${tiempoEvolucion(dias).compacto}</div>`:''}
     </div>`;
@@ -2634,7 +2641,7 @@ function renderPatient(){
   const dias=diasDesde(ep.fechaInicio||p.fechaInicio);
   document.getElementById('topbarPatient').style.display='block';
   document.getElementById('topbarName').textContent=p.nombre||'Sin nombre';
-  document.getElementById('topbarSub').textContent=[p.dx,p.institucion].filter(Boolean).join(' · ')||'—';
+  document.getElementById('topbarSub').textContent=[ep.dx,p.institucion].filter(Boolean).join(' · ')||'—';
   const chip=document.getElementById('daysChip');
   if(dias!==null&&ep.estado==='tratamiento'){
     const t=tiempoEvolucion(dias);
@@ -2705,10 +2712,10 @@ function deleteEpisodio(idx){
 function addEpisodio(){
   const p=getPatient(currentPatientId);
   if(!p.episodios){
-    p.episodios=[{id:uid(),nombre:'Episodio 1',estado:'alta',fechaInicio:p.fechaInicio||'',fechaAlta:'',sesiones:p.sesiones||[],evaluaciones:p.evaluaciones||[],estudios:p.estudios||[],cuestionarios:p.cuestionarios||[],movilidad:p.movilidad||{}}];
+    p.episodios=[{id:uid(),nombre:'Episodio 1',estado:'alta',fechaInicio:p.fechaInicio||'',fechaAlta:'',sesiones:p.sesiones||[],evaluaciones:p.evaluaciones||[],estudios:p.estudios||[],cuestionarios:p.cuestionarios||[],movilidad:p.movilidad||{},dx:p.dx||'',estructura:p.estructura||'',cirugia:p.cirugia||'',cirujano:p.cirujano||'',fase:p.fase||'',antecedentes:p.antecedentes||'',objetivos:p.objetivos||'',medicacion:p.medicacion||'',contra:p.contra||'',dxDetalles:p.dxDetalles||{}}];
   }
   const n=p.episodios.length+1;
-  p.episodios.push({id:uid(),nombre:`Episodio ${n}`,estado:'tratamiento',fechaInicio:new Date().toISOString().slice(0,10),fechaAlta:'',sesiones:[],evaluaciones:[],estudios:[],cuestionarios:[],movilidad:{}});
+  p.episodios.push({id:uid(),nombre:`Episodio ${n}`,estado:'tratamiento',fechaInicio:new Date().toISOString().slice(0,10),fechaAlta:'',sesiones:[],evaluaciones:[],estudios:[],cuestionarios:[],movilidad:{},dx:'',estructura:'',cirugia:'',cirujano:'',fase:'',antecedentes:'',objetivos:'',medicacion:'',contra:'',dxDetalles:{}});
   currentEpisodioIdx=p.episodios.length-1;
   saveDB();renderPatient();
 }
@@ -3504,7 +3511,7 @@ function renderProtocolo(panel){
   const p=getPatient(currentPatientId);
   const ep=getEpData(p);
   const pf=getProtocoloFase(ep);
-  const autodetect=detectProtocoloTipo(p);
+  const autodetect=detectProtocoloTipo(ep);
   const tipo=pf.tipo!==undefined?pf.tipo:autodetect;
   const selectorHTML=`<select onchange="setProtocoloTipo(this.value)" style="border:1px solid var(--border);background:var(--bg);border-radius:var(--radius-sm);padding:8px 10px;font-size:13px;font-family:Inter,sans-serif;outline:none;color:var(--text);font-weight:600;">
     <option value="__none__" ${(!tipo||tipo==='__none__')?'selected':''}>Sin protocolo asignado</option>
@@ -3587,7 +3594,7 @@ function toggleProtoFaseOpen(numero){
 }
 function buildProtocoloResumenMiniHTML(p, ep){
   const pf=getProtocoloFase(ep);
-  const autodetect=detectProtocoloTipo(p);
+  const autodetect=detectProtocoloTipo(ep);
   const tipo=pf.tipo!==undefined?pf.tipo:autodetect;
   if(!tipo||tipo==='__none__') return '';
   const protocolo=PROTOCOLOS_FASES[tipo];
@@ -3689,19 +3696,19 @@ function renderResumen(panel) {
         <div class="rsum-section ${secClinico?'open':''}" id="rs_rsClinico">
           <div class="rsum-section-head" onclick="toggleRsumSection('rsClinico')"><span class="title">🩺 Diagnóstico y clínica</span><span class="chevron">▾</span></div>
           <div class="rsum-section-body"><div class="resumen-grid">
-            ${rFieldDx(p.dx)}
-            ${rField2('Estructura / Lado','rEstructura',p.estructura,'estructura','Cirujano / Médico','rCirujano',p.cirujano,'cirujano')}
-            ${rField('Fecha inicio / lesión','rFechaInicio',p.fechaInicio,'fechaInicio','date')}
-            ${rField('Estado / Fase','rFase',p.fase,'fase','text')}
-            ${rField('Cirugía / Injerto / Técnica','rCirugia',p.cirugia,'cirugia','text',false)}
-            ${rField2('Medicación','rMedicacion',p.medicacion,'medicacion','Contraindicaciones','rContra',p.contra,'contra')}
+            ${rFieldDx(ep.dx)}
+            ${rField2Ep('Estructura / Lado','rEstructura',ep.estructura,'estructura','Cirujano / Médico','rCirujano',ep.cirujano,'cirujano')}
+            ${rFieldEp('Fecha inicio / lesión','rFechaInicio',ep.fechaInicio,'fechaInicio','date')}
+            ${rFieldEp('Estado / Fase','rFase',ep.fase,'fase','text')}
+            ${rFieldEp('Cirugía / Injerto / Técnica','rCirugia',ep.cirugia,'cirugia','text',false)}
+            ${rField2Ep('Medicación','rMedicacion',ep.medicacion,'medicacion','Contraindicaciones','rContra',ep.contra,'contra')}
           </div></div>
         </div>
         <div class="rsum-section ${secAnt?'open':''}" id="rs_rsAntecedentes">
           <div class="rsum-section-head" onclick="toggleRsumSection('rsAntecedentes')"><span class="title">📝 Antecedentes y objetivos</span><span class="chevron">▾</span></div>
           <div class="rsum-section-body"><div class="resumen-grid">
-            ${rField('Antecedentes relevantes','rAntecedentes',p.antecedentes,'antecedentes','textarea',true)}
-            ${rField('Objetivos del paciente','rObjetivos',p.objetivos,'objetivos','textarea',true)}
+            ${rFieldEp('Antecedentes relevantes','rAntecedentes',ep.antecedentes,'antecedentes','textarea',true)}
+            ${rFieldEp('Objetivos del paciente','rObjetivos',ep.objetivos,'objetivos','textarea',true)}
           </div></div>
         </div>
         <div style="margin-top:16px;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;" id="movCard">
@@ -4004,11 +4011,17 @@ function rField(label,id,val,key,type='text',full=false){
   return `<div class="field${full?' full':''}"><span class="field-label">${label}</span>${input}</div>`;
 }
 function rField2(l1,id1,v1,k1,l2,id2,v2,k2,type='text'){return rField(l1,id1,v1,k1,type)+rField(l2,id2,v2,k2,type);}
+function rFieldEp(label,id,val,key,type='text',full=false){
+  const input=type==='textarea'?`<textarea id="${id}" placeholder="—" oninput="updateEpField('${key}',this.value)">${esc(val||'')}</textarea>`:`<input type="${type}" id="${id}" value="${esc(val||'')}" placeholder="—" oninput="updateEpField('${key}',this.value)">`;
+  return `<div class="field${full?' full':''}"><span class="field-label">${label}</span>${input}</div>`;
+}
+function rField2Ep(l1,id1,v1,k1,l2,id2,v2,k2,type='text'){return rFieldEp(l1,id1,v1,k1,type)+rFieldEp(l2,id2,v2,k2,type);}
 function rFieldDx(val){
   const p=getPatient(currentPatientId);
+  const ep=p?getEpData(p):null;
   dxDetailFieldsFor=val;
-  const detailHTML=buildDxDetailFieldsHTML(val, p?p.dxDetalles:{}, 'rdxd', true);
-  return `<div class="field full"><span class="field-label">Diagnóstico principal <span id="rDxBadge">${dxBadgeHTML(val)}</span></span><input type="text" id="rDx" class="dx-input" value="${esc(val||'')}" placeholder="Escribí para buscar en la lista…" autocomplete="off" oninput="updateField('dx',this.value);updateDxBadge(this.value)"></div>
+  const detailHTML=buildDxDetailFieldsHTML(val, ep?ep.dxDetalles:{}, 'rdxd', true);
+  return `<div class="field full"><span class="field-label">Diagnóstico principal <span id="rDxBadge">${dxBadgeHTML(val)}</span></span><input type="text" id="rDx" class="dx-input" value="${esc(val||'')}" placeholder="Escribí para buscar en la lista…" autocomplete="off" oninput="updateEpField('dx',this.value);updateDxBadge(this.value)"></div>
   <div class="field full" id="rDxDetailWrap" style="${detailHTML?'':'display:none;'}">${detailHTML}</div>`;
 }
 function dxBadgeHTML(val){
@@ -4023,6 +4036,14 @@ function updateField(key,val){
   const p=getPatient(currentPatientId);if(!p)return;
   p[key]=val;clearTimeout(autoSaveTimer);
   autoSaveTimer=setTimeout(()=>{saveDB();renderPatientList();if(['fechaInicio','alerta','nombre'].includes(key))renderPatient();},600);
+}
+// Para campos clínicos que pertenecen al episodio (dx, estructura, cirugía, fechaInicio, etc.)
+// en vez de al paciente entero — así no se mezclan entre episodios distintos.
+function updateEpField(key,val){
+  const p=getPatient(currentPatientId);if(!p)return;
+  const ep=getEpData(p);
+  ep[key]=val;clearTimeout(autoSaveTimer);
+  autoSaveTimer=setTimeout(()=>{saveDB();renderPatientList();if(['fechaInicio','fase','dx'].includes(key))renderPatient();},600);
 }
 
 // ── SESIONES ──────────────────────────────────────────────────────────────────
@@ -5988,26 +6009,33 @@ function openNewPatient(){
 }
 function openEditPatient(){
   const p=getPatient(currentPatientId);editingPatientId=p.id;
+  const ep=getEpData(p);
   document.getElementById('modalTitle').textContent='Editar paciente';populateCatSelect(p.categoria||'');
   document.getElementById('mNombre').value=p.nombre||'';document.getElementById('mEdad').value=p.edad||'';
   document.getElementById('mContacto').value=p.contacto||'';document.getElementById('mInstitucion').value=p.institucion||'';
-  document.getElementById('mDeporte').value=p.deporte||'';document.getElementById('mCirujano').value=p.cirujano||'';
+  document.getElementById('mDeporte').value=p.deporte||'';document.getElementById('mCirujano').value=ep.cirujano||'';
   document.getElementById('mFutbolista').checked=!!p.futbolista;
-  document.getElementById('mDx').value=p.dx||'';document.getElementById('mEstructura').value=p.estructura||'';
-  document.getElementById('mFechaInicio').value=p.fechaInicio||'';document.getElementById('mCirugia').value=p.cirugia||'';
-  document.getElementById('mAntecedentes').value=p.antecedentes||'';document.getElementById('mObjetivos').value=p.objetivos||'';
-  document.getElementById('mMedicacion').value=p.medicacion||'';document.getElementById('mContra').value=p.contra||'';
+  document.getElementById('mDx').value=ep.dx||'';document.getElementById('mEstructura').value=ep.estructura||'';
+  document.getElementById('mFechaInicio').value=ep.fechaInicio||'';document.getElementById('mCirugia').value=ep.cirugia||'';
+  document.getElementById('mAntecedentes').value=ep.antecedentes||'';document.getElementById('mObjetivos').value=ep.objetivos||'';
+  document.getElementById('mMedicacion').value=ep.medicacion||'';document.getElementById('mContra').value=ep.contra||'';
   document.getElementById('mAlerta').value=p.alerta||'';
-  renderDxDetailFieldsModal(p.dx||'', p.dxDetalles||{});
+  renderDxDetailFieldsModal(ep.dx||'', ep.dxDetalles||{});
   document.getElementById('modalOverlay').classList.add('open');
 }
 function closeModal(){document.getElementById('modalOverlay').classList.remove('open');editingPatientId=null;}
 function savePatient(){
   const nombre=document.getElementById('mNombre').value.trim();if(!nombre){alert('El nombre es obligatorio.');return;}
   const dxVal=document.getElementById('mDx').value;
-  const data={nombre,categoria:document.getElementById('mCategoria').value,edad:document.getElementById('mEdad').value,contacto:document.getElementById('mContacto').value,institucion:document.getElementById('mInstitucion').value,deporte:document.getElementById('mDeporte').value,futbolista:document.getElementById('mFutbolista').checked,cirujano:document.getElementById('mCirujano').value,dx:dxVal,estructura:document.getElementById('mEstructura').value,fechaInicio:document.getElementById('mFechaInicio').value,cirugia:document.getElementById('mCirugia').value,antecedentes:document.getElementById('mAntecedentes').value,objetivos:document.getElementById('mObjetivos').value,medicacion:document.getElementById('mMedicacion').value,contra:document.getElementById('mContra').value,alerta:document.getElementById('mAlerta').value,dxDetalles:collectDxDetailsFromDOM(dxVal,'dxd')};
-  if(editingPatientId){const idx=DB.patients.findIndex(p=>p.id===editingPatientId);if(idx!==-1)Object.assign(DB.patients[idx],data);}
-  else{DB.patients.unshift({id:uid(),sesiones:[],evaluaciones:[],cuestionarios:[],notas:'',...data});currentPatientId=DB.patients[0].id;}
+  // Datos que son del paciente en general (no cambian entre episodios)
+  const patData={nombre,categoria:document.getElementById('mCategoria').value,edad:document.getElementById('mEdad').value,contacto:document.getElementById('mContacto').value,institucion:document.getElementById('mInstitucion').value,deporte:document.getElementById('mDeporte').value,futbolista:document.getElementById('mFutbolista').checked,alerta:document.getElementById('mAlerta').value};
+  // Datos clínicos que pertenecen al episodio actual (distinto diagnóstico/estructura/etc por episodio)
+  const epData={dx:dxVal,estructura:document.getElementById('mEstructura').value,fechaInicio:document.getElementById('mFechaInicio').value,cirugia:document.getElementById('mCirugia').value,cirujano:document.getElementById('mCirujano').value,antecedentes:document.getElementById('mAntecedentes').value,objetivos:document.getElementById('mObjetivos').value,medicacion:document.getElementById('mMedicacion').value,contra:document.getElementById('mContra').value,dxDetalles:collectDxDetailsFromDOM(dxVal,'dxd')};
+  if(editingPatientId){
+    const idx=DB.patients.findIndex(p=>p.id===editingPatientId);
+    if(idx!==-1){ Object.assign(DB.patients[idx],patData); Object.assign(getEpData(DB.patients[idx]),epData); }
+  }
+  else{DB.patients.unshift({id:uid(),sesiones:[],evaluaciones:[],cuestionarios:[],notas:'',...patData,...epData});currentPatientId=DB.patients[0].id;}
   saveDB();closeModal();renderPatientList();renderPatient();
 }
 function deletePatient(){
@@ -6089,8 +6117,9 @@ function renderHomeDashboard(){
   const TIPO_COLORS={'Ligamentario':'#1A4E8C','Tendinopatía':'#B8962E','Muscular':'#1B5E3B','Meniscal / Cartílago':'#5E35B1','Óseo / Fractura':'#C0392B','Articular / Capsular':'#1893A8','Neural':'#8E5A2E','Inflamatorio / Bursitis':'#A23B72','Posquirúrgico':'#2E6B6B','Funcional / Sobreuso':'#6B7280','Funcional / Postural':'#6B7280','Otro':'#9AA0AD'};
   const porZona={}, porTipo={}; let sinClasificar=0;
   pts.forEach(p=>{
-    if(!p.dx||!p.dx.trim()) return;
-    const meta=getDxMeta(p.dx);
+    const dxUlt=getUltimoEpisodio(p).dx;
+    if(!dxUlt||!dxUlt.trim()) return;
+    const meta=getDxMeta(dxUlt);
     if(!meta){ sinClasificar++; return; }
     porZona[meta.region]=(porZona[meta.region]||0)+1;
     porTipo[meta.tipo]=(porTipo[meta.tipo]||0)+1;
@@ -6376,6 +6405,31 @@ dbRef.once('value').then(snapshot=>{
     }
   });
   if(migrado) saveDB();
+
+  // Migración: dx/estructura/cirugía/cirujano/fase/antecedentes/objetivos/medicación/contra
+  // (y dxDetalles) pasan a vivir DENTRO de cada episodio en vez de a nivel paciente, para que
+  // no se mezclen entre episodios distintos del mismo paciente. Los episodios creados antes de
+  // este cambio no tienen estos campos: al último (el que se estaba editando) le asignamos el
+  // valor viejo del paciente como mejor estimación; a los anteriores los dejamos en blanco en
+  // vez de heredar un valor que puede pertenecer a otro episodio.
+  let migradoClinico=false;
+  DB.patients.forEach(p=>{
+    if(!p.episodios||!p.episodios.length) return;
+    const last=p.episodios[p.episodios.length-1];
+    if(last.dx===undefined){
+      CLINICAL_EP_KEYS.forEach(k=>{ if(last[k]===undefined) last[k]=p[k]||''; });
+      if(last.dxDetalles===undefined) last.dxDetalles=p.dxDetalles||{};
+      migradoClinico=true;
+    }
+    p.episodios.forEach((ep,i)=>{
+      if(i===p.episodios.length-1) return;
+      let tocado=false;
+      CLINICAL_EP_KEYS.forEach(k=>{ if(ep[k]===undefined){ ep[k]=''; tocado=true; } });
+      if(ep.dxDetalles===undefined){ ep.dxDetalles={}; tocado=true; }
+      if(tocado) migradoClinico=true;
+    });
+  });
+  if(migradoClinico) saveDB();
 
   dbPatientsLoaded=true;
   tryMigrarTurnos();
