@@ -216,7 +216,7 @@ input,textarea,select{font-family:'Inter',sans-serif;}
 .ej-eva-wrap .ej-input.eva{flex:1;min-width:0;}
 .ej-row.ej-grouped{background:var(--orange-light);}
 .ej-input.bloque{text-align:center;font-weight:700;text-transform:uppercase;}
-.ej-input.rir{text-align:center;font-weight:600;color:var(--orange);}
+.ej-input.rir{text-align:center;font-weight:600;color:var(--orange);flex:1;min-width:0;}
 .ej-badge-mini{display:inline-block;background:var(--orange);color:#fff;font-size:9px;font-weight:700;border-radius:4px;padding:1px 5px;margin-right:5px;vertical-align:middle;}
 .ej-row:nth-child(even){background:var(--surface);}
 .ej-input{border:1px solid transparent;border-radius:5px;padding:6px 7px;font-size:14px;font-family:Inter,sans-serif;color:var(--text);background:transparent;outline:none;width:100%;transition:border-color .15s,background .15s;}
@@ -230,9 +230,6 @@ input,textarea,select{font-family:'Inter',sans-serif;}
 .vald-chip-line{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:2px 8px 8px 6px;}
 .vald-chip-label{font-size:10px;font-weight:700;color:#5E35B1;text-transform:uppercase;letter-spacing:.03em;}
 .ej-vald-x{background:none;border:none;color:var(--text-3);cursor:pointer;font-size:13px;padding:0 2px;margin-left:auto;}
-.prog-badge-wrap{font-size:12px;flex-shrink:0;cursor:help;}
-.ej-rir-wrap{display:flex;align-items:center;gap:2px;min-width:0;}
-.ej-rir-wrap .ej-input.rir{flex:1;min-width:0;}
 .btn-ej-del:hover{color:var(--red);}
 .ej-row-actions{display:flex;align-items:center;gap:1px;flex-wrap:nowrap;}
 .btn-ej-move{background:none;border:none;color:var(--text-3);cursor:pointer;font-size:12px;padding:2px 1px;line-height:1;flex-shrink:0;}
@@ -4085,24 +4082,6 @@ function effectiveRowEva(e, sesEva){
   if(!isNaN(v)) return v;
   return (sesEva===null||sesEva===undefined) ? null : sesEva;
 }
-// Badge de sugerencia de progresión (⚠️/✅) según RIR de la fila + EVA (propio o de sesión).
-function progresionBadgeHTML(rir, eva){
-  const r=parseFloat(rir);
-  const hasR=!isNaN(r);
-  if(!hasR && (eva===null||eva===undefined)) return '';
-  if((hasR && r<=1) || (eva!=null && eva>=6)) return '<span class="prog-badge-wrap" title="RIR bajo y/o dolor alto: no convendría subir carga la próxima vez">⚠️</span>';
-  if(hasR && r>=3 && (eva==null || eva<=3)) return '<span class="prog-badge-wrap" title="RIR alto y poco dolor: se podría progresar la próxima vez">✅</span>';
-  return '';
-}
-function refreshProgBadgesForSes(sesId){
-  const p=getPatient(currentPatientId); const ep=getEpData(p);
-  const ses=(ep.sesiones||[]).find(s=>s.id===sesId); if(!ses) return;
-  const sesEva=getDolorSesion(ses);
-  (ses.ejercicios||[]).forEach((e,i)=>{
-    const el=document.getElementById('progbadge_'+sesId+'_'+i);
-    if(el) el.outerHTML=`<span id="progbadge_${sesId}_${i}" class="prog-badge-wrap-outer">${progresionBadgeHTML(e.rir, effectiveRowEva(e,sesEva))}</span>`;
-  });
-}
 // Lista continua de ejercicios de una sesión (sin agrupar por categoría clínica).
 // Las superseries se siguen marcando con el campito "Sup." (A1/A2…) y se resaltan con un borde.
 // Badge de color según severidad, mismo criterio que el semáforo de EVA (0-3 verde, 4-6 amarillo, 7-10 rojo)
@@ -4141,11 +4120,8 @@ function buildSesEjTable(sesId, ejercicios, sesEva){
         oninput="updateEjField('${sesId}',${i},'reps',this.value)">
       <input class="ej-input center" type="text" value="${esc(e.kg||'')}" placeholder="—"
         oninput="updateEjField('${sesId}',${i},'kg',this.value)">
-      <div class="ej-rir-wrap">
-        <input class="ej-input rir" type="text" value="${esc(e.rir||'')}" placeholder="—" title="RIR (reps en reserva)"
-          oninput="updateEjField('${sesId}',${i},'rir',this.value)">
-        <span id="progbadge_${sesId}_${i}" class="prog-badge-wrap-outer">${progresionBadgeHTML(e.rir, effectiveRowEva(e,sesEva))}</span>
-      </div>
+      <input class="ej-input rir" type="text" value="${esc(e.rir||'')}" placeholder="—" title="RIR real de esta sesión"
+        oninput="updateEjField('${sesId}',${i},'rir',this.value)">
       <div class="ej-eva-wrap">
         <input class="ej-input eva" type="text" value="${esc(e.eva||'')}" placeholder="—" title="EVA durante este ejercicio (0-10). Si se deja vacío, se usa el EVA general de la sesión."
           oninput="updateEjField('${sesId}',${i},'eva',this.value)">
@@ -4175,11 +4151,11 @@ function buildSesEjTable(sesId, ejercicios, sesEva){
   </div>`;
 }
 
-// Cuando una sesión fue cargada "desde el plan" (tiene planRef), cualquier cambio que se
-// haga acá (kg, series, reps, RIR, nota) se refleja también en el día del plan de origen —
-// así el plan queda siempre con la última prescripción realmente usada, sin tener que
-// entrar a editarlo a mano. Si el ejercicio está marcado con ⭐ (track), además guardamos
-// un historial acotado (últimas 20 entradas) para poder ver su progresión.
+// Cuando una sesión fue cargada "desde el plan" (tiene planRef), los cambios de nota/bloque/etc.
+// se reflejan en el día del plan de origen. kg/reps/series/RIR quedan aparte: el plan guarda el
+// objetivo prescripto y NO se sobrescribe con lo hecho en la sesión — eso queda solo en la propia
+// sesión y, si el ejercicio está marcado con ⭐ (track), en el historial de progresión (últimas
+// 20 entradas), para poder ver la progresión real sin perder de vista el objetivo planificado.
 function syncEjSesionAPlan(ses, idx, field, val){
   if(!ses.planRef) return false;
   const ej = ses.ejercicios && ses.ejercicios[idx];
@@ -4188,11 +4164,14 @@ function syncEjSesionAPlan(ses, idx, field, val){
   if(!dia || !dia.ejercicios) return false;
   const planEj = dia.ejercicios.find(e=>e.id===ej.id);
   if(!planEj) return false;
-  planEj[field] = val;
-  dia.actualizado = new Date().toISOString();
-  if(planEj.track && ['kg','reps','series','rir'].indexOf(field)!==-1){
+  const esPrescripcion = ['kg','reps','series','rir'].indexOf(field)!==-1;
+  if(!esPrescripcion){
+    planEj[field] = val;
+    dia.actualizado = new Date().toISOString();
+  }
+  if(planEj.track && esPrescripcion){
     if(!planEj.historial) planEj.historial=[];
-    const snap = {fecha:todayISO(), kg:planEj.kg||'', reps:planEj.reps||'', series:planEj.series||'', rir:planEj.rir||''};
+    const snap = {fecha:todayISO(), kg:ej.kg||'', reps:ej.reps||'', series:ej.series||'', rir:ej.rir||''};
     const last = planEj.historial[planEj.historial.length-1];
     if(!last || last.fecha!==snap.fecha || last.kg!==snap.kg || last.reps!==snap.reps || last.series!==snap.series || last.rir!==snap.rir){
       planEj.historial.push(snap);
@@ -4233,7 +4212,7 @@ function toggleEjTrackSes(sesId, idx){
       dia.actualizado = new Date().toISOString();
       if(planEj.track){
         if(!planEj.historial) planEj.historial=[];
-        const snap={fecha:todayISO(), kg:planEj.kg||'', reps:planEj.reps||'', series:planEj.series||'', rir:planEj.rir||''};
+        const snap={fecha:todayISO(), kg:ej.kg||'', reps:ej.reps||'', series:ej.series||'', rir:ej.rir||''};
         const last=planEj.historial[planEj.historial.length-1];
         if(!last || last.fecha!==snap.fecha || last.kg!==snap.kg || last.reps!==snap.reps || last.series!==snap.series || last.rir!==snap.rir){
           planEj.historial.push(snap);
@@ -4258,14 +4237,6 @@ function updateEjField(sesId, idx, field, val) {
   }
   clearTimeout(autoSaveTimer);
   autoSaveTimer = setTimeout(saveDB, 800);
-  if(field==='rir' || field==='eva'){
-    const el=document.getElementById('progbadge_'+sesId+'_'+idx);
-    if(el){
-      const ej=ses.ejercicios[idx];
-      const sesEva=getDolorSesion(ses);
-      el.innerHTML=progresionBadgeHTML(ej.rir, effectiveRowEva(ej,sesEva));
-    }
-  }
 }
 
 function addEjToSes(sesId) {
@@ -4477,7 +4448,7 @@ function renderSesCard(s,num,fechaInicio){
             </div>
             ${buildSesEjTable(s.id, ejercicios, dolor)}
           </div>
-          <div class="ses-field"><label>EVA entrenamiento</label><input type="number" min="0" max="10" value="${esc(s.dolor!=null?s.dolor:'')}" oninput="updateSes('${s.id}','dolor',this.value);refreshProgBadgesForSes('${s.id}')"></div>
+          <div class="ses-field"><label>EVA entrenamiento</label><input type="number" min="0" max="10" value="${esc(s.dolor!=null?s.dolor:'')}" oninput="updateSes('${s.id}','dolor',this.value)"></div>
           <div class="ses-field"><label>RPE (esfuerzo 0-10)</label><input type="number" min="0" max="10" value="${esc(s.rpe!=null?s.rpe:'')}" oninput="updateSes('${s.id}','rpe',this.value)"></div>
           <div class="ses-field"><label>Duración (min)</label><input type="number" min="0" value="${esc(s.duracion!=null?s.duracion:'')}" oninput="updateSes('${s.id}','duracion',this.value)"></div>
           <div class="ses-field full"><label>Lo que observé</label><textarea oninput="updateSes('${s.id}','objetivo',this.value)">${esc(s.objetivo||'')}</textarea></div>
