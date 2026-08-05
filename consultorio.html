@@ -246,6 +246,12 @@ input,textarea,select{font-family:'Inter',sans-serif;}
 .btn-add-eval{display:flex;align-items:center;gap:6px;padding:9px 16px;background:var(--green);color:#fff;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;}
 .eval-table{width:100%;border-collapse:collapse;font-size:13px;}
 .eval-table th{padding:9px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);border-bottom:2px solid var(--border);white-space:nowrap;}
+.eval-group-card{cursor:default;}
+.eval-group-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;cursor:pointer;margin-bottom:12px;}
+.eval-group-chevron{color:var(--text-3);font-size:13px;flex-shrink:0;padding-top:2px;}
+.eval-group-values{display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-bottom:10px;font-size:11px;color:var(--text-3);line-height:1.5;}
+.eval-group-value b{font-size:15px;color:var(--text);font-weight:700;}
+.eval-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;vertical-align:middle;}
 .eval-table td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle;}
 .eval-table tr:last-child td{border-bottom:none;}
 .eval-table tr:hover td{background:var(--surface);}
@@ -5174,8 +5180,31 @@ function recalcEvalLsi(){
   else lsiEl.value='';
 }
 
+// Agrupa evaluaciones que corresponden al mismo test/instrumento (misma clave que usa Evolución para el LSI%)
+function evalGroupKey(e){
+  return (e.testId && e.testId!=='otro') ? `${e.instrumento}_${e.testId}` : (e.test||'eval');
+}
+function evalNum(s){ if(s==null||s==='') return null; const n=parseFloat(s); return isNaN(n)?null:n; }
+let evalExpandedGroups={};
+function toggleEvalGroup(key){ evalExpandedGroups[key]=!evalExpandedGroups[key]; renderTab(); }
+
 function renderEvaluaciones(panel){
-  const p=getPatient(currentPatientId);const ep=getEpData(p);const evals=ep.evaluaciones||[];
+  const p=getPatient(currentPatientId);const ep=getEpData(p);
+  const evals=(ep.evaluaciones||[]).slice().sort((a,b)=>(a.fecha||'').localeCompare(b.fecha||''));
+
+  // Agrupar por test para mostrar una tarjeta por instrumento/test con su evolución, estilo VALD
+  const groups={};
+  evals.forEach(e=>{
+    const key=evalGroupKey(e);
+    if(!groups[key]) groups[key]={label:e.test||'Evaluación', entries:[]};
+    groups[key].entries.push(e);
+  });
+  const groupKeys=Object.keys(groups).sort((a,b)=>{
+    const la=groups[a].entries[groups[a].entries.length-1].fecha||'';
+    const lb=groups[b].entries[groups[b].entries.length-1].fecha||'';
+    return lb.localeCompare(la);
+  });
+
   panel.innerHTML=`
     <div class="eval-toolbar">
       <h3>${evals.length} evaluación${evals.length!==1?'es':''}</h3>
@@ -5185,10 +5214,57 @@ function renderEvaluaciones(panel){
       </button>
     </div>
     ${!evals.length?'<div class="ses-empty">Todavía no hay evaluaciones registradas.</div>':`
+    <div class="home-grid" style="margin-bottom:22px;">
+      ${groupKeys.map(key=>{
+        const g=groups[key];
+        const entries=g.entries;
+        const last=entries[entries.length-1];
+        const lsiNum=parseFloat(last.lsi);
+        const badge=!isNaN(lsiNum)?`<span class="lsi-badge ${lsiClass(lsiNum)}">${lsiNum}% LSI</span>`:'';
+        const expanded=!!evalExpandedGroups[key];
+        const afectadoSerie={name:'Afectado',color:'var(--blue-chip)',data:entries.map(e=>({label:formatFechaCorta(e.fecha),value:evalNum(e.afectado)}))};
+        const sanoSerie={name:'Sano / Ref.',color:'var(--brown)',data:entries.map(e=>({label:formatFechaCorta(e.fecha),value:evalNum(e.sano)}))};
+        const hayChart=afectadoSerie.data.some(d=>d.value!=null)||sanoSerie.data.some(d=>d.value!=null);
+        const keyAttr=String(key).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+        return `
+        <div class="home-card eval-group-card">
+          <div class="eval-group-head" onclick="toggleEvalGroup('${keyAttr}')">
+            <div>
+              <div class="home-card-title" style="margin-bottom:2px;">${esc(g.label)}</div>
+              <div style="font-size:11px;color:var(--text-3);">${entries.length} evaluación${entries.length!==1?'es':''} · última: ${formatFecha(last.fecha)}</div>
+            </div>
+            <span class="eval-group-chevron">${expanded?'︿':'﹀'}</span>
+          </div>
+          <div class="eval-group-values">
+            <div class="eval-group-value"><span class="eval-dot" style="background:var(--blue-chip)"></span>Afectado<br><b>${esc(last.afectado||'—')}</b></div>
+            <div class="eval-group-value"><span class="eval-dot" style="background:var(--brown)"></span>Sano / Ref.<br><b>${esc(last.sano||'—')}</b></div>
+            ${badge}
+          </div>
+          ${hayChart?`${buildChartLegend([afectadoSerie,sanoSerie])}${buildBarChartSVG([afectadoSerie,sanoSerie])}`:'<div class="home-empty-mini">Cargá valores numéricos para ver la evolución.</div>'}
+          ${expanded?`
+          <table class="eval-table" style="margin-top:12px;">
+            <thead><tr><th>Fecha</th><th>Afectado</th><th>Sano/Ref.</th><th>LSI %</th><th>Umbral</th><th>Obs.</th><th></th></tr></thead>
+            <tbody>
+              ${entries.slice().reverse().map(e=>`
+                <tr>
+                  <td>${formatFecha(e.fecha)}</td>
+                  <td>${esc(e.afectado||'—')}</td>
+                  <td>${esc(e.sano||'—')}</td>
+                  <td>${e.lsi?`<span class="lsi-badge ${lsiClass(e.lsi)}">${e.lsi}%</span>`:'—'}</td>
+                  <td>${esc(e.umbral||'—')}</td>
+                  <td style="max-width:140px;font-size:12px;color:var(--text-2)">${esc(e.obs||'')}</td>
+                  <td><button class="btn-del-eval" onclick="deleteEval('${e.id}')">×</button></td>
+                </tr>`).join('')}
+            </tbody>
+          </table>`:''}
+        </div>`;
+      }).join('')}
+    </div>
+    <h3 style="margin-bottom:10px;">Historial completo</h3>
     <table class="eval-table">
       <thead><tr><th>Fecha</th><th>Evolución</th><th>Test</th><th>Afectado</th><th>Sano / Ref.</th><th>LSI %</th><th>Umbral</th><th>Obs.</th><th></th></tr></thead>
       <tbody>
-        ${evals.map(e=>{
+        ${evals.slice().reverse().map(e=>{
           const dias=(e.fecha&&(ep.fechaInicio||p.fechaInicio))?Math.floor((new Date(e.fecha)-new Date(ep.fechaInicio||p.fechaInicio))/86400000):null;
           const lsi=parseFloat(e.lsi);const pasa=!isNaN(lsi)?(lsi>=90?'✓ Pasa':'✗ No pasa'):'';
           return `<tr>
@@ -5634,8 +5710,10 @@ function exportPlanPDF(planId){
   .rt-ex-meta{font-size:10.5px;color:#5A6373;margin-top:1px;}
   .rt-ex-nota{font-size:10.5px;color:#1A4E8C;margin-top:2px;font-style:italic;}
   .rt-footer{margin-top:10px;font-size:10px;color:#5A6373;border-top:1px solid #E2E5EA;padding-top:6px;}
-  @media print{ body{padding:0;} .rt-dia{page-break-inside:avoid;} }
+  .rt-close-btn{position:fixed;top:10px;right:10px;width:36px;height:36px;border-radius:50%;background:#1B2A4A;color:#fff;border:none;font-size:17px;line-height:1;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,.25);z-index:999;cursor:pointer;}
+  @media print{ body{padding:0;} .rt-dia{page-break-inside:avoid;} .rt-close-btn{display:none;} }
 </style></head><body>
+  <button class="rt-close-btn" onclick="window.close()" title="Cerrar">✕</button>
   <div class="rt-header">
     <div style="display:flex;align-items:center;gap:8px;">
       <svg width="26" height="26" viewBox="0 0 36 36"><rect width="36" height="36" rx="9" fill="#13203D"/><path d="M25 10.5C23.2 8.3 20.6 7 17.5 7 11.7 7 7 11.9 7 18s4.7 11 10.5 11c3.1 0 5.7-1.3 7.5-3.5" stroke="#fff" stroke-width="3" stroke-linecap="round" fill="none"/><path d="M11 18h3.2l1.6-3.6 2.4 6.4 1.6-2.8h5.2" stroke="#6B8E5C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
@@ -5966,8 +6044,10 @@ function exportRutinaPDF(sesId){
   .rt-ex-meta{font-size:10.5px;color:#5A6373;margin-top:1px;}
   .rt-ex-nota{font-size:10.5px;color:#1A4E8C;margin-top:2px;font-style:italic;}
   .rt-footer{margin-top:10px;font-size:10px;color:#5A6373;border-top:1px solid #E2E5EA;padding-top:6px;}
-  @media print{ body{padding:0;} }
+  .rt-close-btn{position:fixed;top:10px;right:10px;width:36px;height:36px;border-radius:50%;background:#1B2A4A;color:#fff;border:none;font-size:17px;line-height:1;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,.25);z-index:999;cursor:pointer;}
+  @media print{ body{padding:0;} .rt-close-btn{display:none;} }
 </style></head><body>
+  <button class="rt-close-btn" onclick="window.close()" title="Cerrar">✕</button>
   <div class="rt-header">
     <div style="display:flex;align-items:center;gap:8px;">
       <svg width="26" height="26" viewBox="0 0 36 36"><rect width="36" height="36" rx="9" fill="#13203D"/><path d="M25 10.5C23.2 8.3 20.6 7 17.5 7 11.7 7 7 11.9 7 18s4.7 11 10.5 11c3.1 0 5.7-1.3 7.5-3.5" stroke="#fff" stroke-width="3" stroke-linecap="round" fill="none"/><path d="M11 18h3.2l1.6-3.6 2.4 6.4 1.6-2.8h5.2" stroke="#6B8E5C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
