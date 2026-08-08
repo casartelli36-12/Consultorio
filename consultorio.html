@@ -1681,6 +1681,152 @@ const QUESTIONNAIRES = {
     ],
   },
 
+  PCS: {
+    nombre: 'PCS',
+    nombreCompleto: 'Pain Catastrophizing Scale — Escala de Catastrofización del Dolor (Sullivan et al. 1995, versión española García-Campayo et al. 2008)',
+    region: 'Catastrofización del dolor (transversal)',
+    descripcion: 'Pensamientos y sentimientos catastrofistas frente al dolor (rumiación, magnificación, desesperanza). Útil junto con cualquier PROM funcional cuando el componente psicológico parece estar limitando la recuperación.',
+    escala: [
+      {v:0, l:'Nada en absoluto'},
+      {v:1, l:'Un poco'},
+      {v:2, l:'Moderadamente'},
+      {v:3, l:'Mucho'},
+      {v:4, l:'Todo el tiempo'},
+    ],
+    invertido: true, // 0 = mejor (nada de catastrofización)
+    subescalas: [
+      {
+        id:'Total', label:'Puntaje total',
+        items:[
+          'Estoy preocupado todo el tiempo pensando en si el dolor desaparecerá',
+          'Siento que ya no puedo más',
+          'Es terrible y pienso que esto nunca va a mejorar',
+          'Es horrible y siento que esto es más fuerte que yo',
+          'Siento que no puedo soportarlo más',
+          'Temo que el dolor empeore',
+          'No dejo de pensar en otras situaciones en las que experimento dolor',
+          'Deseo desesperadamente que desaparezca el dolor',
+          'No puedo apartar el dolor de mi mente',
+          'No dejo de pensar en lo mucho que me duele',
+          'No dejo de pensar en lo mucho que deseo que desaparezca el dolor',
+          'No hay nada que pueda hacer para aliviar la intensidad del dolor',
+          'Me pregunto si me puede pasar algo grave',
+        ],
+      },
+      {
+        id:'Rumiacion', label:'Rumiación',
+        items:[
+          'Deseo desesperadamente que desaparezca el dolor',
+          'No puedo apartar el dolor de mi mente',
+          'No dejo de pensar en lo mucho que me duele',
+          'No dejo de pensar en lo mucho que deseo que desaparezca el dolor',
+        ],
+      },
+      {
+        id:'Magnificacion', label:'Magnificación',
+        items:[
+          'Temo que el dolor empeore',
+          'No dejo de pensar en otras situaciones en las que experimento dolor',
+          'Me pregunto si me puede pasar algo grave',
+        ],
+      },
+      {
+        id:'Desesperanza', label:'Desesperanza',
+        items:[
+          'Estoy preocupado todo el tiempo pensando en si el dolor desaparecerá',
+          'Siento que ya no puedo más',
+          'Es terrible y pienso que esto nunca va a mejorar',
+          'Es horrible y siento que esto es más fuerte que yo',
+          'Siento que no puedo soportarlo más',
+          'No hay nada que pueda hacer para aliviar la intensidad del dolor',
+        ],
+      },
+    ],
+  },
+
+  FABQ_PA: {
+    nombre: 'FABQ-PA',
+    nombreCompleto: 'Fear-Avoidance Beliefs Questionnaire — subescala de Actividad física (Waddell et al. 1993)',
+    region: 'Miedo-evitación (transversal)',
+    descripcion: 'Creencias de que la actividad física puede dañar o empeorar el dolor. Predictor independiente de discapacidad, sobre todo en lumbalgia. Se completa junto con FABQ-Trabajo si el paciente está laboralmente activo.',
+    escala: [
+      {v:0, l:'0 — Totalmente en desacuerdo'},{v:1, l:'1'},{v:2, l:'2'},
+      {v:3, l:'3 — Indeciso/a'},{v:4, l:'4'},{v:5, l:'5'},{v:6, l:'6 — Totalmente de acuerdo'},
+    ],
+    invertido: true, // 0 = mejor (en desacuerdo con creencias de miedo/evitación)
+    subescalas: [
+      {
+        id:'Total', label:'Miedo-evitación actividad física',
+        items:[
+          'La actividad física empeora mi dolor',
+          'La actividad física podría dañar mi espalda',
+          'No debería hacer actividades físicas que puedan empeorar mi dolor',
+          'No puedo hacer actividades físicas que puedan empeorar mi dolor',
+        ],
+      },
+    ],
+  },
+
+  FABQ_W: {
+    nombre: 'FABQ-Trabajo',
+    nombreCompleto: 'Fear-Avoidance Beliefs Questionnaire — subescala Laboral (Waddell et al. 1993)',
+    region: 'Miedo-evitación (transversal)',
+    descripcion: 'Creencias de que el trabajo puede dañar o empeorar el dolor. Fuerte predictor de discapacidad laboral prolongada, en especial en pacientes con siniestro laboral o ART.',
+    escala: [
+      {v:0, l:'0 — Totalmente en desacuerdo'},{v:1, l:'1'},{v:2, l:'2'},
+      {v:3, l:'3 — Indeciso/a'},{v:4, l:'4'},{v:5, l:'5'},{v:6, l:'6 — Totalmente de acuerdo'},
+    ],
+    invertido: true,
+    subescalas: [
+      {
+        id:'Total', label:'Miedo-evitación laboral',
+        items:[
+          'Mi dolor fue causado por mi trabajo o por un accidente laboral',
+          'Mi trabajo agravó mi dolor',
+          'Mi trabajo es demasiado pesado para mí',
+          'Mi trabajo empeora o empeoraría mi dolor',
+          'Mi trabajo podría dañar mi espalda',
+          'No debería hacer mi trabajo habitual con el dolor que tengo actualmente',
+          'No creo que vuelva a mi trabajo habitual dentro de los próximos 3 meses',
+        ],
+      },
+    ],
+  },
+
+  OSTRC: {
+    nombre: 'OSTRC',
+    nombreCompleto: 'Oslo Sports Trauma Research Center — Cuestionario de lesiones por sobreuso (Clarsen et al. 2013)',
+    region: 'Sobreuso deportivo (transversal, por zona)',
+    descripcion: 'Monitoreo semanal del impacto de un problema por sobreuso en una zona puntual: participación, volumen de entrenamiento, rendimiento y dolor durante la última semana. Pensado para completarse seguido (ideal: cada semana) y ver la tendencia, no como evaluación única. Cargá una entrada por cada zona que estés monitoreando.',
+    escala: [
+      {v:0, l:'0 — Sin problema / participación completa'},
+      {v:8, l:'Reducción leve'},
+      {v:17, l:'Reducción moderada'},
+      {v:25, l:'No pudo participar / máximo impacto'},
+    ],
+    escalas: {
+      graduada5: [
+        {v:0, l:'0 — Sin problema'},
+        {v:6, l:'Reducción leve'},
+        {v:13, l:'Reducción moderada'},
+        {v:19, l:'Reducción importante'},
+        {v:25, l:'Reducción máxima / imposible'},
+      ],
+    },
+    invertido: true, // 0 = mejor (sin impacto del problema)
+    subescalas: [
+      {
+        id:'Total', label:'Severidad del problema (semana)',
+        items:[
+          '¿Tuviste dificultades para participar en el entrenamiento/competencia normal por este problema en la última semana?',
+          {t:'¿En qué medida redujiste tu volumen de entrenamiento por este problema en la última semana?', e:'graduada5'},
+          {t:'¿En qué medida este problema afectó tu rendimiento deportivo en la última semana?', e:'graduada5'},
+          '¿Cuánto dolor/molestia sentiste por este problema durante la práctica deportiva en la última semana?',
+        ],
+      },
+    ],
+  },
+
 };
 
 // Un item de cuestionario puede ser un string simple (usa la escala/dirección por
@@ -2399,6 +2545,35 @@ const PROM_BANDAS = {
     {min:40, clase:'prom-mod', label:'Bienestar bajo — seguir de cerca'},
     {min:-Infinity, clase:'prom-severa', label:'Bienestar muy bajo — señal de alerta'},
   ],
+  // PCS: Sullivan et al. 1995 — corte validado en ≥30/52 (57.7% de catastrofización) como
+  // nivel clínicamente significativo. Convertido a la convención de la app (100=sin
+  // catastrofización): 100-57.7=42.3%.
+  PCS: [
+    {min:75, clase:'prom-ok', label:'Catastrofización mínima'},
+    {min:42.3, clase:'prom-leve', label:'Catastrofización leve-moderada'},
+    {min:-Infinity, clase:'prom-severa', label:'Catastrofización clínicamente significativa (≥30/52) — considerar educación en neurociencia del dolor o derivación'},
+  ],
+  // FABQ-PA: Waddell et al. 1993 — corte de riesgo alto en >15/24 (62.5%). Convertido: 37.5%.
+  FABQ_PA: [
+    {min:62.5, clase:'prom-ok', label:'Bajo miedo-evitación a la actividad física'},
+    {min:37.5, clase:'prom-leve', label:'Miedo-evitación moderado'},
+    {min:-Infinity, clase:'prom-severa', label:'Alto miedo-evitación (>15/24) — puede limitar la progresión de carga'},
+  ],
+  // FABQ-Trabajo: George et al. 2001 — corte de riesgo alto en >34/42 (81%). Convertido: 19%.
+  FABQ_W: [
+    {min:81, clase:'prom-ok', label:'Bajo miedo-evitación laboral'},
+    {min:19, clase:'prom-leve', label:'Miedo-evitación laboral moderado'},
+    {min:-Infinity, clase:'prom-severa', label:'Alto miedo-evitación laboral (>34/42) — factor de riesgo fuerte para discapacidad prolongada, sobre todo en ART'},
+  ],
+  // OSTRC: no hay corte único de "función normal" (es una escala de severidad semanal,
+  // pensada para ver tendencia). Se usa como referencia orientativa: "problema sustancial"
+  // en la literatura = reducción moderada/severa en volumen o rendimiento.
+  OSTRC: [
+    {min:90, clase:'prom-ok', label:'Sin impacto relevante esta semana'},
+    {min:66, clase:'prom-leve', label:'Impacto leve'},
+    {min:33, clase:'prom-mod', label:'Problema sustancial — reduce entrenamiento o rendimiento'},
+    {min:-Infinity, clase:'prom-severa', label:'Impacto severo — participación muy limitada o nula'},
+  ],
 };
 // tipoId es opcional: si se pasa y existe una banda específica para ese cuestionario,
 // se usa esa. Si no, se cae a la banda genérica (mismo criterio que antes).
@@ -2938,6 +3113,7 @@ const EVOLUCION_CHARTS = [
   {id:'eva', label:'EVA — dolor diario vs. entrenamiento'},
   {id:'rpe', label:'RPE de sesión (esfuerzo)', nota:'Se superpone con Carga interna, que ya incluye el RPE.'},
   {id:'cargaInterna', label:'Carga interna (RPE × duración)'},
+  {id:'cargaExterna', label:'Carga externa (volumen: series×reps×kg)'},
   {id:'acwr', label:'Carga aguda:crónica (ACWR)'},
   {id:'rpeClub', label:'RPE entrenamiento club', nota:'Solo aplica a pacientes marcados como futbolistas.'},
   {id:'lsi', label:'LSI% — evaluaciones'},
@@ -6095,6 +6271,7 @@ function renderEvolucion(panel){
   const dolorEntrenoData= sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:getDolorSesion(s)}));
   const rpeData   = sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:getRpeSesion(s)}));
   const ciData    = sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:getCargaInterna(s)}));
+  const ceData    = sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:calcVolumenSesion(s.ejercicios)}));
   const rpeClubData = sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:getRpeClub(s)}));
 
   const hayDolor = dolorDiariaData.some(d=>d.value!=null) || dolorEntrenoData.some(d=>d.value!=null);
@@ -6161,7 +6338,14 @@ function renderEvolucion(panel){
       ${evoChartEnabled('cargaInterna')?`
       <div class="home-card">
         <div class="home-card-title">🔥 Carga interna (RPE × duración)</div>
+        <div style="font-size:11px;color:var(--text-3);margin-bottom:8px;">Cuánto le costó la sesión al paciente (método Foster). Se calcula RPE de sesión × duración en minutos. A mayor barra, sesión más demandante — no importa cuánto peso movió, sino cuánto esfuerzo percibió.</div>
         ${buildBarChartSVG([{name:'Carga interna',color:'var(--orange)',data:ciData}],{emptyMsg:'Cargá RPE y duración en las sesiones para ver este gráfico.'})}
+      </div>`:''}
+      ${evoChartEnabled('cargaExterna')?`
+      <div class="home-card">
+        <div class="home-card-title">📦 Carga externa (volumen de entrenamiento)</div>
+        <div style="font-size:11px;color:var(--text-3);margin-bottom:8px;">Cuánto trabajo mecánico hizo: suma de series × reps × kg de todos los ejercicios de la sesión (si un ejercicio no tiene kg cargado, cuenta como peso corporal). Sirve para ver si la progresión de carga real acompaña a cómo lo va sintiendo (Carga interna).</div>
+        ${buildBarChartSVG([{name:'Carga externa',color:'var(--blue-chip)',data:ceData}],{emptyMsg:'Cargá series, reps y kg en los ejercicios de las sesiones para ver este gráfico.'})}
       </div>`:''}
       ${evoChartEnabled('acwr')?`
       <div class="home-card">
