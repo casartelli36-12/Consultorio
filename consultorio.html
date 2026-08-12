@@ -362,6 +362,35 @@ input,textarea,select{font-family:'Inter',sans-serif;}
 /* ── TURNOS ── */
 .turnos-shell{display:flex;flex-direction:column;height:100%;overflow:hidden;}
 
+/* ── AYUDA MEMORIA ── */
+.ayudamem-header{margin-bottom:16px;}
+.ayudamem-header h2{font-size:19px;font-weight:800;color:var(--navy);margin-bottom:4px;}
+.ayudamem-header p{font-size:13px;color:var(--text-2);line-height:1.4;}
+.ayudamem-list{display:flex;flex-direction:column;gap:10px;}
+.ayudamem-card{display:flex;align-items:center;gap:12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:14px;cursor:pointer;transition:opacity .12s;}
+.ayudamem-card:active{opacity:.7;}
+.ayudamem-card-emoji{font-size:22px;flex-shrink:0;}
+.ayudamem-card-body{flex:1;min-width:0;}
+.ayudamem-card-title{font-size:14px;font-weight:700;color:var(--text);line-height:1.3;}
+.ayudamem-card-zona{font-size:12px;color:var(--text-3);margin-top:2px;}
+.ayudamem-card-arrow{font-size:20px;color:var(--text-3);flex-shrink:0;}
+.ayudamem-detail{padding-bottom:24px;}
+.ayudamem-back{background:none;border:none;color:var(--orange);font-size:14px;font-weight:600;padding:6px 0 14px;cursor:pointer;}
+.ayudamem-detail-header{display:flex;align-items:flex-start;gap:12px;margin-bottom:10px;}
+.ayudamem-detail-header h2{font-size:17px;font-weight:800;color:var(--navy);line-height:1.3;}
+.ayudamem-fuente{font-size:12px;color:var(--text-3);background:var(--surface);border-radius:var(--radius-sm);padding:8px 10px;margin-bottom:12px;line-height:1.4;}
+.ayudamem-resumen{font-size:13.5px;color:var(--text-2);line-height:1.5;margin-bottom:18px;}
+.ayudamem-bloque{margin-bottom:18px;}
+.ayudamem-bloque-titulo{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:8px;text-transform:uppercase;letter-spacing:.02em;}
+.ayudamem-step{border-left:3px solid var(--orange);background:var(--surface);border-radius:0 var(--radius-sm) var(--radius-sm) 0;padding:9px 12px;margin-bottom:8px;}
+.ayudamem-step-label{font-size:13.5px;font-weight:700;color:var(--text);margin-bottom:3px;}
+.ayudamem-step-detalle{font-size:13px;color:var(--text-2);line-height:1.45;}
+.ayudamem-nota{font-size:13px;color:var(--text-2);line-height:1.5;margin-bottom:8px;}
+@media (max-width:600px){
+  .ayudamem-detail-header h2{font-size:16px;}
+  .ayudamem-card-title{font-size:13.5px;}
+}
+
 /* Nav semana */
 .tur-nav{display:flex;align-items:center;gap:10px;padding:12px 0 14px;flex-shrink:0;}
 .tur-nav-center{flex:1;display:flex;align-items:center;justify-content:center;gap:10px;}
@@ -1890,6 +1919,10 @@ function calcularScoresCuestionario(tipoId, respuestas) {
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="2" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.6"/><path d="M1 5.5h12M4 1v2.2M10 1v2.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
       Agenda
     </button>
+    <button class="btn-agenda-nav" id="btnAyudaMemNav" onclick="goToAyudaMemoria()">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1.2c-2 0-3.4 1.4-3.4 3.2 0 1.1.5 1.8 1.2 2.5.4.4.6.8.6 1.3v.4h3.2v-.4c0-.5.2-.9.6-1.3.7-.7 1.2-1.4 1.2-2.5 0-1.8-1.4-3.2-3.4-3.2z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M5.2 10.4h3.6M5.6 12h2.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      Ayuda Memoria
+    </button>
     <div class="pat-search-wrap"><input type="text" id="patSearch" placeholder="🔎 Buscar por nombre, dx o zona…" oninput="setPatSearch(this.value)"></div>
     <div class="cat-filters" id="catFilters"></div>
     <div class="estado-filters" id="estadoFilters"></div>
@@ -3241,6 +3274,8 @@ function goToAgenda(fecha){
 function updateAgendaNavActive(){
   const btn=document.getElementById('btnAgendaNav');
   if(btn) btn.classList.toggle('active', currentView==='agenda');
+  const btn2=document.getElementById('btnAyudaMemNav');
+  if(btn2) btn2.classList.toggle('active', currentView==='ayudamemoria');
 }
 
 function renderTurnosShell() {
@@ -3686,6 +3721,188 @@ const PROTOCOLOS_FASES = {
     ]
   }
 };
+// ── AYUDA MEMORIA (vista global, referencias clínicas basadas en evidencia) ──
+const AYUDA_MEMORIA_TEMAS = {
+  aquiles: {
+    emoji:'🦶', titulo:'Progresión de carga — Tendón de Aquiles', zona:'Tobillo / pierna',
+    fuente:'Baxter, Corrigan, Hullfish et al. (2020). "Exercise Progression to Incrementally Load the Achilles Tendon". Med Sci Sports Exerc.',
+    resumen:'Estudio biomecánico (motion capture + fuerza de reacción) que cuantificó la carga real sobre el tendón de Aquiles, en múltiplos del peso corporal (BW), durante 25 ejercicios habituales de rehabilitación. Permite ordenar una progresión objetiva en vez de guiarse solo por la intuición.',
+    bloques:[
+      {titulo:'Progresión de carga (baja → alta)', tipo:'progresion', items:[
+        {label:'1. Punta de pie sentado (bipodal)', detalle:'La carga más baja de la batería, ~0.5x peso corporal. Punto de partida seguro en fases tempranas.'},
+        {label:'2. Punta de pie sentado con peso (muslo)', detalle:'Se agrega carga externa (ej. 15 kg) manteniendo la posición sentada — sube la exigencia sin pasar a bipedestación.'},
+        {label:'3. Punta de pie parado, bipodal', detalle:'Velocidad cómoda primero, luego más rápida — la velocidad también aumenta la carga tendinosa.'},
+        {label:'4. Punta de pie parado, unipodal', detalle:'Salto cualitativo de carga respecto al bipodal; requiere buena tolerancia previa.'},
+        {label:'5. Estocadas, sentadillas, step up/down', detalle:'Movimientos multiarticulares asimétricos — permiten dosificar la carga lado por lado, útiles cuando hay lateralidad afectada.'},
+        {label:'6. Caminar y correr', detalle:'Cargas intermedias-altas (aprox. 4-8x peso corporal) — hito antes de progresar a saltos unipodales completos.'},
+        {label:'7. Saltos bipodales (salto y drop jump)', detalle:'Introduce el componente de almacenamiento/liberación de energía del tendón.'},
+        {label:'8. Salto unipodal hacia adelante', detalle:'El pico de carga de toda la batería: ~7.3x peso corporal. Reservar para las últimas fases antes del retorno deportivo.'},
+      ]},
+      {titulo:'Aplicación clínica', tipo:'notas', items:[
+        {detalle:'Las cargas variaron más de 12 veces entre el ejercicio más liviano y el más pesado — de ahí que "solo dar elevaciones de talón" deje huecos grandes en la progresión.'},
+        {detalle:'Los movimientos asimétricos (estocadas, step up/down) dan flexibilidad extra para prescribir carga de forma específica por lado, útil en lesiones unilaterales.'},
+      ]},
+    ]
+  },
+  rotuliano: {
+    emoji:'🦵', titulo:'Continuum de carga — Tendón rotuliano', zona:'Rodilla',
+    fuente:'Malliaras, Cook, Purdam, Rio (2015). "Patellar Tendinopathy: Clinical Diagnosis, Load Management, and Advice for Challenging Case Presentations". JOSPT.',
+    resumen:'Modelo de 4 etapas para progresar la tendinopatía rotuliana guiado por tolerancia al dolor y capacidad de carga, no por un cronograma fijo de semanas.',
+    bloques:[
+      {titulo:'Etapas', tipo:'progresion', items:[
+        {label:'Etapa 1 — Isométrico', detalle:'Extensión de rodilla isométrica en rango medio (30-60°) o sentadilla española (70-90°). 5 reps de 45-60 seg, 2-3 veces/día, progresando de 40% a 70% de la contracción voluntaria máxima. Útil para bajar el dolor e iniciar carga cuando el isotónico no se tolera.'},
+        {label:'Etapa 2 — Isotónico', detalle:'Extensión de rodilla, prensa (leg press), split squat o sentadilla unilateral. 3-4 series, arrancando en 15RM y progresando hacia 6RM. Objetivo: restaurar masa y fuerza del cuádriceps con preferencia por ejercicios unilaterales (control y equilibrio).'},
+        {label:'Etapa 3 — Almacenamiento y liberación de energía', detalle:'Habilitada cuando tolera 4-8 repeticiones de prensa unilateral al 150% del peso corporal, con dolor <3/10 que cede dentro de 24 h. Se incorporan saltos y trabajo pliométrico progresivo, con foco en la demanda específica del deporte.'},
+        {label:'Etapa 4 — Retorno al deporte', detalle:'Reintroducción progresiva de gestos y volumen específicos de la disciplina, coordinada con el cuerpo técnico.'},
+      ]},
+      {titulo:'Regla de dolor', tipo:'notas', items:[
+        {detalle:'Dolor durante y hasta 24 h después del ejercicio se tolera hasta 3-5/10; si aumenta o no cede en 24 h, retroceder a la etapa anterior.'},
+        {detalle:'Los ejercicios isométricos de etapa 1 se mantienen incluso en días de descanso de las etapas más avanzadas.'},
+      ]},
+    ]
+  },
+  hombro_manguito: {
+    emoji:'💪', titulo:'Jerarquía EMG — Manguito rotador', zona:'Hombro',
+    fuente:'Edwards et al. (2017). "A Systematic Review of EMG Studies in Normal Shoulders to Inform Postoperative Rehabilitation Following Rotator Cuff Repair". JOSPT. + Reinold et al. (JOSPT/J Athl Train).',
+    resumen:'Revisión sistemática que clasifica ejercicios de hombro según el % de contracción voluntaria máxima (CVM) que generan en supraespinoso/infraespinoso, para elegir ejercicios seguros según la fase de cicatrización post-reparación.',
+    bloques:[
+      {titulo:'Categorías de activación (%CVM)', tipo:'progresion', items:[
+        {label:'Baja (0-15% CVM)', detalle:'Péndulos, deslizamiento en mesa asistido, deslizamiento en pared. Indicados en fase protegida inmediata post-reparación.'},
+        {label:'Baja-moderada (16-20% CVM)', detalle:'Progresión intermedia dentro de la fase protegida temprana.'},
+        {label:'Moderada (21-40% CVM)', detalle:'Se introduce cuando la cicatrización tolera algo más de exigencia activa.'},
+        {label:'Alta (41-60% CVM)', detalle:'Full can, empty can, rotación externa activa (Reinold et al. reportan ~62-67% CVM de supraespinoso en estos tres). Reservar para cuando la reparación lo permite.'},
+        {label:'Muy alta (>60% CVM)', detalle:'Abducción horizontal en prono con RE a 100°, rotación externa en decúbito lateral. Fases avanzadas de fortalecimiento.'},
+      ]},
+      {titulo:'Nota clínica', tipo:'notas', items:[
+        {detalle:'Ningún ejercicio habitual logra una activación baja (≤15% CVM) del subescapular — tenerlo en cuenta al proteger reparaciones que incluyen esta estructura.'},
+        {detalle:'El ejercicio "full can" genera activación de deltoides medio/posterior significativamente menor que "empty can", con supraespinoso similar — preferirlo cuando se quiere minimizar la carga del deltoides.'},
+      ]},
+    ]
+  },
+  isquiotibiales: {
+    emoji:'🏃', titulo:'Protocolo L de Askling — Isquiotibiales', zona:'Muslo posterior',
+    fuente:'Askling, Tengvar, Thorstensson (2013). "Acute hamstring injuries in Swedish elite football: comparing two rehabilitation protocols". Br J Sports Med.',
+    resumen:'Protocolo de 3 ejercicios (Extender, Diver, Glider) en cadena de longitud creciente, iniciado precozmente tras la lesión aguda. Comparado con rehabilitación convencional, mostró retorno más rápido al deporte y menor recurrencia.',
+    bloques:[
+      {titulo:'Progresión de ejercicios', tipo:'progresion', items:[
+        {label:'1. Extender', detalle:'Supino, cadera flexionada a 90°, extensión de rodilla controlada hasta el límite antes del dolor. 2 veces/día, 3 series de 12 repeticiones.'},
+        {label:'2. Diver', detalle:'De pie, apoyo unipodal, inclinación de tronco hacia adelante (tipo peso muerto a una pierna) dentro de rango controlado y sin dolor.'},
+        {label:'3. Glider', detalle:'Deslizamiento excéntrico hacia atrás en la pierna afectada, volviendo con ayuda de ambos brazos (no con la pierna lesionada). 3 series de 6, una vez cada 3 días. Progresión: aumentar distancia y velocidad del deslizamiento. Es el más exigente de los tres.'},
+      ]},
+      {titulo:'Cómo progresar', tipo:'notas', items:[
+        {detalle:'Progresar por tolerancia (dolor durante el ejercicio, rigidez a las 24 h, control postural), no por un cronograma fijo de días.'},
+        {detalle:'El protocolo L recluta el isquiotibial con intensidad relativamente baja comparado con el Nordic hamstring curl — para prevención de recidiva a mediano plazo conviene sumar Nordic una vez que el protocolo L se tolera bien.'},
+        {detalle:'Criterios de alta descritos en la literatura: test H de Askling, fuerza isocinética simétrica (diferencia <15% respecto al contralateral) y sprint sin dolor.'},
+      ]},
+    ]
+  },
+  retorno_carrera: {
+    emoji:'📈', titulo:'Control de carga — Retorno a la carrera (ACWR)', zona:'General / running',
+    fuente:'Gabbett (2016). "The training-injury prevention paradox: should athletes be training smarter and harder?". Br J Sports Med.',
+    resumen:'Relación entre carga aguda (última semana) y carga crónica (promedio de las 4 semanas previas) para dosificar el aumento de volumen o intensidad de carrera durante el retorno a la actividad.',
+    bloques:[
+      {titulo:'Zonas de riesgo (ACWR = carga aguda / carga crónica)', tipo:'progresion', items:[
+        {label:'< 0.8', detalle:'Sub-entrenamiento — mayor riesgo relativo al reexponerse a la carga más adelante (falta de preparación tisular).'},
+        {label:'0.8 – 1.3', detalle:'"Zona dulce" — el rango con menor riesgo relativo de lesión según la evidencia disponible.'},
+        {label:'1.3 – 1.5', detalle:'Riesgo elevado — monitorear de cerca, evitar sumar otro salto de carga.'},
+        {label:'> 1.5', detalle:'"Zona de peligro" — el riesgo de lesión aumenta notoriamente frente a incrementos bruscos de carga.'},
+      ]},
+      {titulo:'Aplicación práctica', tipo:'notas', items:[
+        {detalle:'Incrementos semanales de carga mayores al 15% respecto a la semana previa se asocian a mayor incidencia de lesión; incrementos de 5-10% se mantienen en rangos de menor riesgo.'},
+        {detalle:'Estos valores no son una regla absoluta ni igual para todos los deportes o personas — usarlos como guía orientativa junto con la clínica (dolor, RPE, síntomas al otro día), no de forma aislada.'},
+      ]},
+    ]
+  },
+  lca_criterios: {
+    emoji:'🎯', titulo:'Criterios de alta — LCA (hop tests / LSI)', zona:'Rodilla / retorno deportivo',
+    fuente:'Grindem, Snyder-Mackler, Moksnes, Engebretsen, Risberg (2016). "Simple decision rules can reduce reinjury risk by 84% after ACL reconstruction". Br J Sports Med. + Kyritsis, Bahr et al. (2016). Br J Sports Med.',
+    resumen:'Estudios de cohorte que vincularon el cumplimiento de criterios objetivos de fuerza y salto antes del retorno deportivo con un menor riesgo de nueva lesión de LCA (propia o del injerto).',
+    bloques:[
+      {titulo:'Criterios habituales (umbral LSI ≥ 90%)', tipo:'progresion', items:[
+        {label:'Fuerza de cuádriceps (LSI ≥90%)', detalle:'Medida isocinética o con dinamómetro respecto al miembro contralateral. Grindem et al. encontraron que cada 1% de fuerza de cuádriceps por debajo del umbral del 90% se asoció a un incremento de riesgo de nueva lesión de hasta ~3%.'},
+        {label:'Fuerza de isquiosurales (LSI ≥90%)', detalle:'Evaluada de la misma forma, comparando contra el lado sano.'},
+        {label:'4 hop tests (LSI ≥90% cada uno)', detalle:'Single hop, triple hop, crossover hop y timed hop — batería estándar para evaluar simetría funcional antes del retorno.'},
+        {label:'Relación isquiosurales/cuádriceps', detalle:'Kyritsis et al. reportaron mayor riesgo de rotura del injerto en quienes no cumplían 6 criterios de alta (fuerza isocinética, test T de carrera y 3 hop tests unilaterales).'},
+      ]},
+      {titulo:'Tiempo desde la cirugía', tipo:'notas', items:[
+        {detalle:'Postergar el retorno deportivo hasta al menos 9 meses post-cirugía se asoció a menor riesgo de nueva lesión; Grindem et al. estimaron que cada mes de demora entre los 6 y los 9 meses redujo el riesgo en torno a un 51%.'},
+        {detalle:'Cumplir los criterios reduce el riesgo pero no lo elimina — conviene combinarlos con evaluación cualitativa del aterrizaje (control de valgo) y con el cuestionario ACL-RSI de confianza psicológica para el retorno.'},
+      ]},
+    ]
+  },
+};
+
+function goToAyudaMemoria(){
+  currentView='ayudamemoria';
+  currentPatientId=null;
+  document.getElementById('topbarPatient').style.display='none';
+  document.getElementById('daysChip').style.display='none';
+  document.getElementById('alertaChip').style.display='none';
+  document.getElementById('tabs').style.display='none';
+  document.getElementById('epBar').style.display='none';
+  renderPatientList();
+  closeSidebar();
+  updateAgendaNavActive();
+  renderAyudaMemoriaLista();
+}
+
+function renderAyudaMemoriaLista(){
+  const panel=document.getElementById('panel');
+  panel.style.padding='16px';
+  panel.style.display='block';
+  const cards=Object.keys(AYUDA_MEMORIA_TEMAS).map(id=>{
+    const t=AYUDA_MEMORIA_TEMAS[id];
+    return `<div class="ayudamem-card" onclick="abrirAyudaMemoriaTema('${id}')">
+      <div class="ayudamem-card-emoji">${t.emoji}</div>
+      <div class="ayudamem-card-body">
+        <div class="ayudamem-card-title">${esc(t.titulo)}</div>
+        <div class="ayudamem-card-zona">${esc(t.zona)}</div>
+      </div>
+      <div class="ayudamem-card-arrow">›</div>
+    </div>`;
+  }).join('');
+  panel.innerHTML = `
+    <div class="ayudamem-header">
+      <h2>🧠 Ayuda Memoria</h2>
+      <p>Progresiones y criterios de referencia basados en evidencia, organizados por zona/tema.</p>
+    </div>
+    <div class="ayudamem-list">${cards}</div>
+  `;
+}
+
+function abrirAyudaMemoriaTema(id){
+  const t=AYUDA_MEMORIA_TEMAS[id];
+  if(!t) return;
+  const panel=document.getElementById('panel');
+  const bloquesHtml = t.bloques.map(b=>{
+    if(b.tipo==='progresion'){
+      const items = b.items.map(it=>`<div class="ayudamem-step">
+        <div class="ayudamem-step-label">${esc(it.label)}</div>
+        <div class="ayudamem-step-detalle">${esc(it.detalle)}</div>
+      </div>`).join('');
+      return `<div class="ayudamem-bloque"><div class="ayudamem-bloque-titulo">${esc(b.titulo)}</div>${items}</div>`;
+    } else {
+      const items = b.items.map(it=>`<div class="ayudamem-nota">• ${esc(it.detalle)}</div>`).join('');
+      return `<div class="ayudamem-bloque"><div class="ayudamem-bloque-titulo">${esc(b.titulo)}</div>${items}</div>`;
+    }
+  }).join('');
+  panel.innerHTML = `
+    <div class="ayudamem-detail">
+      <button class="ayudamem-back" onclick="renderAyudaMemoriaLista()">‹ Volver</button>
+      <div class="ayudamem-detail-header">
+        <div class="ayudamem-card-emoji" style="font-size:28px">${t.emoji}</div>
+        <div>
+          <h2>${esc(t.titulo)}</h2>
+          <div class="ayudamem-card-zona">${esc(t.zona)}</div>
+        </div>
+      </div>
+      <div class="ayudamem-fuente">📖 ${esc(t.fuente)}</div>
+      <div class="ayudamem-resumen">${esc(t.resumen)}</div>
+      ${bloquesHtml}
+    </div>
+  `;
+}
+
 function detectProtocoloTipo(p){
   const dxN=normDx(p.dx||'');
   if(!dxN) return '';
