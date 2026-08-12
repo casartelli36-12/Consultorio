@@ -395,6 +395,55 @@ input,textarea,select{font-family:'Inter',sans-serif;}
   .ayudamem-card-title{font-size:13.5px;}
 }
 
+/* ── SESIÓN EN VIVO ── */
+.btn-live-start{background:var(--navy);color:#fff;border:none;}
+.ses-live-badge{font-size:11px;font-weight:700;color:#fff;background:var(--orange);padding:3px 9px;border-radius:20px;cursor:pointer;animation:liveBadgePulse 1.8s ease-in-out infinite;}
+@keyframes liveBadgePulse{0%,100%{opacity:1;}50%{opacity:.6;}}
+.live-overlay{position:fixed;inset:0;z-index:500;background:#12161F;color:#fff;display:flex;flex-direction:column;overflow:hidden;}
+.live-topbar{display:flex;align-items:center;gap:10px;padding:14px 14px;background:#181D29;border-bottom:1px solid rgba(255,255,255,.08);flex-shrink:0;}
+.live-btn-minimize{background:rgba(255,255,255,.08);border:none;color:#fff;font-size:20px;font-weight:700;width:34px;height:34px;border-radius:50%;cursor:pointer;flex-shrink:0;}
+.live-topbar-info{flex:1;min-width:0;}
+.live-patient-name{font-size:13px;font-weight:700;color:rgba(255,255,255,.9);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.live-timer{font-size:20px;font-weight:800;color:var(--orange);font-variant-numeric:tabular-nums;letter-spacing:.02em;}
+.live-btn-terminar{background:var(--red);color:#fff;border:none;border-radius:var(--radius-sm);padding:10px 12px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;white-space:nowrap;}
+.live-body{flex:1;overflow-y:auto;padding:14px;-webkit-overflow-scrolling:touch;}
+.live-empty{font-size:13.5px;color:rgba(255,255,255,.6);text-align:center;padding:40px 20px;line-height:1.5;}
+.live-block{background:#1A2030;border-radius:var(--radius);margin-bottom:14px;overflow:hidden;}
+.live-block-header{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;background:rgba(255,255,255,.04);font-size:13px;font-weight:700;color:#fff;}
+.live-block-count{font-size:11.5px;font-weight:600;color:rgba(255,255,255,.5);}
+.live-ej-row{padding:12px 14px;border-top:1px solid rgba(255,255,255,.06);transition:background .15s;}
+.live-ej-row.live-ej-done{background:rgba(107,142,92,.12);}
+.live-ej-nombre{font-size:14px;font-weight:700;color:#fff;margin-bottom:9px;}
+.live-ej-inputs{display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap;}
+.live-ej-field{display:flex;flex-direction:column;gap:3px;min-width:52px;}
+.live-ej-field label{font-size:9.5px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.03em;}
+.live-ej-field input{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:6px;color:#fff;font-size:13px;font-weight:600;padding:7px 6px;text-align:center;width:100%;font-family:'Inter',sans-serif;}
+.live-complete-btn{margin-left:auto;background:rgba(255,255,255,.08);color:rgba(255,255,255,.85);border:1px solid rgba(255,255,255,.15);border-radius:20px;padding:9px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+.live-complete-btn.active{background:var(--orange);border-color:var(--orange);color:#fff;}
+.live-ej-nombre-row{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+.live-ej-objetivo{display:flex;flex-direction:column;gap:3px;}
+.live-ej-objetivo label{font-size:9.5px;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:.03em;white-space:nowrap;}
+.live-ej-objetivo input{background:rgba(107,142,92,.15);border:1px solid rgba(107,142,92,.4);border-radius:6px;color:var(--orange);font-size:13px;font-weight:700;padding:5px 8px;width:70px;text-align:center;font-family:'Inter',sans-serif;}
+.live-sets-head{display:grid;grid-template-columns:20px 1fr 1fr 1fr 30px 22px;gap:6px;padding:0 2px 4px;font-size:9.5px;font-weight:700;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.03em;text-align:center;}
+.live-set-row{display:grid;grid-template-columns:20px 1fr 1fr 1fr 30px 22px;gap:6px;align-items:center;padding:5px 2px;border-radius:6px;margin-bottom:5px;}
+.live-set-row.live-set-done{background:rgba(107,142,92,.14);}
+.live-set-num{font-size:11px;font-weight:700;color:rgba(255,255,255,.4);text-align:center;}
+.live-set-field input{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:6px;color:#fff;font-size:13px;font-weight:600;padding:6px 4px;text-align:center;font-family:'Inter',sans-serif;}
+.live-set-check{width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5);font-size:13px;font-weight:800;cursor:pointer;}
+.live-set-check.active{background:var(--orange);border-color:var(--orange);color:#fff;}
+.live-set-del{width:22px;height:22px;border-radius:50%;background:none;border:none;color:rgba(255,255,255,.3);font-size:14px;cursor:pointer;}
+.live-add-set{width:100%;margin-top:4px;background:none;border:1px dashed rgba(255,255,255,.2);border-radius:8px;color:rgba(255,255,255,.5);font-size:12px;font-weight:600;padding:8px;cursor:pointer;font-family:'Inter',sans-serif;}
+@media (max-width:600px){
+  .live-timer{font-size:17px;}
+  .live-btn-terminar{padding:8px 10px;font-size:11px;}
+  .live-ej-inputs{gap:6px;}
+  .live-ej-field{min-width:46px;}
+  .live-complete-btn{width:100%;margin-left:0;margin-top:4px;text-align:center;}
+  .live-set-row,.live-sets-head{grid-template-columns:16px 1fr 1fr 1fr 26px 18px;gap:4px;}
+  .live-set-field input{font-size:12px;padding:5px 3px;}
+  .live-ej-objetivo input{width:56px;font-size:12px;}
+}
+
 /* Nav semana */
 .tur-nav{display:flex;align-items:center;gap:10px;padding:12px 0 14px;flex-shrink:0;}
 .tur-nav-center{flex:1;display:flex;align-items:center;justify-content:center;gap:10px;}
@@ -3782,102 +3831,6 @@ const AYUDA_MEMORIA_TEMAS = {
       ]},
     ]
   },
-  rotuliano: {
-    emoji:'🦵', titulo:'Continuum de carga — Tendón rotuliano', zona:'Rodilla',
-    fuente:'Malliaras, Cook, Purdam, Rio (2015). "Patellar Tendinopathy: Clinical Diagnosis, Load Management, and Advice for Challenging Case Presentations". J Orthop Sports Phys Ther. 45(11):887-898.',
-    resumen:'Modelo de 4 etapas para progresar la tendinopatía rotuliana, guiado por tolerancia al dolor y capacidad de carga (no por un cronograma fijo de semanas). Complementa el modelo de continuum de patología tendinosa de Cook & Purdam.',
-    bloques:[
-      {titulo:'Las 4 etapas', tipo:'tabla', filas:[
-        {nombre:'Etapa 1 — Isométrico', idx:'Parámetros', pico:'5 x 45-60 seg', impulso:'2-3x/día', tasa:'40→70% CVM'},
-        {nombre:'Etapa 2 — Isotónico', idx:'Parámetros', pico:'3-4 series', impulso:'15RM→6RM', tasa:'preferir unilateral'},
-        {nombre:'Etapa 3 — Energía (pliometría)', idx:'Habilita con', pico:'4-8 reps prensa', impulso:'150% peso corp.', tasa:'dolor <3/10, cede en 24h'},
-        {nombre:'Etapa 4 — Retorno al deporte', idx:'Foco', pico:'gestos', impulso:'volumen', tasa:'específicos del deporte'},
-      ]},
-      {titulo:'Ejercicios sugeridos por etapa (según Figura 2 del paper)', tipo:'progresion', items:[
-        {label:'Etapa 1 — Isométrico', detalle:'(A) Extensión de rodilla isométrica en máquina, en rango medio 30-60° de flexión. (B) Sentadilla española a 70-90° de flexión. Indicados para bajar dolor e iniciar carga cuando el isotónico no se tolera; se mantienen incluso en días de descanso de etapas más avanzadas.'},
-        {label:'Etapa 2 — Isotónico', detalle:'(A) Extensión de rodilla isotónica. (B) Prensa (leg press). (C) Split squat / sentadilla búlgara. Series de 15RM progresando hacia 6RM; objetivo: restaurar masa y fuerza del cuádriceps.'},
-        {label:'Etapa 3 — Almacenamiento y liberación de energía', detalle:'Saltos y pliometría progresiva. Habilitada cuando tolera 4-8 repeticiones de prensa unilateral al 150% del peso corporal con dolor <3/10 que cede en 24 h.'},
-        {label:'Etapa 4 — Retorno al deporte', detalle:'Reintroducción progresiva de gestos y volumen específicos de la disciplina, coordinada con el cuerpo técnico.'},
-      ]},
-      {titulo:'Modelo de monitoreo del dolor (semáforo)', tipo:'tabla', filas:[
-        {nombre:'Ideal', idx:'Respuesta', pico:'Sube la carga', impulso:'y', tasa:'el dolor baja a 0/10'},
-        {nombre:'Aceptable', idx:'Respuesta', pico:'Sube la carga', impulso:'con', tasa:'dolor bajo y estable'},
-        {nombre:'Inaceptable', idx:'Respuesta', pico:'Sube la carga', impulso:'y', tasa:'el dolor también sube → retroceder'},
-      ]},
-      {titulo:'Notas clínicas', tipo:'notas', items:[
-        {detalle:'5 repeticiones de 45 segundos de isometría de cuádriceps al 70% de la contracción voluntaria máxima han mostrado reducir el dolor tendinoso hasta 45 minutos después del ejercicio (Rio et al. 2015) — útil como "calmante" antes de una sesión de fuerza.'},
-        {detalle:'Dolor durante y hasta 24 h después del ejercicio se tolera hasta 3-5/10 en tendón; si no cede en 24 h o va en aumento, hay que bajar la carga de la sesión siguiente.'},
-      ]},
-    ]
-  },
-  hombro_manguito: {
-    emoji:'💪', titulo:'Jerarquía EMG — Manguito rotador', zona:'Hombro',
-    fuente:'Edwards, Ebert, Littlewood, Ackland, Wang (2017). "A Systematic Review of EMG Studies in Normal Shoulders to Inform Postoperative Rehabilitation Following Rotator Cuff Repair". J Orthop Sports Phys Ther. 47(12):931-944. + Reinold et al. (J Athl Train 2007; JOSPT 2004).',
-    resumen:'Revisión sistemática de 20 estudios EMG (43 ejercicios) que definieron un punto de corte de 15% de la contracción voluntaria máxima (CVM) como "seguro" para no sobrecargar una reparación de manguito en fase temprana. De 13 ejercicios activo-asistidos evaluados, 9 fueron aptos (≤15% CVM) para supraespinoso y 10 para infraespinoso — ninguno logró ese umbral para el subescapular.',
-    bloques:[
-      {titulo:'Ejercicios ordenados por activación (bajo → alto)', tipo:'tabla', filas:[
-        {nombre:'Péndulo', idx:'≤15% CVM', pico:'supra + infra', impulso:'—', tasa:'fase protegida'},
-        {nombre:'Deslizamiento en mesa asistido', idx:'≤15% CVM', pico:'solo supra', impulso:'—', tasa:'fase protegida'},
-        {nombre:'Deslizamiento en pared', idx:'≤15% CVM', pico:'solo supra', impulso:'—', tasa:'fase protegida'},
-        {nombre:'Movimiento pasivo continuo (CPM)', idx:'bajo', pico:'el más bajo del grupo', impulso:'—', tasa:'fase protegida'},
-        {nombre:'Full can / Empty can / Prone full can', idx:'62-67% CVM', pico:'supraespinoso', impulso:'full can = menos deltoides', tasa:'fortalecimiento'},
-        {nombre:'Rotación externa de pie (varios ángulos)', idx:'31-69% CVM', pico:'supra', impulso:'13-50% infra', tasa:'fortalecimiento medio'},
-        {nombre:'Rotación externa en decúbito lateral', idx:'62% CVM', pico:'infraespinoso', impulso:'67% teres minor', tasa:'fortalecimiento avanzado'},
-        {nombre:'Abducción horizontal prono + RE a 100°', idx:'82% CVM', pico:'supraespinoso', impulso:'87-88% deltoides', tasa:'fase avanzada'},
-        {nombre:'Push-up plus', idx:'muy alto', pico:'de los más altos de toda la batería', impulso:'—', tasa:'fase avanzada / RTS'},
-      ]},
-      {titulo:'Nota clínica', tipo:'notas', items:[
-        {detalle:'Ningún ejercicio habitual logra una activación baja (≤15% CVM) del subescapular — tenerlo en cuenta al proteger reparaciones que incluyen esta estructura, ya que no hay un ejercicio "seguro" equivalente al péndulo para ese músculo.'},
-        {detalle:'"Full can" genera activación de deltoides medio/posterior significativamente menor que "empty can" o "prone full can", con activación de supraespinoso similar (62-67% CVM en los tres) — preferirlo cuando se quiere minimizar la carga del deltoides.'},
-        {detalle:'El EMG mide excitación neuromuscular, no fuerza tendinosa directa ni calidad del ejercicio — usarlo como guía de progresión, no como único criterio de "mejor ejercicio".'},
-      ]},
-    ]
-  },
-  isquiotibiales: {
-    emoji:'🏃', titulo:'Protocolo L de Askling — Isquiotibiales', zona:'Muslo posterior',
-    fuente:'Askling, Tengvar, Thorstensson (2013). "Acute hamstring injuries in Swedish elite football". Br J Sports Med. 47:953-959. + Askling, Tengvar, Tarassova, Thorstensson (2014, sprinters/saltadores). Br J Sports Med. 48(7):532-539.',
-    resumen:'Protocolo de 3 ejercicios (Extender, Diver, Glider) en cadena de longitud creciente, iniciado precozmente (dentro de los primeros días) tras la lesión aguda. Comparado contra un protocolo convencional (C-protocol) en dos ensayos aleatorizados en atletas de élite suecos.',
-    bloques:[
-      {titulo:'Progresión de ejercicios (L-protocol)', tipo:'progresion', items:[
-        {label:'L-1 — Extender', detalle:'Supino, cadera flexionada ~90° sosteniendo el muslo, extensión de rodilla lenta hasta el límite antes del dolor. 2 veces/día, 3 series de 12 repeticiones.'},
-        {label:'L-2 — Diver', detalle:'De pie, apoyo unipodal, simulando un "clavado": flexión de cadera con extensión de tronco hacia adelante y extensión máxima de cadera de la pierna elevada, brazos estirados. Rango controlado y sin dolor.'},
-        {label:'L-3 — Glider', detalle:'Deslizamiento hacia atrás sobre la pierna sana, la lesionada desliza en extensión; el regreso se hace con ayuda de ambos brazos, no con la pierna afectada. 3 series de 6, una vez cada 3 días. Progresión: aumentar distancia y velocidad del deslizamiento. Es el más exigente de los tres.'},
-      ]},
-      {titulo:'Resultados de los ensayos', tipo:'tabla', filas:[
-        {nombre:'Fútbol (2013, n=75)', idx:'Retorno', pico:'más rápido con L-protocol', impulso:'Reinjurias', tasa:'2 en total, ambas en C-protocol'},
-        {nombre:'Sprinters/saltadores (2014)', idx:'L-protocol', pico:'49 ± 26 días', impulso:'C-protocol', tasa:'86 ± 34 días'},
-        {nombre:'Lesión de tendón libre proximal', idx:'L-protocol', pico:'73 días', impulso:'C-protocol', tasa:'116 días (más lento en ambos)'},
-      ]},
-      {titulo:'Cómo progresar y alta', tipo:'notas', items:[
-        {detalle:'Progresar por tolerancia (dolor durante el ejercicio, rigidez a las 24 h, control postural), no por un cronograma fijo de días — en el estudio original la reevaluación fue semanal, ajustando según respuesta individual.'},
-        {detalle:'El protocolo L recluta el isquiotibial con intensidad relativamente baja comparado con el Nordic hamstring curl — para prevención de recidiva a mediano plazo conviene sumar Nordic una vez que el protocolo L se tolera bien.'},
-        {detalle:'Criterios de alta descritos en la literatura: test H de Askling, fuerza isocinética simétrica (diferencia <15% respecto al contralateral) y sprint sin dolor.'},
-        {detalle:'Las lesiones que comprometen el tendón libre proximal (ej. semimembranoso) tardan más en volver que las que no lo comprometen, independientemente del protocolo usado.'},
-      ]},
-    ]
-  },
-  retorno_carrera: {
-    emoji:'📈', titulo:'Control de carga — Retorno a la carrera (ACWR)', zona:'General / running',
-    fuente:'Gabbett (2016). "The training-injury prevention paradox: should athletes be training smarter and harder?". Br J Sports Med. 50(5):273-280. + Blanch & Gabbett (2016). Br J Sports Med. 50(8):471-475. + Murray et al. (2017). Br J Sports Med. 51(9):749-754.',
-    resumen:'ACWR = carga aguda (última semana) ÷ carga crónica (promedio de las 4 semanas previas). Cuantifica si el salto de carga de esta semana es proporcional a lo que el cuerpo viene tolerando. Nació en deportes de equipo (rugby, cricket) pero se aplica igual al retorno a la carrera.',
-    bloques:[
-      {titulo:'Zonas de riesgo', tipo:'tabla', filas:[
-        {nombre:'< 0.8', idx:'Sub-entrenamiento', pico:'—', impulso:'—', tasa:'mayor riesgo al reexponerse después'},
-        {nombre:'0.8 – 1.3', idx:'"Zona dulce"', pico:'—', impulso:'—', tasa:'menor riesgo relativo de lesión'},
-        {nombre:'1.3 – 1.5', idx:'Riesgo elevado', pico:'—', impulso:'—', tasa:'monitorear de cerca'},
-        {nombre:'> 1.5', idx:'"Zona de peligro"', pico:'—', impulso:'—', tasa:'riesgo de lesión notoriamente mayor'},
-      ]},
-      {titulo:'Ejemplo de cálculo', tipo:'progresion', items:[
-        {label:'Corredor en zona dulce', detalle:'Promedio de 30 km/semana en las últimas 4 semanas (carga crónica). Esta semana corrió 33 km (carga aguda). ACWR = 33/30 = 1.1 → dentro de la zona dulce (0.8-1.3).'},
-        {label:'Corredor en zona de peligro', detalle:'Mismo promedio crónico de 30 km/semana, pero esta semana saltó a 50 km. ACWR = 50/30 = 1.67 → zona de peligro (>1.5), incremento demasiado brusco para una sola semana.'},
-      ]},
-      {titulo:'Aplicación práctica', tipo:'notas', items:[
-        {detalle:'Incrementos semanales de carga mayores al 15% respecto a la semana previa se asocian a mayor incidencia de lesión; incrementos de 5-10% se mantienen en rangos de menor riesgo.'},
-        {detalle:'El método EWMA (media móvil exponencialmente ponderada, Murray et al. 2017) es más sensible que el promedio simple de 4 semanas porque pondera más las sesiones recientes — útil si se cuenta con una app o planilla que lo calcule automáticamente.'},
-        {detalle:'Estos valores no son una regla absoluta ni igual para todos los deportes o personas (en fútbol profesional algunos estudios encontraron la zona dulce más cerca de 1.0-1.25) — usarlos como guía orientativa junto con la clínica (dolor, RPE, síntomas al otro día), no de forma aislada.'},
-      ]},
-    ]
-  },
   lca_criterios: {
     emoji:'🎯', titulo:'Criterios de alta — LCA (hop tests / LSI)', zona:'Rodilla / retorno deportivo',
     fuente:'Grindem, Snyder-Mackler, Moksnes, Engebretsen, Risberg (2016). "Simple decision rules can reduce reinjury risk by 84% after ACL reconstruction: the Delaware-Oslo ACL cohort study". Br J Sports Med. 50(13):804-808. + Kyritsis, Bahr, Landreau et al. (2016). Br J Sports Med. 50(15):946-951.',
@@ -4563,13 +4516,19 @@ function updateEpField(key,val){
 function renderSesiones(panel){
   const p=getPatient(currentPatientId);const ep=getEpData(p);
   const sesiones=(ep.sesiones||[]).slice().reverse();
+  const sesLiveActiva=(ep.sesiones||[]).find(s=>s.enVivo&&!s.finTs);
   panel.innerHTML=`
     <div class="ses-toolbar">
       <h3>${sesiones.length} sesión${sesiones.length!==1?'es':''}</h3>
-      <button class="btn-add-ses" onclick="crearSesionRapida()">
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        Nueva sesión
-      </button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn-add-ses btn-live-start" onclick="iniciarSesionEnVivo()">
+          ▶ ${sesLiveActiva?'Reanudar sesión en vivo':'Sesión en vivo'}
+        </button>
+        <button class="btn-add-ses" onclick="crearSesionRapida()">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          Nueva sesión
+        </button>
+      </div>
     </div>
     ${!sesiones.length?'<div class="ses-empty">Todavía no hay sesiones registradas.</div>':''}
     <div class="ses-list">${sesiones.map((s,i)=>renderSesCard(s,sesiones.length-i,ep.fechaInicio||p.fechaInicio)).join('')}</div>`;
@@ -4899,6 +4858,7 @@ function renderSesCard(s,num,fechaInicio){
       <div class="ses-card-header" onclick="toggleSes('${s.id}')">
         <div class="ses-num">${num}</div>
         <div class="ses-fecha">${formatFecha(s.fecha)}</div>
+        ${s.enVivo&&!s.finTs?`<span class="ses-live-badge" onclick="event.stopPropagation();goSesionEnVivo('${s.id}')">● En curso</span>`:''}
         ${s.fase?`<span style="font-size:11px;color:var(--text-2);background:var(--surface);padding:3px 8px;border-radius:20px;">${esc(s.fase)}</span>`:''}
         ${dias!==null?`<div class="ses-dias">${tiempoEvolucion(dias).compacto}</div>`:''}
         ${chip?`<div class="ses-eva">${chip}</div>`:''}
@@ -4981,6 +4941,223 @@ function toggleSes(id){
 }
 function updateSes(sesId,key,val){const p=getPatient(currentPatientId);const ep=getEpData(p);const ses=(ep.sesiones||[]).find(s=>s.id===sesId);if(!ses)return;ses[key]=val;clearTimeout(autoSaveTimer);autoSaveTimer=setTimeout(saveDB,800);}
 function deleteSes(sesId){if(!confirm('¿Eliminar esta sesión?'))return;const p=getPatient(currentPatientId);const ep=getEpData(p);ep.sesiones=(ep.sesiones||[]).filter(s=>s.id!==sesId);saveDB();renderTab();}
+
+// ══════════════════ SESIÓN EN VIVO (modo entrenamiento en pantalla completa) ══════════════════
+let liveSesionId=null;
+let liveTimerInterval=null;
+
+// Inicializa el array de series reales de un ejercicio (lazy) en base a la cantidad
+// de series prescriptas (ej.series). Si ya existe, no lo toca.
+function ensureEjSets(ej){
+  if(!ej.sets || !Array.isArray(ej.sets) || !ej.sets.length){
+    const n=Math.max(1, parseInt(ej.series)||3);
+    ej.sets=Array.from({length:n},()=>({kg:ej.kg||'',reps:ej.reps||'',rpe:'',completado:false}));
+  }
+  return ej.sets;
+}
+function isEjCompletado(ej){
+  const sets=ensureEjSets(ej);
+  return sets.length>0 && sets.every(s=>s.completado);
+}
+// Objetivo de RIR/RPE a buscar: si se cargó manualmente en la sesión (rirObjetivo) se usa ese;
+// si no, y la sesión viene de un plan, se busca el RIR prescripto en ese día del plan.
+function getObjetivoRir(ses, ej){
+  if(ej.rirObjetivo) return ej.rirObjetivo;
+  if(ses.planRef && ej.id){
+    const {dia}=findPlanDia(ses.planRef.planId, ses.planRef.diaId);
+    const planEj = dia && dia.ejercicios && dia.ejercicios.find(x=>x.id===ej.id);
+    if(planEj && planEj.rir) return planEj.rir;
+  }
+  return '';
+}
+
+function iniciarSesionEnVivo(){
+  const p=getPatient(currentPatientId); if(!p) return;
+  const ep=getEpData(p); if(!ep.sesiones) ep.sesiones=[];
+  const existente=ep.sesiones.find(s=>s.enVivo&&!s.finTs);
+  if(existente){ goSesionEnVivo(existente.id); return; }
+  const nueva={id:uid(),fecha:new Date().toISOString().slice(0,10),fase:'',subjetivo:'',ejercicios:[],
+    dolorDiario:'',dolor:'',rpe:'',duracion:'',objetivo:'',plan:'',enVivo:true,inicioTs:new Date().toISOString()};
+  ep.sesiones.push(nueva);
+  saveDB();
+  goSesionEnVivo(nueva.id);
+}
+
+// Agrupa los ejercicios de la sesión por el campo "bloque" (mismo campo que usan las
+// superseries, ej. "A","B"). Sin bloque asignado → van todos juntos en un grupo genérico.
+function groupEjerciciosPorBloque(ejercicios){
+  const grupos=[]; const porClave={};
+  (ejercicios||[]).forEach((e,idx)=>{
+    const clave=(e.bloque||'').trim().toUpperCase();
+    const titulo=clave?`Bloque ${clave}`:'Ejercicios';
+    if(!porClave[clave]){
+      porClave[clave]={titulo,idxs:[]};
+      grupos.push(porClave[clave]);
+    }
+    porClave[clave].idxs.push(idx);
+  });
+  return grupos;
+}
+
+function goSesionEnVivo(sesId){
+  liveSesionId=sesId;
+  renderSesionEnVivoUI();
+  if(liveTimerInterval) clearInterval(liveTimerInterval);
+  liveTimerInterval=setInterval(actualizarTimerEnVivo, 1000);
+}
+
+function getLiveSes(){
+  const p=getPatient(currentPatientId); if(!p) return null;
+  const ep=getEpData(p);
+  return (ep.sesiones||[]).find(s=>s.id===liveSesionId) || null;
+}
+
+function actualizarTimerEnVivo(){
+  const ses=getLiveSes(); if(!ses||!ses.inicioTs) return;
+  const el=document.getElementById('liveTimerDisplay'); if(!el) return;
+  const segs=Math.max(0,Math.floor((Date.now()-new Date(ses.inicioTs).getTime())/1000));
+  const h=Math.floor(segs/3600), m=Math.floor((segs%3600)/60), s=segs%60;
+  el.textContent = (h>0?String(h).padStart(2,'0')+':':'')+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+}
+
+function renderSesionEnVivoUI(){
+  const ses=getLiveSes();
+  if(!ses){ cerrarOverlayEnVivo(); return; }
+  const p=getPatient(currentPatientId);
+  let overlay=document.getElementById('liveOverlay');
+  if(!overlay){
+    overlay=document.createElement('div');
+    overlay.id='liveOverlay';
+    overlay.className='live-overlay';
+    document.body.appendChild(overlay);
+  }
+  const grupos=groupEjerciciosPorBloque(ses.ejercicios||[]);
+  const bloquesHtml = grupos.length ? grupos.map(g=>{
+    const total=g.idxs.length;
+    const hechos=g.idxs.filter(i=>isEjCompletado(ses.ejercicios[i])).length;
+    const filas=g.idxs.map(i=>{
+      const e=ses.ejercicios[i];
+      const sets=ensureEjSets(e);
+      const objetivo=getObjetivoRir(ses,e);
+      const setsHtml=sets.map((s,si)=>`
+        <div class="live-set-row ${s.completado?'live-set-done':''}">
+          <span class="live-set-num">${si+1}</span>
+          <div class="live-set-field"><label>Kg</label><input type="text" value="${esc(s.kg||'')}" oninput="updateEjSetField('${ses.id}',${i},${si},'kg',this.value)"></div>
+          <div class="live-set-field"><label>Reps</label><input type="text" value="${esc(s.reps||'')}" oninput="updateEjSetField('${ses.id}',${i},${si},'reps',this.value)"></div>
+          <div class="live-set-field"><label>RPE</label><input type="text" value="${esc(s.rpe||'')}" oninput="updateEjSetField('${ses.id}',${i},${si},'rpe',this.value)"></div>
+          <button class="live-set-check ${s.completado?'active':''}" onclick="toggleSetCompletado(${i},${si})" title="Marcar serie completada">✓</button>
+          <button class="live-set-del" onclick="removeSetFromEj(${i},${si})" title="Eliminar serie">×</button>
+        </div>`).join('');
+      return `<div class="live-ej-row ${isEjCompletado(e)?'live-ej-done':''}">
+        <div class="live-ej-nombre-row">
+          <div class="live-ej-nombre">${esc(e.nombre||'Ejercicio sin nombre')}</div>
+          <div class="live-ej-objetivo">
+            <label>🎯 RIR/RPE objetivo</label>
+            <input type="text" value="${esc(e.rirObjetivo||'')}" placeholder="${objetivo?esc(objetivo):'—'}" oninput="updateEjObjetivo('${ses.id}',${i},this.value)">
+          </div>
+        </div>
+        <div class="live-sets-head"><span></span><span>Kg</span><span>Reps</span><span>RPE</span><span></span><span></span></div>
+        ${setsHtml}
+        <button class="live-add-set" onclick="addSetToEj(${i})">+ Serie</button>
+      </div>`;
+    }).join('');
+    return `<div class="live-block">
+      <div class="live-block-header"><span>🔹 ${esc(g.titulo)}</span><span class="live-block-count">${hechos}/${total} completados</span></div>
+      ${filas}
+    </div>`;
+  }).join('') : `<div class="live-empty">Todavía no hay ejercicios cargados en esta sesión. Cerrá este modo y agregalos desde la sesión, o cargalos desde un plan.</div>`;
+
+  overlay.innerHTML = `
+    <div class="live-topbar">
+      <button class="live-btn-minimize" onclick="minimizarSesionEnVivo()">‹</button>
+      <div class="live-topbar-info">
+        <div class="live-patient-name">${esc(p?p.nombre:'—')}</div>
+        <div class="live-timer" id="liveTimerDisplay">00:00</div>
+      </div>
+      <button class="live-btn-terminar" onclick="terminarSesionEnVivo()">Terminar entrenamiento</button>
+    </div>
+    <div class="live-body">${bloquesHtml}</div>
+  `;
+  actualizarTimerEnVivo();
+}
+
+// Actualiza un campo (kg/reps/rpe) de una serie puntual sin re-renderizar todo (para no
+// perder el foco mientras se escribe).
+function updateEjSetField(sesId, ejIdx, setIdx, field, val){
+  const p=getPatient(currentPatientId); const ep=getEpData(p);
+  const ses=(ep.sesiones||[]).find(s=>s.id===sesId);
+  if(!ses||!ses.ejercicios||!ses.ejercicios[ejIdx]) return;
+  ensureEjSets(ses.ejercicios[ejIdx]);
+  if(!ses.ejercicios[ejIdx].sets[setIdx]) return;
+  ses.ejercicios[ejIdx].sets[setIdx][field]=val;
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer=setTimeout(saveDB,600);
+}
+
+// Objetivo de RIR/RPE cargado a mano en la sesión (pisa el heredado del plan).
+function updateEjObjetivo(sesId, ejIdx, val){
+  const p=getPatient(currentPatientId); const ep=getEpData(p);
+  const ses=(ep.sesiones||[]).find(s=>s.id===sesId);
+  if(!ses||!ses.ejercicios||!ses.ejercicios[ejIdx]) return;
+  ses.ejercicios[ejIdx].rirObjetivo=val;
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer=setTimeout(saveDB,600);
+}
+
+function toggleSetCompletado(ejIdx, setIdx){
+  const ses=getLiveSes(); if(!ses||!ses.ejercicios||!ses.ejercicios[ejIdx]) return;
+  const sets=ensureEjSets(ses.ejercicios[ejIdx]);
+  if(!sets[setIdx]) return;
+  sets[setIdx].completado=!sets[setIdx].completado;
+  saveDB();
+  renderSesionEnVivoUI();
+}
+
+function addSetToEj(ejIdx){
+  const ses=getLiveSes(); if(!ses||!ses.ejercicios||!ses.ejercicios[ejIdx]) return;
+  const sets=ensureEjSets(ses.ejercicios[ejIdx]);
+  const ultima=sets[sets.length-1];
+  sets.push({kg:ultima?ultima.kg:'',reps:ultima?ultima.reps:'',rpe:'',completado:false});
+  saveDB();
+  renderSesionEnVivoUI();
+}
+
+function removeSetFromEj(ejIdx, setIdx){
+  const ses=getLiveSes(); if(!ses||!ses.ejercicios||!ses.ejercicios[ejIdx]) return;
+  const sets=ensureEjSets(ses.ejercicios[ejIdx]);
+  if(sets.length<=1) return;
+  sets.splice(setIdx,1);
+  saveDB();
+  renderSesionEnVivoUI();
+}
+
+function minimizarSesionEnVivo(){
+  cerrarOverlayEnVivo();
+  renderTab();
+}
+
+function terminarSesionEnVivo(){
+  const ses=getLiveSes(); if(!ses) return;
+  if(!confirm('¿Terminar el entrenamiento? La sesión queda guardada.')) return;
+  ses.finTs=new Date().toISOString();
+  ses.enVivo=false;
+  if(!ses.duracion){
+    const mins=Math.round((new Date(ses.finTs).getTime()-new Date(ses.inicioTs).getTime())/60000);
+    if(mins>0) ses.duracion=String(mins);
+  }
+  saveDB();
+  cerrarOverlayEnVivo();
+  renderTab();
+  showToast('Entrenamiento finalizado ✓');
+}
+
+function cerrarOverlayEnVivo(){
+  if(liveTimerInterval){ clearInterval(liveTimerInterval); liveTimerInterval=null; }
+  liveSesionId=null;
+  const overlay=document.getElementById('liveOverlay');
+  if(overlay) overlay.remove();
+}
+
 
 // ── Ejercicios en modal nueva sesión (con columna Notas) ─────────────────────
 // ── Autocompletado categorizado de ejercicios (sugiere, no restringe) ───────
@@ -6203,7 +6380,7 @@ function buildPlanEjTable(planId,diaId,ejercicios){
         oninput="updatePlanEjField('${planId}','${diaId}',${i},'reps',this.value)">
       <input class="ej-input center" type="text" value="${esc(e.kg||'')}" placeholder="—"
         oninput="updatePlanEjField('${planId}','${diaId}',${i},'kg',this.value)">
-      <input class="ej-input rir" type="text" value="${esc(e.rir||'')}" placeholder="—" title="RIR (reps en reserva)"
+      <input class="ej-input rir" type="text" value="${esc(e.rir||'')}" placeholder="—" title="RIR/RPE objetivo — esto es lo que se busca en la sesión, no lo que se hizo"
         oninput="updatePlanEjField('${planId}','${diaId}',${i},'rir',this.value)">
       <input class="ej-input nota" type="text" value="${esc(e.nota||'')}" placeholder="notas…"
         oninput="updatePlanEjField('${planId}','${diaId}',${i},'nota',this.value)">
@@ -6216,7 +6393,7 @@ function buildPlanEjTable(planId,diaId,ejercicios){
   }).join('');
   return `<div class="ej-table-wrap" id="pejtable_${planId}_${diaId}">
     <div class="ej-table-head">
-      <span style="text-align:center">Sup.</span><span>Ejercicio</span><span style="text-align:center">Series</span><span style="text-align:center">Reps/t</span><span style="text-align:center">Kg/BW</span><span style="text-align:center">RIR</span><span>Notas</span><span></span>
+      <span style="text-align:center">Sup.</span><span>Ejercicio</span><span style="text-align:center">Series</span><span style="text-align:center">Reps/t</span><span style="text-align:center">Kg/BW</span><span style="text-align:center" title="RIR/RPE objetivo">RIR obj.</span><span>Notas</span><span></span>
     </div>
     ${rows}
     <button class="btn-add-ej-row" onclick="addEjToPlanDia('${planId}','${diaId}')">+ Agregar ejercicio</button>
