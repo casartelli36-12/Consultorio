@@ -386,6 +386,10 @@ input,textarea,select{font-family:'Inter',sans-serif;}
 .ayudamem-step-label{font-size:13.5px;font-weight:700;color:var(--text);margin-bottom:3px;}
 .ayudamem-step-detalle{font-size:13px;color:var(--text-2);line-height:1.45;}
 .ayudamem-nota{font-size:13px;color:var(--text-2);line-height:1.5;margin-bottom:8px;}
+.ayudamem-row{background:var(--surface);border-radius:var(--radius-sm);padding:8px 12px;margin-bottom:6px;}
+.ayudamem-row-nombre{font-size:13px;font-weight:700;color:var(--text);margin-bottom:5px;}
+.ayudamem-row-meta{display:flex;flex-wrap:wrap;gap:5px;}
+.ayudamem-chip{font-size:11px;font-weight:600;color:var(--navy);background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:2px 8px;white-space:nowrap;}
 @media (max-width:600px){
   .ayudamem-detail-header h2{font-size:16px;}
   .ayudamem-card-title{font-size:13.5px;}
@@ -3724,108 +3728,176 @@ const PROTOCOLOS_FASES = {
 // ── AYUDA MEMORIA (vista global, referencias clínicas basadas en evidencia) ──
 const AYUDA_MEMORIA_TEMAS = {
   aquiles: {
-    emoji:'🦶', titulo:'Progresión de carga — Tendón de Aquiles', zona:'Tobillo / pierna',
-    fuente:'Baxter, Corrigan, Hullfish et al. (2020). "Exercise Progression to Incrementally Load the Achilles Tendon". Med Sci Sports Exerc.',
-    resumen:'Estudio biomecánico (motion capture + fuerza de reacción) que cuantificó la carga real sobre el tendón de Aquiles, en múltiplos del peso corporal (BW), durante 25 ejercicios habituales de rehabilitación. Permite ordenar una progresión objetiva en vez de guiarse solo por la intuición.',
+    emoji:'🦶', titulo:'Carga del tendón de Aquiles — tabla completa', zona:'Tobillo / pierna',
+    fuente:'Baxter, Corrigan, Hullfish, O\u2019Rourke, Silbernagel (2020). "Exercise Progression to Incrementally Load the Achilles Tendon". Med Sci Sports Exerc. 53(1):124-130. doi:10.1249/MSS.0000000000002459. PMID: 32658037.',
+    resumen:'Motion capture + plataformas de fuerza en 8 adultos sanos, 25+ ejercicios. Para cada uno calcularon un "índice de carga" (0 a 1) combinando 3 variables: carga pico (Pico, en múltiplos de peso corporal BW), impulso de carga (Impulso, área bajo la curva fuerza-tiempo, en BW·s) y velocidad de carga (Tasa, en BW/s). Con ese índice armaron 4 tiers de carga creciente. Caminar y correr quedaron adentro de la tabla como "hitos clínicos" de referencia.',
     bloques:[
-      {titulo:'Progresión de carga (baja → alta)', tipo:'progresion', items:[
-        {label:'1. Punta de pie sentado (bipodal)', detalle:'La carga más baja de la batería, ~0.5x peso corporal. Punto de partida seguro en fases tempranas.'},
-        {label:'2. Punta de pie sentado con peso (muslo)', detalle:'Se agrega carga externa (ej. 15 kg) manteniendo la posición sentada — sube la exigencia sin pasar a bipedestación.'},
-        {label:'3. Punta de pie parado, bipodal', detalle:'Velocidad cómoda primero, luego más rápida — la velocidad también aumenta la carga tendinosa.'},
-        {label:'4. Punta de pie parado, unipodal', detalle:'Salto cualitativo de carga respecto al bipodal; requiere buena tolerancia previa.'},
-        {label:'5. Estocadas, sentadillas, step up/down', detalle:'Movimientos multiarticulares asimétricos — permiten dosificar la carga lado por lado, útiles cuando hay lateralidad afectada.'},
-        {label:'6. Caminar y correr', detalle:'Cargas intermedias-altas (aprox. 4-8x peso corporal) — hito antes de progresar a saltos unipodales completos.'},
-        {label:'7. Saltos bipodales (salto y drop jump)', detalle:'Introduce el componente de almacenamiento/liberación de energía del tendón.'},
-        {label:'8. Salto unipodal hacia adelante', detalle:'El pico de carga de toda la batería: ~7.3x peso corporal. Reservar para las últimas fases antes del retorno deportivo.'},
+      {titulo:'Dos progresiones rápidas (según Discusión del paper)', tipo:'progresion', items:[
+        {label:'Movimientos aislados de tobillo', detalle:'Punta de pie sentado (tier 1) → punta de pie parado unipodal (tier 2) → salto bipodal (tier 3) → salto unipodal hacia adelante (tier 4).'},
+        {label:'Movimientos multiarticulares', detalle:'Sentadilla (tier 1) → step up/step down (tier 2) → salto en contramovimiento unipodal (tier 3) → drop jump unipodal (tier 4).'},
       ]},
-      {titulo:'Aplicación clínica', tipo:'notas', items:[
-        {detalle:'Las cargas variaron más de 12 veces entre el ejercicio más liviano y el más pesado — de ahí que "solo dar elevaciones de talón" deje huecos grandes en la progresión.'},
-        {detalle:'Los movimientos asimétricos (estocadas, step up/down) dan flexibilidad extra para prescribir carga de forma específica por lado, útil en lesiones unilaterales.'},
+      {titulo:'Tabla 1 — Tier 1 (índice de carga < 0.25)', tipo:'tabla', filas:[
+        {nombre:'Punta de pie sentado (bipodal)', idx:'0.100', pico:'0.5 ± 0.2', impulso:'0.6 ± 0.2', tasa:'2.7 ± 1.0'},
+        {nombre:'Punta de pie sentado (unipodal)', idx:'0.128', pico:'0.7 ± 0.2', impulso:'0.7 ± 0.3', tasa:'3.6 ± 1.5'},
+        {nombre:'Sentadilla', idx:'0.167', pico:'1.1 ± 0.3', impulso:'0.8 ± 0.2', tasa:'4.0 ± 1.9'},
+        {nombre:'Step up bajo (pierna delantera)', idx:'0.213', pico:'1.6 ± 0.4', impulso:'0.7 ± 0.3', tasa:'10.1 ± 5.0'},
+        {nombre:'Step up alto (pierna delantera)', idx:'0.241', pico:'1.8 ± 0.3', impulso:'0.8 ± 0.2', tasa:'11.4 ± 3.4'},
+        {nombre:'Punta de pie parado (bipodal)', idx:'0.248', pico:'1.6 ± 0.2', impulso:'1.2 ± 0.2', tasa:'8.7 ± 2.7'},
+      ]},
+      {titulo:'Tabla 1 — Tier 2 (0.25 – 0.50)', tipo:'tabla', filas:[
+        {nombre:'Punta de pie rebote (bipodal)', idx:'0.282', pico:'2.5 ± 0.7', impulso:'0.5 ± 0.1', tasa:'19.9 ± 10.6'},
+        {nombre:'Estocada (pierna delantera)', idx:'0.285', pico:'2.1 ± 0.6', impulso:'1.2 ± 0.5', tasa:'8.4 ± 3.7'},
+        {nombre:'Step down bajo (pierna delantera)', idx:'0.310', pico:'2.2 ± 0.5', impulso:'0.9 ± 0.2', tasa:'22.9 ± 6.1'},
+        {nombre:'Step up bajo (pierna trasera)', idx:'0.341', pico:'2.9 ± 0.4', impulso:'1.1 ± 0.2', tasa:'14.2 ± 4.7'},
+        {nombre:'Step down alto (pierna trasera)', idx:'0.342', pico:'2.6 ± 0.3', impulso:'1.2 ± 0.2', tasa:'16.6 ± 6.0'},
+        {nombre:'Caminar (apoyo)', idx:'0.359', pico:'3.3 ± 0.3', impulso:'0.8 ± 0.1', tasa:'18.7 ± 2.7'},
+        {nombre:'Step down bajo (pierna trasera)', idx:'0.369', pico:'2.9 ± 0.3', impulso:'1.3 ± 0.3', tasa:'15.1 ± 5.0'},
+        {nombre:'Salto adelante (bipodal)', idx:'0.414', pico:'3.2 ± 1.0', impulso:'1.2 ± 0.4', tasa:'25.4 ± 8.5'},
+        {nombre:'Step down alto (pierna delantera)', idx:'0.429', pico:'3.2 ± 0.6', impulso:'1.1 ± 0.2', tasa:'34.2 ± 7.5'},
+        {nombre:'Step up alto (pierna trasera)', idx:'0.432', pico:'3.7 ± 0.6', impulso:'1.1 ± 0.2', tasa:'22.1 ± 7.0'},
+        {nombre:'Estocada (pierna trasera)', idx:'0.435', pico:'2.4 ± 0.5', impulso:'2.4 ± 0.7', tasa:'11.5 ± 3.3'},
+        {nombre:'Salto en contramovimiento (bipodal)', idx:'0.474', pico:'3.4 ± 0.3', impulso:'1.5 ± 0.3', tasa:'32.5 ± 5.3'},
+        {nombre:'Punta de pie rebote (unipodal)', idx:'0.476', pico:'4.2 ± 0.9', impulso:'1.1 ± 0.1', tasa:'26.2 ± 10.5'},
+        {nombre:'Punta de pie parado (unipodal)', idx:'0.493', pico:'3.0 ± 0.3', impulso:'2.5 ± 0.6', tasa:'13.1 ± 3.4'},
+      ]},
+      {titulo:'Tabla 1 — Tier 3 (0.50 – 0.75)', tipo:'tabla', filas:[
+        {nombre:'Drop jump (bipodal)', idx:'0.519', pico:'3.6 ± 0.6', impulso:'1.7 ± 0.3', tasa:'34.4 ± 6.7'},
+        {nombre:'Salto en el lugar (bipodal)', idx:'0.555', pico:'4.8 ± 1.8', impulso:'0.6 ± 0.2', tasa:'56.3 ± 26.0'},
+        {nombre:'Correr (apoyo)', idx:'0.600', pico:'5.2 ± 0.9', impulso:'0.7 ± 0.1', tasa:'58.1 ± 12.7'},
+        {nombre:'Salto adelante (bipodal)', idx:'0.656', pico:'5.2 ± 2.6', impulso:'1.3 ± 0.5', tasa:'58.4 ± 33.4'},
+        {nombre:'Salto en contramovimiento (unipodal)', idx:'0.705', pico:'4.9 ± 0.6', impulso:'2.4 ± 0.5', tasa:'46.2 ± 7.1'},
+        {nombre:'Salto adelante (unipodal)', idx:'0.740', pico:'5.4 ± 1.1', impulso:'2.3 ± 0.4', tasa:'46.9 ± 11.1'},
+      ]},
+      {titulo:'Tabla 1 — Tier 4 (> 0.75, carga máxima)', tipo:'tabla', filas:[
+        {nombre:'Salto en el lugar (unipodal)', idx:'0.764', pico:'6.7 ± 1.6', impulso:'1.3 ± 0.2', tasa:'62.1 ± 16.9'},
+        {nombre:'Drop jump (unipodal)', idx:'0.852', pico:'5.5 ± 0.8', impulso:'3.0 ± 0.4', tasa:'59.2 ± 9.1'},
+        {nombre:'Salto lateral (unipodal)', idx:'0.904', pico:'7.3 ± 2.4', impulso:'2.1 ± 0.7', tasa:'67.7 ± 25.9'},
+        {nombre:'Salto adelante (unipodal)', idx:'0.924', pico:'7.3 ± 1.9', impulso:'2.3 ± 0.3', tasa:'67.1 ± 18.5'},
+      ]},
+      {titulo:'Cómo leer la tabla / aplicación clínica', tipo:'notas', items:[
+        {detalle:'Índice de carga = combinación ponderada de Pico (50%), Impulso (30%) y Tasa (20%), normalizados 0-1. Pico e Impulso en múltiplos de peso corporal (BW); Tasa en BW por segundo.'},
+        {detalle:'Caminar (índice 0.359) y correr (índice 0.600) sirven como "hitos clínicos": si el paciente ya camina/corre sin dolor, puede tolerar ejercicios con índice similar o menor (ej. una vez que corre, ya puede hacer punta de pie unipodal o drop jump bipodal).'},
+        {detalle:'Estocadas, step up y step down cargan distinto la pierna delantera vs la trasera (hasta 52% más en la trasera durante la estocada) — útil para dosificar de forma específica por lado en lesiones unilaterales.'},
+        {detalle:'La punta de pie sentada unipodal casi no duplica la carga de la versión bipodal (0.128 vs 0.100) — si se busca subir la exigencia en fase temprana sin pasar a bipedestación, conviene agregar peso en el muslo en vez de pasar a unipodal.'},
       ]},
     ]
   },
   rotuliano: {
     emoji:'🦵', titulo:'Continuum de carga — Tendón rotuliano', zona:'Rodilla',
-    fuente:'Malliaras, Cook, Purdam, Rio (2015). "Patellar Tendinopathy: Clinical Diagnosis, Load Management, and Advice for Challenging Case Presentations". JOSPT.',
-    resumen:'Modelo de 4 etapas para progresar la tendinopatía rotuliana guiado por tolerancia al dolor y capacidad de carga, no por un cronograma fijo de semanas.',
+    fuente:'Malliaras, Cook, Purdam, Rio (2015). "Patellar Tendinopathy: Clinical Diagnosis, Load Management, and Advice for Challenging Case Presentations". J Orthop Sports Phys Ther. 45(11):887-898.',
+    resumen:'Modelo de 4 etapas para progresar la tendinopatía rotuliana, guiado por tolerancia al dolor y capacidad de carga (no por un cronograma fijo de semanas). Complementa el modelo de continuum de patología tendinosa de Cook & Purdam.',
     bloques:[
-      {titulo:'Etapas', tipo:'progresion', items:[
-        {label:'Etapa 1 — Isométrico', detalle:'Extensión de rodilla isométrica en rango medio (30-60°) o sentadilla española (70-90°). 5 reps de 45-60 seg, 2-3 veces/día, progresando de 40% a 70% de la contracción voluntaria máxima. Útil para bajar el dolor e iniciar carga cuando el isotónico no se tolera.'},
-        {label:'Etapa 2 — Isotónico', detalle:'Extensión de rodilla, prensa (leg press), split squat o sentadilla unilateral. 3-4 series, arrancando en 15RM y progresando hacia 6RM. Objetivo: restaurar masa y fuerza del cuádriceps con preferencia por ejercicios unilaterales (control y equilibrio).'},
-        {label:'Etapa 3 — Almacenamiento y liberación de energía', detalle:'Habilitada cuando tolera 4-8 repeticiones de prensa unilateral al 150% del peso corporal, con dolor <3/10 que cede dentro de 24 h. Se incorporan saltos y trabajo pliométrico progresivo, con foco en la demanda específica del deporte.'},
+      {titulo:'Las 4 etapas', tipo:'tabla', filas:[
+        {nombre:'Etapa 1 — Isométrico', idx:'Parámetros', pico:'5 x 45-60 seg', impulso:'2-3x/día', tasa:'40→70% CVM'},
+        {nombre:'Etapa 2 — Isotónico', idx:'Parámetros', pico:'3-4 series', impulso:'15RM→6RM', tasa:'preferir unilateral'},
+        {nombre:'Etapa 3 — Energía (pliometría)', idx:'Habilita con', pico:'4-8 reps prensa', impulso:'150% peso corp.', tasa:'dolor <3/10, cede en 24h'},
+        {nombre:'Etapa 4 — Retorno al deporte', idx:'Foco', pico:'gestos', impulso:'volumen', tasa:'específicos del deporte'},
+      ]},
+      {titulo:'Ejercicios sugeridos por etapa (según Figura 2 del paper)', tipo:'progresion', items:[
+        {label:'Etapa 1 — Isométrico', detalle:'(A) Extensión de rodilla isométrica en máquina, en rango medio 30-60° de flexión. (B) Sentadilla española a 70-90° de flexión. Indicados para bajar dolor e iniciar carga cuando el isotónico no se tolera; se mantienen incluso en días de descanso de etapas más avanzadas.'},
+        {label:'Etapa 2 — Isotónico', detalle:'(A) Extensión de rodilla isotónica. (B) Prensa (leg press). (C) Split squat / sentadilla búlgara. Series de 15RM progresando hacia 6RM; objetivo: restaurar masa y fuerza del cuádriceps.'},
+        {label:'Etapa 3 — Almacenamiento y liberación de energía', detalle:'Saltos y pliometría progresiva. Habilitada cuando tolera 4-8 repeticiones de prensa unilateral al 150% del peso corporal con dolor <3/10 que cede en 24 h.'},
         {label:'Etapa 4 — Retorno al deporte', detalle:'Reintroducción progresiva de gestos y volumen específicos de la disciplina, coordinada con el cuerpo técnico.'},
       ]},
-      {titulo:'Regla de dolor', tipo:'notas', items:[
-        {detalle:'Dolor durante y hasta 24 h después del ejercicio se tolera hasta 3-5/10; si aumenta o no cede en 24 h, retroceder a la etapa anterior.'},
-        {detalle:'Los ejercicios isométricos de etapa 1 se mantienen incluso en días de descanso de las etapas más avanzadas.'},
+      {titulo:'Modelo de monitoreo del dolor (semáforo)', tipo:'tabla', filas:[
+        {nombre:'Ideal', idx:'Respuesta', pico:'Sube la carga', impulso:'y', tasa:'el dolor baja a 0/10'},
+        {nombre:'Aceptable', idx:'Respuesta', pico:'Sube la carga', impulso:'con', tasa:'dolor bajo y estable'},
+        {nombre:'Inaceptable', idx:'Respuesta', pico:'Sube la carga', impulso:'y', tasa:'el dolor también sube → retroceder'},
+      ]},
+      {titulo:'Notas clínicas', tipo:'notas', items:[
+        {detalle:'5 repeticiones de 45 segundos de isometría de cuádriceps al 70% de la contracción voluntaria máxima han mostrado reducir el dolor tendinoso hasta 45 minutos después del ejercicio (Rio et al. 2015) — útil como "calmante" antes de una sesión de fuerza.'},
+        {detalle:'Dolor durante y hasta 24 h después del ejercicio se tolera hasta 3-5/10 en tendón; si no cede en 24 h o va en aumento, hay que bajar la carga de la sesión siguiente.'},
       ]},
     ]
   },
   hombro_manguito: {
     emoji:'💪', titulo:'Jerarquía EMG — Manguito rotador', zona:'Hombro',
-    fuente:'Edwards et al. (2017). "A Systematic Review of EMG Studies in Normal Shoulders to Inform Postoperative Rehabilitation Following Rotator Cuff Repair". JOSPT. + Reinold et al. (JOSPT/J Athl Train).',
-    resumen:'Revisión sistemática que clasifica ejercicios de hombro según el % de contracción voluntaria máxima (CVM) que generan en supraespinoso/infraespinoso, para elegir ejercicios seguros según la fase de cicatrización post-reparación.',
+    fuente:'Edwards, Ebert, Littlewood, Ackland, Wang (2017). "A Systematic Review of EMG Studies in Normal Shoulders to Inform Postoperative Rehabilitation Following Rotator Cuff Repair". J Orthop Sports Phys Ther. 47(12):931-944. + Reinold et al. (J Athl Train 2007; JOSPT 2004).',
+    resumen:'Revisión sistemática de 20 estudios EMG (43 ejercicios) que definieron un punto de corte de 15% de la contracción voluntaria máxima (CVM) como "seguro" para no sobrecargar una reparación de manguito en fase temprana. De 13 ejercicios activo-asistidos evaluados, 9 fueron aptos (≤15% CVM) para supraespinoso y 10 para infraespinoso — ninguno logró ese umbral para el subescapular.',
     bloques:[
-      {titulo:'Categorías de activación (%CVM)', tipo:'progresion', items:[
-        {label:'Baja (0-15% CVM)', detalle:'Péndulos, deslizamiento en mesa asistido, deslizamiento en pared. Indicados en fase protegida inmediata post-reparación.'},
-        {label:'Baja-moderada (16-20% CVM)', detalle:'Progresión intermedia dentro de la fase protegida temprana.'},
-        {label:'Moderada (21-40% CVM)', detalle:'Se introduce cuando la cicatrización tolera algo más de exigencia activa.'},
-        {label:'Alta (41-60% CVM)', detalle:'Full can, empty can, rotación externa activa (Reinold et al. reportan ~62-67% CVM de supraespinoso en estos tres). Reservar para cuando la reparación lo permite.'},
-        {label:'Muy alta (>60% CVM)', detalle:'Abducción horizontal en prono con RE a 100°, rotación externa en decúbito lateral. Fases avanzadas de fortalecimiento.'},
+      {titulo:'Ejercicios ordenados por activación (bajo → alto)', tipo:'tabla', filas:[
+        {nombre:'Péndulo', idx:'≤15% CVM', pico:'supra + infra', impulso:'—', tasa:'fase protegida'},
+        {nombre:'Deslizamiento en mesa asistido', idx:'≤15% CVM', pico:'solo supra', impulso:'—', tasa:'fase protegida'},
+        {nombre:'Deslizamiento en pared', idx:'≤15% CVM', pico:'solo supra', impulso:'—', tasa:'fase protegida'},
+        {nombre:'Movimiento pasivo continuo (CPM)', idx:'bajo', pico:'el más bajo del grupo', impulso:'—', tasa:'fase protegida'},
+        {nombre:'Full can / Empty can / Prone full can', idx:'62-67% CVM', pico:'supraespinoso', impulso:'full can = menos deltoides', tasa:'fortalecimiento'},
+        {nombre:'Rotación externa de pie (varios ángulos)', idx:'31-69% CVM', pico:'supra', impulso:'13-50% infra', tasa:'fortalecimiento medio'},
+        {nombre:'Rotación externa en decúbito lateral', idx:'62% CVM', pico:'infraespinoso', impulso:'67% teres minor', tasa:'fortalecimiento avanzado'},
+        {nombre:'Abducción horizontal prono + RE a 100°', idx:'82% CVM', pico:'supraespinoso', impulso:'87-88% deltoides', tasa:'fase avanzada'},
+        {nombre:'Push-up plus', idx:'muy alto', pico:'de los más altos de toda la batería', impulso:'—', tasa:'fase avanzada / RTS'},
       ]},
       {titulo:'Nota clínica', tipo:'notas', items:[
-        {detalle:'Ningún ejercicio habitual logra una activación baja (≤15% CVM) del subescapular — tenerlo en cuenta al proteger reparaciones que incluyen esta estructura.'},
-        {detalle:'El ejercicio "full can" genera activación de deltoides medio/posterior significativamente menor que "empty can", con supraespinoso similar — preferirlo cuando se quiere minimizar la carga del deltoides.'},
+        {detalle:'Ningún ejercicio habitual logra una activación baja (≤15% CVM) del subescapular — tenerlo en cuenta al proteger reparaciones que incluyen esta estructura, ya que no hay un ejercicio "seguro" equivalente al péndulo para ese músculo.'},
+        {detalle:'"Full can" genera activación de deltoides medio/posterior significativamente menor que "empty can" o "prone full can", con activación de supraespinoso similar (62-67% CVM en los tres) — preferirlo cuando se quiere minimizar la carga del deltoides.'},
+        {detalle:'El EMG mide excitación neuromuscular, no fuerza tendinosa directa ni calidad del ejercicio — usarlo como guía de progresión, no como único criterio de "mejor ejercicio".'},
       ]},
     ]
   },
   isquiotibiales: {
     emoji:'🏃', titulo:'Protocolo L de Askling — Isquiotibiales', zona:'Muslo posterior',
-    fuente:'Askling, Tengvar, Thorstensson (2013). "Acute hamstring injuries in Swedish elite football: comparing two rehabilitation protocols". Br J Sports Med.',
-    resumen:'Protocolo de 3 ejercicios (Extender, Diver, Glider) en cadena de longitud creciente, iniciado precozmente tras la lesión aguda. Comparado con rehabilitación convencional, mostró retorno más rápido al deporte y menor recurrencia.',
+    fuente:'Askling, Tengvar, Thorstensson (2013). "Acute hamstring injuries in Swedish elite football". Br J Sports Med. 47:953-959. + Askling, Tengvar, Tarassova, Thorstensson (2014, sprinters/saltadores). Br J Sports Med. 48(7):532-539.',
+    resumen:'Protocolo de 3 ejercicios (Extender, Diver, Glider) en cadena de longitud creciente, iniciado precozmente (dentro de los primeros días) tras la lesión aguda. Comparado contra un protocolo convencional (C-protocol) en dos ensayos aleatorizados en atletas de élite suecos.',
     bloques:[
-      {titulo:'Progresión de ejercicios', tipo:'progresion', items:[
-        {label:'1. Extender', detalle:'Supino, cadera flexionada a 90°, extensión de rodilla controlada hasta el límite antes del dolor. 2 veces/día, 3 series de 12 repeticiones.'},
-        {label:'2. Diver', detalle:'De pie, apoyo unipodal, inclinación de tronco hacia adelante (tipo peso muerto a una pierna) dentro de rango controlado y sin dolor.'},
-        {label:'3. Glider', detalle:'Deslizamiento excéntrico hacia atrás en la pierna afectada, volviendo con ayuda de ambos brazos (no con la pierna lesionada). 3 series de 6, una vez cada 3 días. Progresión: aumentar distancia y velocidad del deslizamiento. Es el más exigente de los tres.'},
+      {titulo:'Progresión de ejercicios (L-protocol)', tipo:'progresion', items:[
+        {label:'L-1 — Extender', detalle:'Supino, cadera flexionada ~90° sosteniendo el muslo, extensión de rodilla lenta hasta el límite antes del dolor. 2 veces/día, 3 series de 12 repeticiones.'},
+        {label:'L-2 — Diver', detalle:'De pie, apoyo unipodal, simulando un "clavado": flexión de cadera con extensión de tronco hacia adelante y extensión máxima de cadera de la pierna elevada, brazos estirados. Rango controlado y sin dolor.'},
+        {label:'L-3 — Glider', detalle:'Deslizamiento hacia atrás sobre la pierna sana, la lesionada desliza en extensión; el regreso se hace con ayuda de ambos brazos, no con la pierna afectada. 3 series de 6, una vez cada 3 días. Progresión: aumentar distancia y velocidad del deslizamiento. Es el más exigente de los tres.'},
       ]},
-      {titulo:'Cómo progresar', tipo:'notas', items:[
-        {detalle:'Progresar por tolerancia (dolor durante el ejercicio, rigidez a las 24 h, control postural), no por un cronograma fijo de días.'},
+      {titulo:'Resultados de los ensayos', tipo:'tabla', filas:[
+        {nombre:'Fútbol (2013, n=75)', idx:'Retorno', pico:'más rápido con L-protocol', impulso:'Reinjurias', tasa:'2 en total, ambas en C-protocol'},
+        {nombre:'Sprinters/saltadores (2014)', idx:'L-protocol', pico:'49 ± 26 días', impulso:'C-protocol', tasa:'86 ± 34 días'},
+        {nombre:'Lesión de tendón libre proximal', idx:'L-protocol', pico:'73 días', impulso:'C-protocol', tasa:'116 días (más lento en ambos)'},
+      ]},
+      {titulo:'Cómo progresar y alta', tipo:'notas', items:[
+        {detalle:'Progresar por tolerancia (dolor durante el ejercicio, rigidez a las 24 h, control postural), no por un cronograma fijo de días — en el estudio original la reevaluación fue semanal, ajustando según respuesta individual.'},
         {detalle:'El protocolo L recluta el isquiotibial con intensidad relativamente baja comparado con el Nordic hamstring curl — para prevención de recidiva a mediano plazo conviene sumar Nordic una vez que el protocolo L se tolera bien.'},
         {detalle:'Criterios de alta descritos en la literatura: test H de Askling, fuerza isocinética simétrica (diferencia <15% respecto al contralateral) y sprint sin dolor.'},
+        {detalle:'Las lesiones que comprometen el tendón libre proximal (ej. semimembranoso) tardan más en volver que las que no lo comprometen, independientemente del protocolo usado.'},
       ]},
     ]
   },
   retorno_carrera: {
     emoji:'📈', titulo:'Control de carga — Retorno a la carrera (ACWR)', zona:'General / running',
-    fuente:'Gabbett (2016). "The training-injury prevention paradox: should athletes be training smarter and harder?". Br J Sports Med.',
-    resumen:'Relación entre carga aguda (última semana) y carga crónica (promedio de las 4 semanas previas) para dosificar el aumento de volumen o intensidad de carrera durante el retorno a la actividad.',
+    fuente:'Gabbett (2016). "The training-injury prevention paradox: should athletes be training smarter and harder?". Br J Sports Med. 50(5):273-280. + Blanch & Gabbett (2016). Br J Sports Med. 50(8):471-475. + Murray et al. (2017). Br J Sports Med. 51(9):749-754.',
+    resumen:'ACWR = carga aguda (última semana) ÷ carga crónica (promedio de las 4 semanas previas). Cuantifica si el salto de carga de esta semana es proporcional a lo que el cuerpo viene tolerando. Nació en deportes de equipo (rugby, cricket) pero se aplica igual al retorno a la carrera.',
     bloques:[
-      {titulo:'Zonas de riesgo (ACWR = carga aguda / carga crónica)', tipo:'progresion', items:[
-        {label:'< 0.8', detalle:'Sub-entrenamiento — mayor riesgo relativo al reexponerse a la carga más adelante (falta de preparación tisular).'},
-        {label:'0.8 – 1.3', detalle:'"Zona dulce" — el rango con menor riesgo relativo de lesión según la evidencia disponible.'},
-        {label:'1.3 – 1.5', detalle:'Riesgo elevado — monitorear de cerca, evitar sumar otro salto de carga.'},
-        {label:'> 1.5', detalle:'"Zona de peligro" — el riesgo de lesión aumenta notoriamente frente a incrementos bruscos de carga.'},
+      {titulo:'Zonas de riesgo', tipo:'tabla', filas:[
+        {nombre:'< 0.8', idx:'Sub-entrenamiento', pico:'—', impulso:'—', tasa:'mayor riesgo al reexponerse después'},
+        {nombre:'0.8 – 1.3', idx:'"Zona dulce"', pico:'—', impulso:'—', tasa:'menor riesgo relativo de lesión'},
+        {nombre:'1.3 – 1.5', idx:'Riesgo elevado', pico:'—', impulso:'—', tasa:'monitorear de cerca'},
+        {nombre:'> 1.5', idx:'"Zona de peligro"', pico:'—', impulso:'—', tasa:'riesgo de lesión notoriamente mayor'},
+      ]},
+      {titulo:'Ejemplo de cálculo', tipo:'progresion', items:[
+        {label:'Corredor en zona dulce', detalle:'Promedio de 30 km/semana en las últimas 4 semanas (carga crónica). Esta semana corrió 33 km (carga aguda). ACWR = 33/30 = 1.1 → dentro de la zona dulce (0.8-1.3).'},
+        {label:'Corredor en zona de peligro', detalle:'Mismo promedio crónico de 30 km/semana, pero esta semana saltó a 50 km. ACWR = 50/30 = 1.67 → zona de peligro (>1.5), incremento demasiado brusco para una sola semana.'},
       ]},
       {titulo:'Aplicación práctica', tipo:'notas', items:[
         {detalle:'Incrementos semanales de carga mayores al 15% respecto a la semana previa se asocian a mayor incidencia de lesión; incrementos de 5-10% se mantienen en rangos de menor riesgo.'},
-        {detalle:'Estos valores no son una regla absoluta ni igual para todos los deportes o personas — usarlos como guía orientativa junto con la clínica (dolor, RPE, síntomas al otro día), no de forma aislada.'},
+        {detalle:'El método EWMA (media móvil exponencialmente ponderada, Murray et al. 2017) es más sensible que el promedio simple de 4 semanas porque pondera más las sesiones recientes — útil si se cuenta con una app o planilla que lo calcule automáticamente.'},
+        {detalle:'Estos valores no son una regla absoluta ni igual para todos los deportes o personas (en fútbol profesional algunos estudios encontraron la zona dulce más cerca de 1.0-1.25) — usarlos como guía orientativa junto con la clínica (dolor, RPE, síntomas al otro día), no de forma aislada.'},
       ]},
     ]
   },
   lca_criterios: {
     emoji:'🎯', titulo:'Criterios de alta — LCA (hop tests / LSI)', zona:'Rodilla / retorno deportivo',
-    fuente:'Grindem, Snyder-Mackler, Moksnes, Engebretsen, Risberg (2016). "Simple decision rules can reduce reinjury risk by 84% after ACL reconstruction". Br J Sports Med. + Kyritsis, Bahr et al. (2016). Br J Sports Med.',
-    resumen:'Estudios de cohorte que vincularon el cumplimiento de criterios objetivos de fuerza y salto antes del retorno deportivo con un menor riesgo de nueva lesión de LCA (propia o del injerto).',
+    fuente:'Grindem, Snyder-Mackler, Moksnes, Engebretsen, Risberg (2016). "Simple decision rules can reduce reinjury risk by 84% after ACL reconstruction: the Delaware-Oslo ACL cohort study". Br J Sports Med. 50(13):804-808. + Kyritsis, Bahr, Landreau et al. (2016). Br J Sports Med. 50(15):946-951.',
+    resumen:'Dos cohortes independientes que vincularon el cumplimiento de criterios objetivos de fuerza y salto antes del retorno deportivo con un menor riesgo de nueva lesión de LCA (propia o del injerto).',
     bloques:[
-      {titulo:'Criterios habituales (umbral LSI ≥ 90%)', tipo:'progresion', items:[
-        {label:'Fuerza de cuádriceps (LSI ≥90%)', detalle:'Medida isocinética o con dinamómetro respecto al miembro contralateral. Grindem et al. encontraron que cada 1% de fuerza de cuádriceps por debajo del umbral del 90% se asoció a un incremento de riesgo de nueva lesión de hasta ~3%.'},
-        {label:'Fuerza de isquiosurales (LSI ≥90%)', detalle:'Evaluada de la misma forma, comparando contra el lado sano.'},
-        {label:'4 hop tests (LSI ≥90% cada uno)', detalle:'Single hop, triple hop, crossover hop y timed hop — batería estándar para evaluar simetría funcional antes del retorno.'},
-        {label:'Relación isquiosurales/cuádriceps', detalle:'Kyritsis et al. reportaron mayor riesgo de rotura del injerto en quienes no cumplían 6 criterios de alta (fuerza isocinética, test T de carrera y 3 hop tests unilaterales).'},
+      {titulo:'Criterios de Grindem et al. 2016 (umbral LSI ≥ 90%)', tipo:'progresion', items:[
+        {label:'Fuerza de cuádriceps', detalle:'Medida isocinética, LSI ≥90% respecto al miembro contralateral. Por cada 1% de fuerza de cuádriceps por debajo del umbral del 90%, el riesgo de nueva lesión aumentó hasta ~3%.'},
+        {label:'Fuerza de isquiosurales', detalle:'Isocinética, LSI ≥90% respecto al lado sano.'},
+        {label:'4 hop tests', detalle:'Single hop, triple hop, crossover hop y timed hop (6 m) — los 4 con LSI ≥90% para aprobar.'},
+        {label:'Cumplir todos los criterios', detalle:'Redujo el riesgo de nueva lesión en un 84% comparado con quienes no los cumplían, en el mismo estudio.'},
       ]},
-      {titulo:'Tiempo desde la cirugía', tipo:'notas', items:[
+      {titulo:'Criterios de Kyritsis et al. 2016 (6 criterios de alta)', tipo:'progresion', items:[
+        {label:'Fuerza isocinética de cuádriceps y de isquiosurales', detalle:'LSI ≥90% respecto al contralateral (2 de los 6 criterios).'},
+        {label:'3 hop tests unilaterales', detalle:'LSI ≥90% en cada uno (3 de los 6 criterios).'},
+        {label:'Test T de carrera', detalle:'Menos de 11 segundos (1 de los 6 criterios).'},
+        {label:'No cumplir los 6 criterios', detalle:'Se asoció a un riesgo hasta 4 veces mayor de rotura del injerto en una cohorte de 158 futbolistas profesionales varones.'},
+      ]},
+      {titulo:'Tiempo desde la cirugía y otros factores', tipo:'notas', items:[
         {detalle:'Postergar el retorno deportivo hasta al menos 9 meses post-cirugía se asoció a menor riesgo de nueva lesión; Grindem et al. estimaron que cada mes de demora entre los 6 y los 9 meses redujo el riesgo en torno a un 51%.'},
+        {detalle:'Kyritsis et al. también reportaron que una relación isquiosurales/cuádriceps más baja se asoció a mayor riesgo de rotura del injerto — vale la pena mirar esa relación además de cada fuerza por separado.'},
         {detalle:'Cumplir los criterios reduce el riesgo pero no lo elimina — conviene combinarlos con evaluación cualitativa del aterrizaje (control de valgo) y con el cuestionario ACL-RSI de confianza psicológica para el retorno.'},
       ]},
     ]
@@ -3864,7 +3936,7 @@ function renderAyudaMemoriaLista(){
   panel.innerHTML = `
     <div class="ayudamem-header">
       <h2>🧠 Ayuda Memoria</h2>
-      <p>Progresiones y criterios de referencia basados en evidencia, organizados por zona/tema.</p>
+      <p>Progresiones y criterios de referencia basados en evidencia, tal como los presentan los papers originales.</p>
     </div>
     <div class="ayudamem-list">${cards}</div>
   `;
@@ -3881,6 +3953,17 @@ function abrirAyudaMemoriaTema(id){
         <div class="ayudamem-step-detalle">${esc(it.detalle)}</div>
       </div>`).join('');
       return `<div class="ayudamem-bloque"><div class="ayudamem-bloque-titulo">${esc(b.titulo)}</div>${items}</div>`;
+    } else if(b.tipo==='tabla'){
+      const filas = b.filas.map(f=>`<div class="ayudamem-row">
+        <div class="ayudamem-row-nombre">${esc(f.nombre)}</div>
+        <div class="ayudamem-row-meta">
+          <span class="ayudamem-chip">${esc(f.idx)}</span>
+          <span class="ayudamem-chip">${esc(f.pico)}</span>
+          ${f.impulso&&f.impulso!=='—'?`<span class="ayudamem-chip">${esc(f.impulso)}</span>`:''}
+          ${f.tasa&&f.tasa!=='—'?`<span class="ayudamem-chip">${esc(f.tasa)}</span>`:''}
+        </div>
+      </div>`).join('');
+      return `<div class="ayudamem-bloque"><div class="ayudamem-bloque-titulo">${esc(b.titulo)}</div>${filas}</div>`;
     } else {
       const items = b.items.map(it=>`<div class="ayudamem-nota">• ${esc(it.detalle)}</div>`).join('');
       return `<div class="ayudamem-bloque"><div class="ayudamem-bloque-titulo">${esc(b.titulo)}</div>${items}</div>`;
@@ -3902,7 +3985,6 @@ function abrirAyudaMemoriaTema(id){
     </div>
   `;
 }
-
 function detectProtocoloTipo(p){
   const dxN=normDx(p.dx||'');
   if(!dxN) return '';
