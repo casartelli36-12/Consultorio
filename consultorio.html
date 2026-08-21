@@ -215,6 +215,9 @@ input,textarea,select{font-family:'Inter',sans-serif;}
 .ej-eva-wrap{display:flex;align-items:center;gap:2px;min-width:0;}
 .ej-eva-wrap .ej-input.eva{flex:1;min-width:0;}
 .ej-row.ej-grouped{background:var(--orange-light);}
+.ej-row.ej-carrera{background:var(--blue-chip-light,#eaf1ff);}
+.btn-ej-tipo{background:none;border:none;cursor:pointer;font-size:13px;padding:0 2px;line-height:1;flex-shrink:0;opacity:.35;filter:grayscale(1);}
+.btn-ej-tipo.active{opacity:1;filter:none;}
 .ej-input.bloque{text-align:center;font-weight:700;text-transform:uppercase;}
 .ej-input.rir{text-align:center;font-weight:600;color:var(--orange);flex:1;min-width:0;}
 .ej-badge-mini{display:inline-block;background:var(--orange);color:#fff;font-size:9px;font-weight:700;border-radius:4px;padding:1px 5px;margin-right:5px;vertical-align:middle;}
@@ -3170,6 +3173,7 @@ const EVOLUCION_CHARTS = [
   {id:'rpe', label:'RPE de sesión (esfuerzo)', nota:'Se superpone con Carga interna, que ya incluye el RPE.'},
   {id:'cargaInterna', label:'Carga interna (RPE × duración)'},
   {id:'cargaExterna', label:'Carga externa (volumen: series×reps×kg)'},
+  {id:'distanciaCarrera', label:'Carga externa carrera (km por sesión)'},
   {id:'acwr', label:'Carga aguda:crónica (ACWR)'},
   {id:'rpeClub', label:'RPE entrenamiento club', nota:'Solo aplica a pacientes marcados como futbolistas.'},
   {id:'lsi', label:'LSI% — evaluaciones'},
@@ -4544,12 +4548,22 @@ function quitarValdDeEj(sesId,idx){
   saveDB(); renderTab();
 }
 function buildSesEjTable(sesId, ejercicios, sesEva){
-  const rows=ejercicios.map((e,i)=>`
-    <div class="ej-row ej-ses ${e.bloque?'ej-grouped':''}" id="ejrow_${sesId}_${i}">
-      <input class="ej-input bloque" type="text" value="${esc(e.bloque||'')}" placeholder="—" maxlength="2" title="Superserie"
-        oninput="updateEjField('${sesId}',${i},'bloque',this.value)">
-      <input class="ej-input ej-name-input" type="text" value="${esc(e.nombre||'')}" placeholder="Ejercicio" autocomplete="off"
-        oninput="updateEjField('${sesId}',${i},'nombre',this.value)">
+  const rows=ejercicios.map((e,i)=>{
+    const esCarrera = e.tipo==='carrera';
+    const pasHayValor = !isNaN(parseFloat(e.pasadas)) && parseFloat(e.pasadas)>0;
+    const camposMedidas = esCarrera ? `
+      <input class="ej-input center" type="text" value="${esc(e.pasadas||'')}" placeholder="Pasadas"
+        title="Cantidad de pasadas/repeticiones (dejar vacío si es carrera continua)"
+        oninput="updateEjField('${sesId}',${i},'pasadas',this.value)">
+      <input class="ej-input center" type="text" value="${esc(e.distancia||'')}" placeholder="${pasHayValor?'m/pasada':'km'}"
+        title="${pasHayValor?'Metros por pasada':'Kilómetros totales corridos'}"
+        oninput="updateEjField('${sesId}',${i},'distancia',this.value)">
+      <input class="ej-input center" type="text" value="${esc(e.duracionCarrera||'')}" placeholder="min"
+        title="Duración de este bloque de carrera (min)"
+        oninput="updateEjField('${sesId}',${i},'duracionCarrera',this.value)">
+      <input class="ej-input rir" type="text" value="${esc(e.rpeCarrera||'')}" placeholder="RPE"
+        title="RPE de este bloque de carrera (0-10)"
+        oninput="updateEjField('${sesId}',${i},'rpeCarrera',this.value)">` : `
       <input class="ej-input center" type="text" value="${esc(e.series||'')}" placeholder="—"
         oninput="updateEjField('${sesId}',${i},'series',this.value)">
       <input class="ej-input center" type="text" value="${esc(e.reps||'')}" placeholder="—"
@@ -4557,7 +4571,14 @@ function buildSesEjTable(sesId, ejercicios, sesEva){
       <input class="ej-input center" type="text" value="${esc(e.kg||'')}" placeholder="—"
         oninput="updateEjField('${sesId}',${i},'kg',this.value)">
       <input class="ej-input rir" type="text" value="${esc(e.rir||'')}" placeholder="—" title="RIR real de esta sesión"
-        oninput="updateEjField('${sesId}',${i},'rir',this.value)">
+        oninput="updateEjField('${sesId}',${i},'rir',this.value)">`;
+    return `
+    <div class="ej-row ej-ses ${e.bloque?'ej-grouped':''}${esCarrera?' ej-carrera':''}" id="ejrow_${sesId}_${i}">
+      <input class="ej-input bloque" type="text" value="${esc(e.bloque||'')}" placeholder="—" maxlength="2" title="Superserie"
+        oninput="updateEjField('${sesId}',${i},'bloque',this.value)">
+      <input class="ej-input ej-name-input" type="text" value="${esc(e.nombre||'')}" placeholder="Ejercicio" autocomplete="off"
+        oninput="updateEjField('${sesId}',${i},'nombre',this.value)">
+      ${camposMedidas}
       <div class="ej-eva-wrap">
         <input class="ej-input eva" type="text" value="${esc(e.eva||'')}" placeholder="—" title="EVA durante este ejercicio (0-10). Si se deja vacío, se usa el EVA general de la sesión."
           oninput="updateEjField('${sesId}',${i},'eva',this.value)">
@@ -4566,12 +4587,14 @@ function buildSesEjTable(sesId, ejercicios, sesEva){
         oninput="updateEjField('${sesId}',${i},'nota',this.value)">
       <div class="ej-row-actions">
         <button class="btn-ej-star ${e.track?'active':''}" onclick="toggleEjTrackSes('${sesId}',${i})" title="${e.track?'Dejar de trackear la progresión de este ejercicio':'Trackear la progresión de este ejercicio'}">${e.track?'⭐':'☆'}</button>
-        <button class="btn-ej-sets ${openCardIds.has('ejsets_'+sesId+'_'+i)?'active':''}" id="btnsets_${sesId}_${i}" onclick="toggleEjSetsDetalle('${sesId}',${i})" title="Detalle serie por serie (kg/reps/RPE)">▾</button>
+        <button class="btn-ej-tipo ${esCarrera?'active':''}" onclick="toggleEjTipoSes('${sesId}',${i})" title="${esCarrera?'Volver a ejercicio de fuerza':'Convertir en ejercicio de carrera/cardio'}">🏃</button>
+        ${!esCarrera?`<button class="btn-ej-sets ${openCardIds.has('ejsets_'+sesId+'_'+i)?'active':''}" id="btnsets_${sesId}_${i}" onclick="toggleEjSetsDetalle('${sesId}',${i})" title="Detalle serie por serie (kg/reps/RPE)">▾</button>`:''}
         <span class="ej-drag-handle" data-kind="ses" data-ses="${sesId}" title="Mantené y arrastrá para reordenar">⠿</span>
         <button class="btn-ej-del" onclick="removeEjFromSes('${sesId}',${i})" title="Eliminar">×</button>
       </div>
     </div>${e.vald?buildValdChipHTML(sesId,i,e.vald):''}
-    <div class="ej-sets-detalle${openCardIds.has('ejsets_'+sesId+'_'+i)?' open':''}" id="ejsets_${sesId}_${i}">${buildEjSetsDetalleHTML(sesId,i,e)}</div>`).join('');
+    ${!esCarrera?`<div class="ej-sets-detalle${openCardIds.has('ejsets_'+sesId+'_'+i)?' open':''}" id="ejsets_${sesId}_${i}">${buildEjSetsDetalleHTML(sesId,i,e)}</div>`:''}`;
+  }).join('');
   return `<div class="ej-table-wrap" id="sejtable_${sesId}">
     <div class="ej-table-head ej-ses">
       <span style="text-align:center">Sup.</span>
@@ -4587,6 +4610,18 @@ function buildSesEjTable(sesId, ejercicios, sesEva){
     ${rows}
     <button class="btn-add-ej-row" onclick="addEjToSes('${sesId}')">+ Agregar ejercicio</button>
   </div>`;
+}
+function toggleEjTipoSes(sesId, idx){
+  const p=getPatient(currentPatientId); const ep=getEpData(p);
+  const ses=(ep.sesiones||[]).find(s=>s.id===sesId);
+  if(!ses||!ses.ejercicios||!ses.ejercicios[idx]) return;
+  const ej=ses.ejercicios[idx];
+  ej.tipo = ej.tipo==='carrera' ? 'fuerza' : 'carrera';
+  syncEjSesionAPlan(ses, idx, 'tipo', ej.tipo);
+  saveDB();
+  const tableEl=document.getElementById('sejtable_'+sesId);
+  if(tableEl) tableEl.outerHTML=buildSesEjTable(sesId, ses.ejercicios, getDolorSesion(ses));
+  else renderTab();
 }
 
 // Detalle serie por serie (kg/reps/RPE) de un ejercicio dentro de una sesión.
@@ -4648,16 +4683,16 @@ function syncEjSesionAPlan(ses, idx, field, val){
   if(!dia || !dia.ejercicios) return false;
   const planEj = dia.ejercicios.find(e=>e.id===ej.id);
   if(!planEj) return false;
-  const esPrescripcion = ['kg','reps','series','rir'].indexOf(field)!==-1;
+  const esPrescripcion = ['kg','reps','series','rir','distancia','pasadas','duracionCarrera','rpeCarrera'].indexOf(field)!==-1;
   if(!esPrescripcion){
     planEj[field] = val;
     dia.actualizado = new Date().toISOString();
   }
   if(planEj.track && esPrescripcion){
     if(!planEj.historial) planEj.historial=[];
-    const snap = {fecha:todayISO(), kg:ej.kg||'', reps:ej.reps||'', series:ej.series||'', rir:ej.rir||''};
+    const snap = buildEjSnapshot(ej);
     const last = planEj.historial[planEj.historial.length-1];
-    if(!last || last.fecha!==snap.fecha || last.kg!==snap.kg || last.reps!==snap.reps || last.series!==snap.series || last.rir!==snap.rir){
+    if(!snapEquals(last,snap)){
       planEj.historial.push(snap);
       if(planEj.historial.length>20) planEj.historial.shift();
     }
@@ -4670,9 +4705,9 @@ function syncEjSesionAPlan(ses, idx, field, val){
 function snapshotEjHistorialLocal(ej){
   if(!ej.track) return;
   if(!ej.historial) ej.historial=[];
-  const snap={fecha:todayISO(), kg:ej.kg||'', reps:ej.reps||'', series:ej.series||'', rir:ej.rir||''};
+  const snap=buildEjSnapshot(ej);
   const last=ej.historial[ej.historial.length-1];
-  if(!last || last.fecha!==snap.fecha || last.kg!==snap.kg || last.reps!==snap.reps || last.series!==snap.series || last.rir!==snap.rir){
+  if(!snapEquals(last,snap)){
     ej.historial.push(snap);
     if(ej.historial.length>20) ej.historial.shift();
   }
@@ -4696,9 +4731,9 @@ function toggleEjTrackSes(sesId, idx){
       dia.actualizado = new Date().toISOString();
       if(planEj.track){
         if(!planEj.historial) planEj.historial=[];
-        const snap={fecha:todayISO(), kg:ej.kg||'', reps:ej.reps||'', series:ej.series||'', rir:ej.rir||''};
+        const snap=buildEjSnapshot(ej);
         const last=planEj.historial[planEj.historial.length-1];
-        if(!last || last.fecha!==snap.fecha || last.kg!==snap.kg || last.reps!==snap.reps || last.series!==snap.series || last.rir!==snap.rir){
+        if(!snapEquals(last,snap)){
           planEj.historial.push(snap);
           if(planEj.historial.length>20) planEj.historial.shift();
         }
@@ -4716,7 +4751,7 @@ function updateEjField(sesId, idx, field, val) {
   if(!ses || !ses.ejercicios || !ses.ejercicios[idx]) return;
   ses.ejercicios[idx][field] = val;
   const synced = syncEjSesionAPlan(ses, idx, field, val);
-  if(!synced && ['kg','reps','series','rir'].indexOf(field)!==-1){
+  if(!synced && ['kg','reps','series','rir','distancia','pasadas','duracionCarrera','rpeCarrera'].indexOf(field)!==-1){
     snapshotEjHistorialLocal(ses.ejercicios[idx]);
   }
   clearTimeout(autoSaveTimer);
@@ -4729,7 +4764,7 @@ function addEjToSes(sesId) {
   const ses = (ep.sesiones||[]).find(s=>s.id===sesId);
   if(!ses) return;
   if(!ses.ejercicios) ses.ejercicios = [];
-  const nuevo = {id:uid(), nombre:'',series:'',reps:'',kg:'',rir:'',eva:'',nota:'',bloque:''};
+  const nuevo = {id:uid(), nombre:'',series:'',reps:'',kg:'',rir:'',eva:'',nota:'',bloque:'',tipo:'fuerza',distancia:'',pasadas:'',duracionCarrera:'',rpeCarrera:''};
   ses.ejercicios.push(nuevo);
   if(ses.planRef){
     const {dia}=findPlanDia(ses.planRef.planId, ses.planRef.diaId);
@@ -5563,10 +5598,54 @@ function sanitizeEjercicio(e){
   const out={
     id:e.id||uid(), nombre:e.nombre||'', series:e.series||'', reps:e.reps||'', kg:e.kg||'',
     rir:e.rir||'', nota:e.nota||'', bloque:e.bloque||'', categoria:e.categoria||'',
-    track:!!e.track,
+    track:!!e.track, tipo:e.tipo||'fuerza',
+    distancia:e.distancia||'', pasadas:e.pasadas||'', duracionCarrera:e.duracionCarrera||'', rpeCarrera:e.rpeCarrera||'',
   };
   if(e.historial && e.historial.length) out.historial=e.historial;
   return out;
+}
+// Ejercicio tipo 'carrera': si tiene pasadas cargadas, e.distancia se interpreta como metros
+// POR pasada (series de sprints/repeticiones); si no hay pasadas, e.distancia son km totales
+// corridos de forma continua. Devuelve la distancia total en km (o 0 si no hay datos/no es carrera).
+function calcDistanciaEjKm(e){
+  if(!e || e.tipo!=='carrera') return 0;
+  const pas=parseFloat(e.pasadas), dist=parseFloat(e.distancia);
+  if(isNaN(dist)) return 0;
+  if(!isNaN(pas) && pas>0) return (pas*dist)/1000;
+  return dist;
+}
+function calcDistanciaSesionKm(ejercicios){
+  let km=0, conDatos=false;
+  (ejercicios||[]).forEach(e=>{ const d=calcDistanciaEjKm(e); if(d>0){ km+=d; conDatos=true; } });
+  return conDatos?Math.round(km*100)/100:null;
+}
+// Texto resumen de un ejercicio 'carrera' para mostrar en filas/PDF (ej. "5 pasadas × 100m (500m)" o "5 km")
+function fmtCarreraResumen(e){
+  const pas=parseFloat(e.pasadas), dist=parseFloat(e.distancia), dur=parseFloat(e.duracionCarrera), rpe=parseFloat(e.rpeCarrera);
+  const parts=[];
+  if(!isNaN(pas) && pas>0 && !isNaN(dist)) parts.push(`${pas} pasadas × ${dist}m (${Math.round(pas*dist)}m)`);
+  else if(!isNaN(dist)) parts.push(`${dist} km`);
+  if(!isNaN(dur)) parts.push(`${dur} min`);
+  if(!isNaN(rpe)) parts.push(`RPE ${rpe}`);
+  return parts.join(' · ');
+}
+// Snapshot de historial: distinto shape según tipo de ejercicio (carrera vs fuerza).
+function buildEjSnapshot(ej){
+  if(ej.tipo==='carrera') return {fecha:todayISO(), distancia:ej.distancia||'', pasadas:ej.pasadas||'', duracionCarrera:ej.duracionCarrera||'', rpeCarrera:ej.rpeCarrera||''};
+  return {fecha:todayISO(), kg:ej.kg||'', reps:ej.reps||'', series:ej.series||'', rir:ej.rir||''};
+}
+function snapEquals(a,b){
+  if(!a) return false;
+  return a.fecha===b.fecha && a.kg===b.kg && a.reps===b.reps && a.series===b.series && a.rir===b.rir
+    && a.distancia===b.distancia && a.pasadas===b.pasadas && a.duracionCarrera===b.duracionCarrera && a.rpeCarrera===b.rpeCarrera;
+}
+function fmtHistLinea(h){
+  if(h.distancia!=null && h.distancia!==''){
+    const pas=parseFloat(h.pasadas), dist=parseFloat(h.distancia);
+    const distTxt=(!isNaN(pas)&&pas>0)?`${pas}×${dist}m`:`${dist}km`;
+    return `${distTxt}${h.duracionCarrera?' '+h.duracionCarrera+'min':''}${h.rpeCarrera?' RPE'+h.rpeCarrera:''}`;
+  }
+  return `${h.series||'—'}×${h.reps||'—'}${h.kg?' '+h.kg+'kg':''}${h.rir?' RIR'+h.rir:''}`;
 }
 
 function elegirDiaPlan(planId, diaId){
@@ -6078,7 +6157,7 @@ function buildProgresionKeyCard(ep){
     <div style="padding:12px 14px;display:flex;flex-direction:column;gap:10px;">
       ${items.map(it=>{
         const hist=it.historial;
-        const linea = hist.length ? hist.slice(-6).map(h=>`${formatFechaCorta(h.fecha)}: ${h.series||'—'}×${h.reps||'—'}${h.kg?' '+h.kg+'kg':''}${h.rir?' RIR'+h.rir:''}`).join('  →  ') : 'Todavía sin registros — se completa solo a medida que uses este ejercicio en las sesiones.';
+        const linea = hist.length ? hist.slice(-6).map(h=>`${formatFechaCorta(h.fecha)}: ${fmtHistLinea(h)}`).join('  →  ') : 'Todavía sin registros — se completa solo a medida que uses este ejercicio en las sesiones.';
         return `<div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;">
           <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;">
             <span style="font-size:13px;font-weight:700;">⭐ ${esc(it.nombre)}</span>
@@ -6188,12 +6267,21 @@ function buildPlanEjTable(planId,diaId,ejercicios){
   };
   const rows=ejercicios.map((e,i)=>{
     const vinculadoCon = e.track && (e.nombre||'').trim() ? otrosDiasConMismoNombre(e.nombre) : [];
-    return `
-    <div class="ej-row ${e.bloque?'ej-grouped':''}" id="pejrow_${planId}_${diaId}_${i}">
-      <input class="ej-input bloque" type="text" value="${esc(e.bloque||'')}" placeholder="—" maxlength="2" title="Superserie"
-        oninput="updatePlanEjField('${planId}','${diaId}',${i},'bloque',this.value)">
-      <input class="ej-input ej-name-input" type="text" value="${esc(e.nombre||'')}" placeholder="Ejercicio" autocomplete="off"
-        oninput="updatePlanEjField('${planId}','${diaId}',${i},'nombre',this.value)">
+    const esCarrera = e.tipo==='carrera';
+    const pasHayValor = !isNaN(parseFloat(e.pasadas)) && parseFloat(e.pasadas)>0;
+    const camposMedidas = esCarrera ? `
+      <input class="ej-input center" type="text" value="${esc(e.pasadas||'')}" placeholder="Pasadas"
+        title="Cantidad de pasadas/repeticiones objetivo (vacío si es carrera continua)"
+        oninput="updatePlanEjField('${planId}','${diaId}',${i},'pasadas',this.value)">
+      <input class="ej-input center" type="text" value="${esc(e.distancia||'')}" placeholder="${pasHayValor?'m/pasada':'km'}"
+        title="${pasHayValor?'Metros por pasada':'Kilómetros objetivo'}"
+        oninput="updatePlanEjField('${planId}','${diaId}',${i},'distancia',this.value)">
+      <input class="ej-input center" type="text" value="${esc(e.duracionCarrera||'')}" placeholder="min"
+        title="Duración objetivo del bloque de carrera (min)"
+        oninput="updatePlanEjField('${planId}','${diaId}',${i},'duracionCarrera',this.value)">
+      <input class="ej-input rir" type="text" value="${esc(e.rpeCarrera||'')}" placeholder="RPE"
+        title="RPE objetivo del bloque de carrera"
+        oninput="updatePlanEjField('${planId}','${diaId}',${i},'rpeCarrera',this.value)">` : `
       <input class="ej-input center" type="text" value="${esc(e.series||'')}" placeholder="—"
         oninput="updatePlanEjField('${planId}','${diaId}',${i},'series',this.value)">
       <input class="ej-input center" type="text" value="${esc(e.reps||'')}" placeholder="—"
@@ -6201,15 +6289,23 @@ function buildPlanEjTable(planId,diaId,ejercicios){
       <input class="ej-input center" type="text" value="${esc(e.kg||'')}" placeholder="—"
         oninput="updatePlanEjField('${planId}','${diaId}',${i},'kg',this.value)">
       <input class="ej-input rir" type="text" value="${esc(e.rir||'')}" placeholder="—" title="RIR/RPE objetivo — esto es lo que se busca en la sesión, no lo que se hizo"
-        oninput="updatePlanEjField('${planId}','${diaId}',${i},'rir',this.value)">
+        oninput="updatePlanEjField('${planId}','${diaId}',${i},'rir',this.value)">`;
+    return `
+    <div class="ej-row ${e.bloque?'ej-grouped':''}${esCarrera?' ej-carrera':''}" id="pejrow_${planId}_${diaId}_${i}">
+      <input class="ej-input bloque" type="text" value="${esc(e.bloque||'')}" placeholder="—" maxlength="2" title="Superserie"
+        oninput="updatePlanEjField('${planId}','${diaId}',${i},'bloque',this.value)">
+      <input class="ej-input ej-name-input" type="text" value="${esc(e.nombre||'')}" placeholder="Ejercicio" autocomplete="off"
+        oninput="updatePlanEjField('${planId}','${diaId}',${i},'nombre',this.value)">
+      ${camposMedidas}
       <input class="ej-input nota" type="text" value="${esc(e.nota||'')}" placeholder="notas…"
         oninput="updatePlanEjField('${planId}','${diaId}',${i},'nota',this.value)">
       <div class="ej-row-actions">
         <button class="btn-ej-star ${e.track?'active':''}" onclick="toggleEjTrack('${planId}','${diaId}',${i})" title="${e.track?'Dejar de trackear la progresión de este ejercicio':'Trackear la progresión de este ejercicio'}">${e.track?'⭐':'☆'}</button>
+        <button class="btn-ej-tipo ${esCarrera?'active':''}" onclick="toggleEjTipoPlan('${planId}','${diaId}',${i})" title="${esCarrera?'Volver a ejercicio de fuerza':'Convertir en ejercicio de carrera/cardio'}">🏃</button>
         <span class="ej-drag-handle" data-kind="plan" data-plan="${planId}" data-dia="${diaId}" title="Mantené y arrastrá para reordenar">⠿</span>
         <button class="btn-ej-del" onclick="removeEjFromPlanDia('${planId}','${diaId}',${i})" title="Eliminar">×</button>
       </div>
-    </div>${vinculadoCon.length?`<div class="ej-hist-line" style="color:var(--accent,#4a7dfc);">🔗 Vinculado con ${esc(vinculadoCon.join(', '))} — progresión combinada en "Progresión de ejercicios clave"</div>`:''}${e.track&&e.historial&&e.historial.length?`<div class="ej-hist-line">📈 ${e.historial.slice(-4).map(h=>`${formatFechaCorta(h.fecha)}: ${h.series||'—'}×${h.reps||'—'} ${h.kg?h.kg+'kg':''}${h.rir?' RIR'+h.rir:''}`).join(' · ')}</div>`:''}`;
+    </div>${vinculadoCon.length?`<div class="ej-hist-line" style="color:var(--accent,#4a7dfc);">🔗 Vinculado con ${esc(vinculadoCon.join(', '))} — progresión combinada en "Progresión de ejercicios clave"</div>`:''}${e.track&&e.historial&&e.historial.length?`<div class="ej-hist-line">📈 ${e.historial.slice(-4).map(h=>`${formatFechaCorta(h.fecha)}: ${fmtHistLinea(h)}`).join(' · ')}</div>`:''}`;
   }).join('');
   return `<div class="ej-table-wrap" id="pejtable_${planId}_${diaId}">
     <div class="ej-table-head">
@@ -6224,6 +6320,16 @@ function toggleEjTrack(planId,diaId,idx){
   dia.ejercicios[idx].track = !dia.ejercicios[idx].track;
   saveDB(); renderTab();
 }
+function toggleEjTipoPlan(planId,diaId,idx){
+  const {dia}=findPlanDia(planId,diaId); if(!dia||!dia.ejercicios||!dia.ejercicios[idx]) return;
+  const ej=dia.ejercicios[idx];
+  ej.tipo = ej.tipo==='carrera' ? 'fuerza' : 'carrera';
+  dia.actualizado=new Date().toISOString();
+  saveDB();
+  const tableEl=document.getElementById('pejtable_'+planId+'_'+diaId);
+  if(tableEl) tableEl.outerHTML=buildPlanEjTable(planId,diaId,dia.ejercicios);
+  else renderTab();
+}
 
 function updatePlanEjField(planId,diaId,idx,field,val){
   const {dia}=findPlanDia(planId,diaId);
@@ -6235,7 +6341,7 @@ function updatePlanEjField(planId,diaId,idx,field,val){
 function addEjToPlanDia(planId,diaId){
   const {dia}=findPlanDia(planId,diaId); if(!dia) return;
   if(!dia.ejercicios) dia.ejercicios=[];
-  dia.ejercicios.push({id:uid(),nombre:'',series:'',reps:'',kg:'',nota:'',bloque:''});
+  dia.ejercicios.push({id:uid(),nombre:'',series:'',reps:'',kg:'',nota:'',bloque:'',tipo:'fuerza',distancia:'',pasadas:'',duracionCarrera:'',rpeCarrera:''});
   dia.actualizado=new Date().toISOString();
   saveDB();
   const tableEl=document.getElementById('pejtable_'+planId+'_'+diaId);
@@ -6568,6 +6674,7 @@ function renderEvolucion(panel){
   const rpeData   = sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:getRpeSesion(s)}));
   const ciData    = sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:getCargaInterna(s)}));
   const ceData    = sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:calcVolumenSesion(s.ejercicios)}));
+  const distCarreraData = sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:calcDistanciaSesionKm(s.ejercicios)}));
   const rpeClubData = sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:getRpeClub(s)}));
 
   const hayDolor = dolorDiariaData.some(d=>d.value!=null) || dolorEntrenoData.some(d=>d.value!=null);
@@ -6643,6 +6750,12 @@ function renderEvolucion(panel){
         <div style="font-size:11px;color:var(--text-3);margin-bottom:8px;">Cuánto trabajo mecánico hizo: suma de series × reps × kg de todos los ejercicios de la sesión (si un ejercicio no tiene kg cargado, cuenta como peso corporal). Sirve para ver si la progresión de carga real acompaña a cómo lo va sintiendo (Carga interna).</div>
         ${buildBarChartSVG([{name:'Carga externa',color:'var(--blue-chip)',data:ceData}],{emptyMsg:'Cargá series, reps y kg en los ejercicios de las sesiones para ver este gráfico.'})}
       </div>`:''}
+      ${evoChartEnabled('distanciaCarrera')?`
+      <div class="home-card">
+        <div class="home-card-title">🏃 Carga externa carrera (km por sesión)</div>
+        <div style="font-size:11px;color:var(--text-3);margin-bottom:8px;">Suma de kilómetros corridos por sesión (continuos o pasadas×metros). Útil para progresión de RTP — ver que el aumento semanal sea gradual.</div>
+        ${buildBarChartSVG([{name:'Distancia',color:'var(--green,#2ea043)',data:distCarreraData}],{emptyMsg:'Cargá ejercicios tipo carrera (🏃) en las sesiones para ver este gráfico.'})}
+      </div>`:''}
       ${evoChartEnabled('acwr')?`
       <div class="home-card">
         <div class="home-card-title">🚦 Carga aguda:crónica (ACWR) — riesgo de sobrecarga</div>
@@ -6696,9 +6809,11 @@ function renderEvolucion(panel){
 
 // ══════════════════ EXPORTAR RUTINA A PDF (vía diálogo de impresión) ════════
 function rtExRow(e,label){
+  const meta = e.tipo==='carrera' ? esc(fmtCarreraResumen(e))
+    : [e.series?`${esc(e.series)} series`:'',e.reps?`${esc(e.reps)} reps`:'',e.kg?`${esc(e.kg)}`:'',e.rir?`RIR ${esc(e.rir)}`:''].filter(Boolean).join(' · ');
   return `<div class="rt-ex">
-    <div class="rt-ex-name">${label?`<span class="rt-ex-badge">${esc(label)}</span>`:''}${esc(e.nombre||'')}</div>
-    <div class="rt-ex-meta">${[e.series?`${esc(e.series)} series`:'',e.reps?`${esc(e.reps)} reps`:'',e.kg?`${esc(e.kg)}`:'',e.rir?`RIR ${esc(e.rir)}`:''].filter(Boolean).join(' · ')}</div>
+    <div class="rt-ex-name">${label?`<span class="rt-ex-badge">${esc(label)}</span>`:''}${e.tipo==='carrera'?'🏃 ':''}${esc(e.nombre||'')}</div>
+    <div class="rt-ex-meta">${meta}</div>
     ${e.nota?`<div class="rt-ex-nota">${esc(e.nota)}</div>`:''}
   </div>`;
 }
