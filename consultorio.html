@@ -3174,6 +3174,7 @@ const EVOLUCION_CHARTS = [
   {id:'cargaInterna', label:'Carga interna (RPE × duración)'},
   {id:'cargaExterna', label:'Carga externa (volumen: series×reps×kg)'},
   {id:'distanciaCarrera', label:'Carga externa carrera (km por sesión)'},
+  {id:'cargaInternaCarrera', label:'Carga interna carrera (RPE × duración, solo bloques de carrera)', nota:'Distinta de Carga interna general: no se mezcla con fuerza.'},
   {id:'acwr', label:'Carga aguda:crónica (ACWR)'},
   {id:'rpeClub', label:'RPE entrenamiento club', nota:'Solo aplica a pacientes marcados como futbolistas.'},
   {id:'lsi', label:'LSI% — evaluaciones'},
@@ -5619,6 +5620,39 @@ function calcDistanciaSesionKm(ejercicios){
   (ejercicios||[]).forEach(e=>{ const d=calcDistanciaEjKm(e); if(d>0){ km+=d; conDatos=true; } });
   return conDatos?Math.round(km*100)/100:null;
 }
+// Duración total (min) de los bloques de carrera de una sesión (suma de duracionCarrera de cada ejercicio tipo carrera)
+function calcDuracionCarreraSesion(ejercicios){
+  let dur=0, conDatos=false;
+  (ejercicios||[]).forEach(e=>{
+    if(e.tipo!=='carrera') return;
+    const d=parseFloat(e.duracionCarrera);
+    if(!isNaN(d)&&d>0){ dur+=d; conDatos=true; }
+  });
+  return conDatos?dur:null;
+}
+// Carga interna específica de carrera (método Foster por bloque, sumado): RPE_bloque × duración_bloque de cada
+// ejercicio tipo carrera. Distinto de getCargaInterna(s), que usa el RPE/duración de TODA la sesión (mezclado con fuerza).
+// Devuelve {carga, duracion, rpeProm} o null si no hay datos.
+function calcCargaInternaCarreraSesion(ejercicios){
+  let carga=0, dur=0, conDatos=false;
+  (ejercicios||[]).forEach(e=>{
+    if(e.tipo!=='carrera') return;
+    const rpe=parseFloat(e.rpeCarrera), d=parseFloat(e.duracionCarrera);
+    if(!isNaN(rpe)&&!isNaN(d)&&d>0){ carga+=rpe*d; dur+=d; conDatos=true; }
+  });
+  if(!conDatos) return null;
+  return {carga:Math.round(carga), duracion:dur, rpeProm:dur>0?Math.round((carga/dur)*10)/10:null};
+}
+// Ritmo promedio de la sesión (min:seg por km), a partir del km total y la duración total de carrera.
+// Es un promedio de sesión (no por-repetición, todavía no se captura tiempo por pasada).
+function calcPaceSesion(km, durMin){
+  if(!km || km<=0 || !durMin || durMin<=0) return null;
+  const paceMinPerKm = durMin/km;
+  const min=Math.floor(paceMinPerKm), seg=Math.round((paceMinPerKm-min)*60);
+  const segFmt = seg===60?0:seg;
+  const minFmt = seg===60?min+1:min;
+  return `${minFmt}:${String(segFmt).padStart(2,'0')}/km`;
+}
 // Texto resumen de un ejercicio 'carrera' para mostrar en filas/PDF (ej. "5 pasadas × 100m (500m)" o "5 km")
 function fmtCarreraResumen(e){
   const pas=parseFloat(e.pasadas), dist=parseFloat(e.distancia), dur=parseFloat(e.duracionCarrera), rpe=parseFloat(e.rpeCarrera);
@@ -6605,7 +6639,7 @@ function buildBarChartSVG(seriesArr, opts={}){
   const n=labels.length;
   const allVals=seriesArr.flatMap(s=>s.data.map(d=>d.value)).filter(v=>v!=null && !isNaN(v));
   if(n<1 || allVals.length<1) return `<div class="home-empty-mini">${opts.emptyMsg||'Necesitás al menos 1 registro con datos para graficar.'}</div>`;
-  const w=560,h=170,padL=34,padR=14,padT=14,padB=22;
+  const w=560,h=170,padL=34,padR=14,padT=opts.showValues?26:14,padB=22;
   const min=opts.min!=null?opts.min:Math.min(0,...allVals);
   const max=opts.max!=null?opts.max:Math.max(...allVals);
   const range=(max-min)||1;
@@ -6634,6 +6668,11 @@ function buildBarChartSVG(seriesArr, opts={}){
       const y=h-padB-((d.value-min)/range)*plotH;
       const barH=Math.max((h-padB)-y,0);
       bars+=`<rect x="${x.toFixed(1)}" y="${Math.min(y,h-padB).toFixed(1)}" width="${barW.toFixed(1)}" height="${barH.toFixed(1)}" rx="2" fill="${d.color||s.color}"><title>${esc(s.name?s.name+': ':'')}${esc(lab)}: ${d.value}</title></rect>`;
+      if(opts.showValues){
+        const valTxt=opts.valueFormat?opts.valueFormat(d.value):d.value;
+        const vy=Math.max(Math.min(y,h-padB)-4,10);
+        bars+=`<text x="${(x+barW/2).toFixed(1)}" y="${vy.toFixed(1)}" font-size="9" text-anchor="middle" fill="${d.color||s.color}" font-family="Inter,sans-serif" font-weight="600">${esc(String(valTxt))}</text>`;
+      }
     });
   });
 
@@ -6675,7 +6714,23 @@ function renderEvolucion(panel){
   const ciData    = sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:getCargaInterna(s)}));
   const ceData    = sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:calcVolumenSesion(s.ejercicios)}));
   const distCarreraData = sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:calcDistanciaSesionKm(s.ejercicios)}));
+  const ciCarreraData = sesiones.map(s=>{ const c=calcCargaInternaCarreraSesion(s.ejercicios); return {label:formatFechaCorta(s.fecha), value:c?c.carga:null}; });
   const rpeClubData = sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:getRpeClub(s)}));
+  // Detalle día a día de carrera (para la tabla): solo sesiones con datos de carrera
+  const carreraDetalle = sesiones.map(s=>{
+    const km=calcDistanciaSesionKm(s.ejercicios);
+    const dur=calcDuracionCarreraSesion(s.ejercicios);
+    const ci=calcCargaInternaCarreraSesion(s.ejercicios);
+    if(km==null && dur==null && !ci) return null;
+    return {
+      fecha: formatFechaCorta(s.fecha),
+      km: km!=null?km:null,
+      dur: dur!=null?dur:null,
+      rpe: ci?ci.rpeProm:null,
+      carga: ci?ci.carga:null,
+      pace: calcPaceSesion(km, dur)
+    };
+  }).filter(Boolean);
 
   const hayDolor = dolorDiariaData.some(d=>d.value!=null) || dolorEntrenoData.some(d=>d.value!=null);
   const acwrData = computeACWRSemanal(sesiones, ep.fechaInicio||p.fechaInicio);
@@ -6754,7 +6809,39 @@ function renderEvolucion(panel){
       <div class="home-card">
         <div class="home-card-title">🏃 Carga externa carrera (km por sesión)</div>
         <div style="font-size:11px;color:var(--text-3);margin-bottom:8px;">Suma de kilómetros corridos por sesión (continuos o pasadas×metros). Útil para progresión de RTP — ver que el aumento semanal sea gradual.</div>
-        ${buildBarChartSVG([{name:'Distancia',color:'var(--green,#2ea043)',data:distCarreraData}],{emptyMsg:'Cargá ejercicios tipo carrera (🏃) en las sesiones para ver este gráfico.'})}
+        ${buildBarChartSVG([{name:'Distancia',color:'var(--green,#2ea043)',data:distCarreraData}],{emptyMsg:'Cargá ejercicios tipo carrera (🏃) en las sesiones para ver este gráfico.',showValues:true,valueFormat:v=>v+'km'})}
+      </div>`:''}
+      ${evoChartEnabled('cargaInternaCarrera')?`
+      <div class="home-card">
+        <div class="home-card-title">🔥🏃 Carga interna carrera (RPE × duración, solo bloques de carrera)</div>
+        <div style="font-size:11px;color:var(--text-3);margin-bottom:8px;">Igual método que Carga interna general (Foster), pero calculado solo con el RPE y la duración de los bloques de carrera — no se mezcla con el trabajo de fuerza de la misma sesión.</div>
+        ${buildBarChartSVG([{name:'Carga interna carrera',color:'var(--orange)',data:ciCarreraData}],{emptyMsg:'Cargá RPE y duración en los bloques de carrera (🏃) para ver este gráfico.',showValues:true})}
+      </div>`:''}
+      ${(evoChartEnabled('distanciaCarrera')||evoChartEnabled('cargaInternaCarrera'))&&carreraDetalle.length?`
+      <div class="home-card" style="grid-column:1/-1;">
+        <div class="home-card-title">📋 Carrera — detalle día a día</div>
+        <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead><tr style="border-bottom:1px solid var(--border);">
+            <th style="text-align:left;padding:6px 8px;color:var(--text-3);">Fecha</th>
+            <th style="text-align:right;padding:6px 8px;color:var(--text-3);">Km</th>
+            <th style="text-align:right;padding:6px 8px;color:var(--text-3);">Min</th>
+            <th style="text-align:right;padding:6px 8px;color:var(--text-3);">Ritmo</th>
+            <th style="text-align:right;padding:6px 8px;color:var(--text-3);">RPE</th>
+            <th style="text-align:right;padding:6px 8px;color:var(--text-3);">Carga int.</th>
+          </tr></thead>
+          <tbody>
+            ${carreraDetalle.map(d=>`<tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:6px 8px;">${esc(d.fecha)}</td>
+              <td style="text-align:right;padding:6px 8px;">${d.km!=null?d.km:'—'}</td>
+              <td style="text-align:right;padding:6px 8px;">${d.dur!=null?d.dur:'—'}</td>
+              <td style="text-align:right;padding:6px 8px;">${d.pace?esc(d.pace):'—'}</td>
+              <td style="text-align:right;padding:6px 8px;">${d.rpe!=null?d.rpe:'—'}</td>
+              <td style="text-align:right;padding:6px 8px;">${d.carga!=null?d.carga:'—'}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+        </div>
       </div>`:''}
       ${evoChartEnabled('acwr')?`
       <div class="home-card">
