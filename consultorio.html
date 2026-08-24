@@ -3174,7 +3174,8 @@ const EVOLUCION_CHARTS = [
   {id:'cargaInterna', label:'Carga interna (RPE × duración)'},
   {id:'cargaExterna', label:'Carga externa (volumen: series×reps×kg)'},
   {id:'distanciaCarrera', label:'Carga externa carrera (km por sesión)'},
-  {id:'cargaInternaCarrera', label:'Carga interna carrera (RPE × duración, solo bloques de carrera)', nota:'Distinta de Carga interna general: no se mezcla con fuerza.'},
+  {id:'metrosCarreraSemanal', label:'Metros de carrera por semana (lun-dom)'},
+  {id:'acwrCarrera', label:'Carga aguda:crónica de carrera (ACWR sobre metros)'},
   {id:'acwr', label:'Carga aguda:crónica (ACWR)'},
   {id:'rpeClub', label:'RPE entrenamiento club', nota:'Solo aplica a pacientes marcados como futbolistas.'},
   {id:'lsi', label:'LSI% — evaluaciones'},
@@ -5620,38 +5621,10 @@ function calcDistanciaSesionKm(ejercicios){
   (ejercicios||[]).forEach(e=>{ const d=calcDistanciaEjKm(e); if(d>0){ km+=d; conDatos=true; } });
   return conDatos?Math.round(km*100)/100:null;
 }
-// Duración total (min) de los bloques de carrera de una sesión (suma de duracionCarrera de cada ejercicio tipo carrera)
-function calcDuracionCarreraSesion(ejercicios){
-  let dur=0, conDatos=false;
-  (ejercicios||[]).forEach(e=>{
-    if(e.tipo!=='carrera') return;
-    const d=parseFloat(e.duracionCarrera);
-    if(!isNaN(d)&&d>0){ dur+=d; conDatos=true; }
-  });
-  return conDatos?dur:null;
-}
-// Carga interna específica de carrera (método Foster por bloque, sumado): RPE_bloque × duración_bloque de cada
-// ejercicio tipo carrera. Distinto de getCargaInterna(s), que usa el RPE/duración de TODA la sesión (mezclado con fuerza).
-// Devuelve {carga, duracion, rpeProm} o null si no hay datos.
-function calcCargaInternaCarreraSesion(ejercicios){
-  let carga=0, dur=0, conDatos=false;
-  (ejercicios||[]).forEach(e=>{
-    if(e.tipo!=='carrera') return;
-    const rpe=parseFloat(e.rpeCarrera), d=parseFloat(e.duracionCarrera);
-    if(!isNaN(rpe)&&!isNaN(d)&&d>0){ carga+=rpe*d; dur+=d; conDatos=true; }
-  });
-  if(!conDatos) return null;
-  return {carga:Math.round(carga), duracion:dur, rpeProm:dur>0?Math.round((carga/dur)*10)/10:null};
-}
-// Ritmo promedio de la sesión (min:seg por km), a partir del km total y la duración total de carrera.
-// Es un promedio de sesión (no por-repetición, todavía no se captura tiempo por pasada).
-function calcPaceSesion(km, durMin){
-  if(!km || km<=0 || !durMin || durMin<=0) return null;
-  const paceMinPerKm = durMin/km;
-  const min=Math.floor(paceMinPerKm), seg=Math.round((paceMinPerKm-min)*60);
-  const segFmt = seg===60?0:seg;
-  const minFmt = seg===60?min+1:min;
-  return `${minFmt}:${String(segFmt).padStart(2,'0')}/km`;
+// Metros de carrera de una sesión (para agrupados semanales de volumen/ACWR). 0 si no corrió ese día.
+function getMetrosCarreraSesion(s){
+  const km=calcDistanciaSesionKm(s.ejercicios);
+  return km?Math.round(km*1000):0;
 }
 // Texto resumen de un ejercicio 'carrera' para mostrar en filas/PDF (ej. "5 pasadas × 100m (500m)" o "5 km")
 function fmtCarreraResumen(e){
@@ -6595,12 +6568,15 @@ function getCargaInternaTotal(s){
   if(ci==null && cc==null) return null;
   return (ci||0)+(cc||0);
 }
-// Carga aguda:crónica (ACWR, método de promedio móvil de Hulin/Gabbett): agrupa la carga
-// interna total por semana (lunes a domingo) desde el inicio del episodio, y compara la
-// carga de cada semana ("aguda") contra el promedio de esa semana + las 3 anteriores
-// ("crónica"). Zona óptima consensuada en la literatura de ciencias del deporte: 0.8-1.3.
-// Por debajo: probable desentrenamiento. Por encima: pico de carga, mayor riesgo de lesión.
-function computeACWRSemanal(sesiones, fechaInicio){
+// Carga aguda:crónica (ACWR, método de promedio móvil de Hulin/Gabbett): agrupa una métrica de carga
+// por semana (lunes a domingo) desde el inicio del episodio, y compara la carga de cada semana ("aguda")
+// contra el promedio de esa semana + las 3 anteriores ("crónica"). Zona óptima consensuada en la
+// literatura de ciencias del deporte: 0.8-1.3. Por debajo: probable desentrenamiento. Por encima: pico
+// de carga, mayor riesgo de lesión. getValorSesion(s) define qué métrica se suma por sesión (por defecto,
+// carga interna total consultorio+club); se puede pasar otra función (ej. metros de carrera) para reusar
+// el mismo agrupamiento semanal con otra carga.
+function computeACWRSemanal(sesiones, fechaInicio, getValorSesion){
+  const getVal = getValorSesion || getCargaInternaTotal;
   const conFecha=(sesiones||[]).filter(s=>s.fecha);
   if(!conFecha.length) return [];
   const inicioRef=fechaInicio?new Date(fechaInicio+'T00:00:00'):new Date(conFecha[0].fecha+'T00:00:00');
@@ -6611,7 +6587,7 @@ function computeACWRSemanal(sesiones, fechaInicio){
   let guard=0;
   while(cur<=fin && guard<104){ // tope de 2 años para evitar loops infinitos
     const inicioYmd=ymd(cur), finYmd=ymd(addDays(cur,6));
-    const total=conFecha.filter(s=>s.fecha>=inicioYmd && s.fecha<=finYmd).reduce((sum,s)=>sum+(getCargaInternaTotal(s)||0),0);
+    const total=conFecha.filter(s=>s.fecha>=inicioYmd && s.fecha<=finYmd).reduce((sum,s)=>sum+(getVal(s)||0),0);
     semanas.push({inicio:inicioYmd, total});
     cur=addDays(cur,7); guard++;
   }
@@ -6622,6 +6598,26 @@ function computeACWRSemanal(sesiones, fechaInicio){
     const ratio=cronica>0?Math.round((w.total/cronica)*100)/100:null;
     return {label:formatFechaCorta(w.inicio), value:ratio, color:acwrColor(ratio)};
   });
+}
+// Metros totales de carrera por semana calendario (lunes a domingo), mismo agrupamiento que ACWR.
+// Devuelve [{label, value}] con value en metros (redondeado), para graficar como barras.
+function computeMetrosCarreraSemanal(sesiones, fechaInicio){
+  const conFecha=(sesiones||[]).filter(s=>s.fecha);
+  if(!conFecha.length) return [];
+  const inicioRef=fechaInicio?new Date(fechaInicio+'T00:00:00'):new Date(conFecha[0].fecha+'T00:00:00');
+  const ultimaFecha=conFecha.reduce((max,s)=>s.fecha>max?s.fecha:max, conFecha[0].fecha);
+  let cur=getWeekMon(inicioRef);
+  const fin=getWeekMon(new Date(ultimaFecha+'T00:00:00'));
+  const semanas=[];
+  let guard=0;
+  while(cur<=fin && guard<104){
+    const inicioYmd=ymd(cur), finYmd=ymd(addDays(cur,6));
+    const metros=conFecha.filter(s=>s.fecha>=inicioYmd && s.fecha<=finYmd)
+      .reduce((sum,s)=>sum+((calcDistanciaSesionKm(s.ejercicios)||0)*1000),0);
+    semanas.push({label:formatFechaCorta(inicioYmd), value:metros>0?Math.round(metros):null});
+    cur=addDays(cur,7); guard++;
+  }
+  return semanas;
 }
 // Carga externa (índice de volumen): suma de series×reps×kg (si no hay kg numérico, cuenta como peso corporal = 1)
 function calcVolumenSesion(ejercicios){
@@ -6714,23 +6710,9 @@ function renderEvolucion(panel){
   const ciData    = sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:getCargaInterna(s)}));
   const ceData    = sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:calcVolumenSesion(s.ejercicios)}));
   const distCarreraData = sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:calcDistanciaSesionKm(s.ejercicios)}));
-  const ciCarreraData = sesiones.map(s=>{ const c=calcCargaInternaCarreraSesion(s.ejercicios); return {label:formatFechaCorta(s.fecha), value:c?c.carga:null}; });
   const rpeClubData = sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:getRpeClub(s)}));
-  // Detalle día a día de carrera (para la tabla): solo sesiones con datos de carrera
-  const carreraDetalle = sesiones.map(s=>{
-    const km=calcDistanciaSesionKm(s.ejercicios);
-    const dur=calcDuracionCarreraSesion(s.ejercicios);
-    const ci=calcCargaInternaCarreraSesion(s.ejercicios);
-    if(km==null && dur==null && !ci) return null;
-    return {
-      fecha: formatFechaCorta(s.fecha),
-      km: km!=null?km:null,
-      dur: dur!=null?dur:null,
-      rpe: ci?ci.rpeProm:null,
-      carga: ci?ci.carga:null,
-      pace: calcPaceSesion(km, dur)
-    };
-  }).filter(Boolean);
+  const metrosSemanalData = computeMetrosCarreraSemanal(sesiones, ep.fechaInicio||p.fechaInicio);
+  const acwrCarreraData = computeACWRSemanal(sesiones, ep.fechaInicio||p.fechaInicio, getMetrosCarreraSesion);
 
   const hayDolor = dolorDiariaData.some(d=>d.value!=null) || dolorEntrenoData.some(d=>d.value!=null);
   const acwrData = computeACWRSemanal(sesiones, ep.fechaInicio||p.fechaInicio);
@@ -6811,37 +6793,17 @@ function renderEvolucion(panel){
         <div style="font-size:11px;color:var(--text-3);margin-bottom:8px;">Suma de kilómetros corridos por sesión (continuos o pasadas×metros). Útil para progresión de RTP — ver que el aumento semanal sea gradual.</div>
         ${buildBarChartSVG([{name:'Distancia',color:'var(--green,#2ea043)',data:distCarreraData}],{emptyMsg:'Cargá ejercicios tipo carrera (🏃) en las sesiones para ver este gráfico.',showValues:true,valueFormat:v=>v+'km'})}
       </div>`:''}
-      ${evoChartEnabled('cargaInternaCarrera')?`
+      ${evoChartEnabled('metrosCarreraSemanal')?`
       <div class="home-card">
-        <div class="home-card-title">🔥🏃 Carga interna carrera (RPE × duración, solo bloques de carrera)</div>
-        <div style="font-size:11px;color:var(--text-3);margin-bottom:8px;">Igual método que Carga interna general (Foster), pero calculado solo con el RPE y la duración de los bloques de carrera — no se mezcla con el trabajo de fuerza de la misma sesión.</div>
-        ${buildBarChartSVG([{name:'Carga interna carrera',color:'var(--orange)',data:ciCarreraData}],{emptyMsg:'Cargá RPE y duración en los bloques de carrera (🏃) para ver este gráfico.',showValues:true})}
+        <div class="home-card-title">📏 Metros de carrera por semana (lun-dom)</div>
+        <div style="font-size:11px;color:var(--text-3);margin-bottom:8px;">Volumen total corrido cada semana calendario. Regla práctica de progresión: no subir más de ~10% respecto de la semana anterior.</div>
+        ${buildBarChartSVG([{name:'Metros/semana',color:'var(--green,#2ea043)',data:metrosSemanalData}],{emptyMsg:'Cargá ejercicios tipo carrera (🏃) en las sesiones para ver este gráfico.',showValues:true,valueFormat:v=>v+'m'})}
       </div>`:''}
-      ${(evoChartEnabled('distanciaCarrera')||evoChartEnabled('cargaInternaCarrera'))&&carreraDetalle.length?`
-      <div class="home-card" style="grid-column:1/-1;">
-        <div class="home-card-title">📋 Carrera — detalle día a día</div>
-        <div style="overflow-x:auto;">
-        <table style="width:100%;border-collapse:collapse;font-size:12px;">
-          <thead><tr style="border-bottom:1px solid var(--border);">
-            <th style="text-align:left;padding:6px 8px;color:var(--text-3);">Fecha</th>
-            <th style="text-align:right;padding:6px 8px;color:var(--text-3);">Km</th>
-            <th style="text-align:right;padding:6px 8px;color:var(--text-3);">Min</th>
-            <th style="text-align:right;padding:6px 8px;color:var(--text-3);">Ritmo</th>
-            <th style="text-align:right;padding:6px 8px;color:var(--text-3);">RPE</th>
-            <th style="text-align:right;padding:6px 8px;color:var(--text-3);">Carga int.</th>
-          </tr></thead>
-          <tbody>
-            ${carreraDetalle.map(d=>`<tr style="border-bottom:1px solid var(--border);">
-              <td style="padding:6px 8px;">${esc(d.fecha)}</td>
-              <td style="text-align:right;padding:6px 8px;">${d.km!=null?d.km:'—'}</td>
-              <td style="text-align:right;padding:6px 8px;">${d.dur!=null?d.dur:'—'}</td>
-              <td style="text-align:right;padding:6px 8px;">${d.pace?esc(d.pace):'—'}</td>
-              <td style="text-align:right;padding:6px 8px;">${d.rpe!=null?d.rpe:'—'}</td>
-              <td style="text-align:right;padding:6px 8px;">${d.carga!=null?d.carga:'—'}</td>
-            </tr>`).join('')}
-          </tbody>
-        </table>
-        </div>
+      ${evoChartEnabled('acwrCarrera')?`
+      <div class="home-card">
+        <div class="home-card-title">🚦🏃 Carga aguda:crónica de carrera (sobre metros)</div>
+        <div style="font-size:11px;color:var(--text-3);margin-bottom:8px;">Mismo método que el ACWR general (semana actual vs. promedio de las últimas 4), pero calculado solo con metros corridos — no se mezcla con la carga de fuerza. Verde = zona óptima (0.8-1.3). Rojo = pico de volumen, más riesgo.</div>
+        ${buildBarChartSVG([{name:'ACWR carrera',data:acwrCarreraData}],{min:0,max:2,bandMin:0.8,bandMax:1.3,bandLabel:'zona óptima',emptyMsg:'Necesitás al menos un par de semanas con carrera cargada para ver este gráfico.'})}
       </div>`:''}
       ${evoChartEnabled('acwr')?`
       <div class="home-card">
