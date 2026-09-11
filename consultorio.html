@@ -4634,7 +4634,7 @@ function updateDxBadge(val){
 function updateField(key,val){
   const p=getPatient(currentPatientId);if(!p)return;
   p[key]=val;clearTimeout(autoSaveTimer);
-  autoSaveTimer=setTimeout(()=>{saveDB();renderPatientList();if(['fechaInicio','alerta','nombre'].includes(key))renderPatient();},600);
+  autoSaveTimer=setTimeout(()=>{saveDB();renderPatientList();},600);
 }
 // Para campos clínicos que pertenecen al episodio (dx, estructura, cirugía, fechaInicio, etc.)
 // en vez de al paciente entero — así no se mezclan entre episodios distintos.
@@ -4642,7 +4642,7 @@ function updateEpField(key,val){
   const p=getPatient(currentPatientId);if(!p)return;
   const ep=getEpData(p);
   ep[key]=val;clearTimeout(autoSaveTimer);
-  autoSaveTimer=setTimeout(()=>{saveDB();renderPatientList();if(['fechaInicio','fase','dx'].includes(key))renderPatient();},600);
+  autoSaveTimer=setTimeout(()=>{saveDB();renderPatientList();},600);
 }
 
 // ── SESIONES ──────────────────────────────────────────────────────────────────
