@@ -12,6 +12,7 @@
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script>
 const firebaseConfig = {
   apiKey: "AIzaSyC-H1Q7ganQheCNS5E-GfW9D0V04s-mneA",
@@ -23,9 +24,11 @@ const firebaseConfig = {
   appId: "1:479178186370:web:e30e7089b64cd966239e9b"
 };
 firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
 const dbRef = firebase.database().ref('consultorio');
 const turnosRef = firebase.database().ref('turnos');
 const pendRef = firebase.database().ref('consultorio_pendientes');
+const usuariosRef = firebase.database().ref('usuarios');
 </script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -80,6 +83,9 @@ input,textarea,select{font-family:'Inter',sans-serif;}
 .pi-info{flex:1;min-width:0;}
 .pi-name{font-size:13px;font-weight:600;color:rgba(255,255,255,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .pi-sub{font-size:11px;color:rgba(255,255,255,.4);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pat-group-head{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:9px 16px 6px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:rgba(255,255,255,.5);cursor:pointer;user-select:none;}
+.pat-group-head:hover{color:rgba(255,255,255,.85);}
+.pat-group-count{background:rgba(255,255,255,.12);color:rgba(255,255,255,.7);font-size:10px;font-weight:700;border-radius:20px;padding:1px 7px;}
 .pi-days{font-size:10px;font-weight:700;color:var(--orange);background:rgba(107,142,92,.15);padding:2px 6px;border-radius:20px;flex-shrink:0;margin-left:6px;}
 .empty-list{padding:32px 16px;text-align:center;color:rgba(255,255,255,.3);font-size:13px;}
 
@@ -622,10 +628,11 @@ input,textarea,select{font-family:'Inter',sans-serif;}
       </svg>
     </div>
     <h2>VORA</h2>
-    <p>Ingresá la contraseña para acceder.</p>
-    <input type="password" id="authPassInput" placeholder="Contraseña" autocomplete="off">
-    <div id="authError" class="auth-gate-error">Contraseña incorrecta. Probá de nuevo.</div>
-    <button type="submit">Entrar</button>
+    <p>Ingresá con tu cuenta para acceder.</p>
+    <input type="email" id="authEmailInput" placeholder="Email" autocomplete="username">
+    <input type="password" id="authPassInput" placeholder="Contraseña" autocomplete="current-password">
+    <div id="authError" class="auth-gate-error">Email o contraseña incorrectos.</div>
+    <button type="submit" id="authSubmitBtn">Entrar</button>
   </form>
 </div>
 
@@ -1952,11 +1959,16 @@ function calcularScoresCuestionario(tipoId, respuestas) {
     <div class="patient-list" id="patientList">
       <div class="empty-list">Todavía no hay pacientes</div>
     </div>
-    <div class="sidebar-footer">
+    <div class="sidebar-footer" id="sidebarFooter">
       <button class="btn-backup" onclick="exportDB()">⬇ Exportar</button>
       <button class="btn-backup" onclick="document.getElementById('importFile').click()">⬆ Importar</button>
       <button class="btn-backup" onclick="openCatManager()" title="Editar categorías">⚙</button>
+      <button class="btn-backup" id="btnUsuarios" onclick="openUsuariosManager()" title="Gestionar usuarios" style="display:none">👥</button>
       <input type="file" id="importFile" accept=".json" style="display:none" onchange="importDB(this)">
+    </div>
+    <div class="sidebar-footer" style="padding-top:0;">
+      <div id="sesionInfo" style="font-size:11px;color:rgba(255,255,255,.45);padding:2px 2px 6px;flex-basis:100%;"></div>
+      <button class="btn-backup" onclick="cerrarSesion()">⏻ Cerrar sesión</button>
     </div>
   </aside>
 
@@ -2004,6 +2016,7 @@ function calcularScoresCuestionario(tipoId, respuestas) {
   <div class="modal">
     <div class="modal-header"><h2 id="modalTitle">Nuevo paciente</h2><button class="btn-close" onclick="closeModal()">×</button></div>
     <div class="modal-body">
+      <div class="modal-field" id="mKinesiologoWrap" style="display:none;"><label>Kinesiólogo/a asignado/a</label><select id="mKinesiologo"></select></div>
       <div class="modal-field"><label>Categoría</label><select id="mCategoria"><option value="">Sin categoría</option></select></div>
       <div class="modal-2col">
         <div class="modal-field"><label>Nombre completo *</label><input type="text" id="mNombre" placeholder="Apellido, Nombre"></div>
@@ -2063,6 +2076,39 @@ function calcularScoresCuestionario(tipoId, respuestas) {
     </div>
     <div class="modal-footer">
       <button class="btn-secondary" onclick="closeModalPlantillas()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal usuarios / roles -->
+<div class="modal-overlay" id="modalUsuarios">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <h2>Usuarios</h2>
+      <button class="btn-close" onclick="closeUsuariosManager()">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-bottom:16px;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);margin-bottom:8px;">Dar de alta un usuario</div>
+        <p style="font-size:11.5px;color:var(--text-2);margin-bottom:10px;">
+          Primero hay que crear la cuenta en Firebase Console (Authentication → Users → Add user) con su email y una contraseña provisoria. Después asignale acá el rol con el mismo email.
+        </p>
+        <div class="modal-field" style="margin-bottom:8px;"><input type="email" id="uEmail" placeholder="email@ejemplo.com" style="width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;font-size:13px;font-family:Inter,sans-serif;outline:none;"></div>
+        <div class="modal-field" style="margin-bottom:8px;"><input type="text" id="uNombre" placeholder="Nombre para mostrar" style="width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;font-size:13px;font-family:Inter,sans-serif;outline:none;"></div>
+        <div style="display:flex;gap:8px;">
+          <select id="uRol" style="flex:1;border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;font-size:13px;font-family:Inter,sans-serif;outline:none;">
+            <option value="admin">Admin (ve todos los pacientes)</option>
+            <option value="kinesiologo">Kinesiólogo/a (solo sus pacientes)</option>
+            <option value="secretaria">Secretaria (agenda + contacto)</option>
+          </select>
+          <button onclick="guardarUsuario()" style="padding:9px 16px;background:var(--navy);color:#fff;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;">Guardar</button>
+        </div>
+      </div>
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);margin-bottom:8px;">Usuarios habilitados</div>
+      <div id="usuariosList"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeUsuariosManager()">Cerrar</button>
     </div>
   </div>
 </div>
@@ -2390,7 +2436,13 @@ const DIAS_SHORT = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 
 // ── Firebase ──────────────────────────────────────────────────────────────────
-function saveDB() { dbRef.set(DB); showSaveIndicator(); }
+function saveDB() {
+  if(currentPatientId){
+    const p=getPatient(currentPatientId);
+    if(p) p.lastOpened=Date.now();
+  }
+  dbRef.set(DB); showSaveIndicator();
+}
 function showSaveIndicator() {
   const el = document.getElementById('saveIndicator');
   el.classList.add('show');
@@ -2784,9 +2836,10 @@ function getAllEpisodios(p){
   return [{sesiones:p.sesiones||[],evaluaciones:p.evaluaciones||[],cuestionarios:p.cuestionarios||[],estudios:p.estudios||[],movilidad:p.movilidad||{},estado:p.estado||'tratamiento',fechaInicio:p.fechaInicio||'',dx:p.dx||'',estructura:p.estructura||'',cirugia:p.cirugia||'',cirujano:p.cirujano||'',fase:p.fase||'',antecedentes:p.antecedentes||'',objetivos:p.objetivos||'',medicacion:p.medicacion||'',contra:p.contra||'',dxDetalles:p.dxDetalles||{}}];
 }
 function setPatSearch(v){ currentPatSearch=(v||'').toLowerCase().trim(); renderPatientList(); }
+let collapsedGroups={};
 function renderPatientList(){
   const list=document.getElementById('patientList');
-  let pts=DB.patients||[];
+  let pts=visiblePatients();
   if(currentCatFilter!=='all') pts=pts.filter(p=>p.categoria===currentCatFilter);
   if(currentEstadoFilter!=='todos') pts=pts.filter(p=>getPatientEstado(p)===currentEstadoFilter);
   if(currentPatSearch){
@@ -2798,34 +2851,94 @@ function renderPatientList(){
     });
   }
   if(!pts.length){list.innerHTML='<div class="empty-list">No hay pacientes aquí</div>';return;}
-  list.innerHTML=pts.map(p=>{
-    const epUlt=getUltimoEpisodio(p);
-    const dias=diasDesde(epUlt.fechaInicio||p.fechaInicio);
-    const dotColor=catDotColor(p.categoria);
-    const estado=getPatientEstado(p);
-    return `<div class="patient-item ${p.id===currentPatientId?'active':''}" onclick="selectPatient('${p.id}')">
-      <div class="pi-avatar">${initials(p.nombre)}</div>
-      <div class="pi-info">
-        <div class="pi-name" style="display:flex;align-items:center;gap:5px">
-          ${p.nombre||'Sin nombre'}
-          ${dotColor?`<span class="pi-cat-dot" style="background:${dotColor}"></span>`:''}
-          ${estado==='alta'?'<span style="font-size:10px;color:#1B5E3B;font-weight:700">✓</span>':''}
-          ${estado==='abandono'?'<span style="font-size:10px;color:#aaa">—</span>':''}
+  const byRecency=(a,b)=>(b.lastOpened||0)-(a.lastOpened||0);
+  if(CURRENT_ROLE==='admin'){
+    const groups={};
+    pts.forEach(p=>{ const k=p.kinesiologoKey||'sin_asignar'; (groups[k]=groups[k]||[]).push(p); });
+    const ownKey=emailKey(CURRENT_EMAIL);
+    const orderedKeys=Object.keys(groups).sort((a,b)=>{
+      if(a===ownKey) return -1; if(b===ownKey) return 1;
+      return nombreKinesiologo(a).localeCompare(nombreKinesiologo(b));
+    });
+    list.innerHTML=orderedKeys.map(k=>{
+      const arr=groups[k].slice().sort(byRecency);
+      const isCollapsed = collapsedGroups.hasOwnProperty(k) ? collapsedGroups[k] : (k!==ownKey);
+      return `<div class="pat-group">
+        <div class="pat-group-head" onclick="toggleGrupoKine('${k}')">
+          <span>${isCollapsed?'▸':'▾'} ${esc(nombreKinesiologo(k))}</span>
+          <span class="pat-group-count">${arr.length}</span>
         </div>
-        <div class="pi-sub">${epUlt.dx||p.institucion||'—'}</div>
+        ${isCollapsed?'':arr.map(p=>renderPatientItem(p)).join('')}
+      </div>`;
+    }).join('');
+  } else {
+    const ordenado=pts.slice().sort(byRecency);
+    list.innerHTML=ordenado.map(p=>renderPatientItem(p)).join('');
+  }
+}
+function toggleGrupoKine(k){
+  const ownKey=emailKey(CURRENT_EMAIL);
+  const actual = collapsedGroups.hasOwnProperty(k) ? collapsedGroups[k] : (k!==ownKey);
+  collapsedGroups[k]=!actual;
+  renderPatientList();
+}
+function renderPatientItem(p){
+  const epUlt=getUltimoEpisodio(p);
+  const dias=diasDesde(epUlt.fechaInicio||p.fechaInicio);
+  const dotColor=catDotColor(p.categoria);
+  const estado=getPatientEstado(p);
+  const esSecretaria = CURRENT_ROLE==='secretaria';
+  return `<div class="patient-item ${p.id===currentPatientId?'active':''}" onclick="selectPatient('${p.id}')">
+    <div class="pi-avatar">${initials(p.nombre)}</div>
+    <div class="pi-info">
+      <div class="pi-name" style="display:flex;align-items:center;gap:5px">
+        ${p.nombre||'Sin nombre'}
+        ${dotColor?`<span class="pi-cat-dot" style="background:${dotColor}"></span>`:''}
+        ${!esSecretaria&&estado==='alta'?'<span style="font-size:10px;color:#1B5E3B;font-weight:700">✓</span>':''}
+        ${!esSecretaria&&estado==='abandono'?'<span style="font-size:10px;color:#aaa">—</span>':''}
       </div>
-      ${dias!==null&&estado==='tratamiento'?`<div class="pi-days">${tiempoEvolucion(dias).compacto}</div>`:''}
-    </div>`;
-  }).join('');
+      <div class="pi-sub">${esSecretaria?(p.institucion||'—'):(epUlt.dx||p.institucion||'—')}</div>
+    </div>
+    ${!esSecretaria&&dias!==null&&estado==='tratamiento'?`<div class="pi-days">${tiempoEvolucion(dias).compacto}</div>`:''}
+  </div>`;
 }
 
 function selectPatient(id){
+  const p=DB.patients.find(x=>x.id===id);
+  if(!puedeVerPaciente(p)) return;
   currentView='patient';
   currentPatientId=id; currentTab='resumen'; currentEpisodioIdx=0;
-  const p=DB.patients.find(x=>x.id===id);
   if(p&&p.episodios&&p.episodios.length) currentEpisodioIdx=p.episodios.length-1;
-  renderPatientList(); renderPatient(); closeSidebar();
+  p.lastOpened=Date.now();
+  clearTimeout(autoSaveTimer);autoSaveTimer=setTimeout(saveDB,600);
+  renderPatientList();
+  if(CURRENT_ROLE==='secretaria') renderPatientContactoOnly(); else renderPatient();
+  closeSidebar();
   updateAgendaNavActive();
+}
+// Vista restringida para el rol secretaria: solo datos de contacto, sin nada clínico.
+function renderPatientContactoOnly(){
+  const p=getPatient(currentPatientId); if(!p) return;
+  document.getElementById('topbarPatient').style.display='block';
+  document.getElementById('topbarName').textContent=p.nombre||'Sin nombre';
+  document.getElementById('topbarSub').textContent='Datos de contacto';
+  document.getElementById('daysChip').style.display='none';
+  document.getElementById('alertaChip').style.display='none';
+  document.getElementById('tabs').style.display='none';
+  document.getElementById('epBar').style.display='none';
+  const panel=document.getElementById('panel');
+  panel.style.padding='20px';
+  panel.style.display='block';
+  panel.style.flexDirection='';
+  panel.innerHTML=`
+    <div style="max-width:420px;">
+      <div class="modal-field"><label>Nombre</label><div style="padding:8px 0;font-size:16px;font-weight:700;color:var(--text);">${esc(p.nombre||'—')}</div></div>
+      <div class="modal-2col">
+        <div class="modal-field"><label>Edad</label><div style="padding:8px 0;">${esc(p.edad||'—')}</div></div>
+        <div class="modal-field"><label>Contacto / WhatsApp</label><div style="padding:8px 0;">${esc(p.contacto||'—')}</div></div>
+      </div>
+      <div class="modal-field"><label>Institución / Club</label><div style="padding:8px 0;">${esc(p.institucion||'—')}</div></div>
+    </div>`;
 }
 function getPatient(id){return DB.patients.find(p=>p.id===id);}
 
@@ -6437,9 +6550,20 @@ function exportRutinaPDF(sesId){
 function populateCatSelect(sel=''){
   document.getElementById('mCategoria').innerHTML='<option value="">Sin categoría</option>'+getCats().map(c=>`<option value="${c.id}" ${c.id===sel?'selected':''}>${c.label}</option>`).join('');
 }
+// Selector de dueño/a del paciente: solo admin lo ve y lo puede cambiar.
+function populateKinesiologoSelect(selectedKey){
+  const wrap=document.getElementById('mKinesiologoWrap');
+  if(CURRENT_ROLE!=='admin'){ wrap.style.display='none'; return; }
+  const sel=document.getElementById('mKinesiologo');
+  const opciones=Object.entries(USUARIOS).filter(([,u])=>u.rol==='admin'||u.rol==='kinesiologo');
+  const key=selectedKey||emailKey(CURRENT_EMAIL);
+  sel.innerHTML=opciones.map(([k,u])=>`<option value="${k}" ${k===key?'selected':''}>${esc(u.nombre||k)}</option>`).join('');
+  wrap.style.display='';
+}
 function openNewPatient(){
   editingPatientId=null;document.getElementById('modalTitle').textContent='Nuevo paciente';
   populateCatSelect('');
+  populateKinesiologoSelect(emailKey(CURRENT_EMAIL));
   ['mNombre','mEdad','mContacto','mInstitucion','mDeporte','mCirujano','mDx','mEstructura','mFechaInicio','mCirugia','mAntecedentes','mObjetivos','mMedicacion','mContra','mAlerta'].forEach(id=>document.getElementById(id).value='');
   renderDxDetailFieldsModal('',{});
   document.getElementById('modalOverlay').classList.add('open');
@@ -6448,6 +6572,7 @@ function openEditPatient(){
   const p=getPatient(currentPatientId);editingPatientId=p.id;
   const ep=getEpData(p);
   document.getElementById('modalTitle').textContent='Editar paciente';populateCatSelect(p.categoria||'');
+  populateKinesiologoSelect(p.kinesiologoKey);
   document.getElementById('mNombre').value=p.nombre||'';document.getElementById('mEdad').value=p.edad||'';
   document.getElementById('mContacto').value=p.contacto||'';document.getElementById('mInstitucion').value=p.institucion||'';
   document.getElementById('mDeporte').value=p.deporte||'';document.getElementById('mCirujano').value=ep.cirujano||'';
@@ -6463,15 +6588,25 @@ function closeModal(){document.getElementById('modalOverlay').classList.remove('
 function savePatient(){
   const nombre=document.getElementById('mNombre').value.trim();if(!nombre){alert('El nombre es obligatorio.');return;}
   const dxVal=document.getElementById('mDx').value;
+  // Dueño/a del paciente: admin puede elegirlo en el modal; kinesiólogo/a siempre queda como propio.
+  let kinesiologoKey;
+  if(CURRENT_ROLE==='admin'){
+    kinesiologoKey=document.getElementById('mKinesiologo').value||emailKey(CURRENT_EMAIL);
+  } else if(editingPatientId){
+    const existente=DB.patients.find(p=>p.id===editingPatientId);
+    kinesiologoKey=(existente&&existente.kinesiologoKey)||emailKey(CURRENT_EMAIL);
+  } else {
+    kinesiologoKey=emailKey(CURRENT_EMAIL);
+  }
   // Datos que son del paciente en general (no cambian entre episodios)
-  const patData={nombre,categoria:document.getElementById('mCategoria').value,edad:document.getElementById('mEdad').value,contacto:document.getElementById('mContacto').value,institucion:document.getElementById('mInstitucion').value,deporte:document.getElementById('mDeporte').value,alerta:document.getElementById('mAlerta').value};
+  const patData={nombre,categoria:document.getElementById('mCategoria').value,edad:document.getElementById('mEdad').value,contacto:document.getElementById('mContacto').value,institucion:document.getElementById('mInstitucion').value,deporte:document.getElementById('mDeporte').value,alerta:document.getElementById('mAlerta').value,kinesiologoKey};
   // Datos clínicos que pertenecen al episodio actual (distinto diagnóstico/estructura/etc por episodio)
   const epData={dx:dxVal,estructura:document.getElementById('mEstructura').value,fechaInicio:document.getElementById('mFechaInicio').value,cirugia:document.getElementById('mCirugia').value,cirujano:document.getElementById('mCirujano').value,antecedentes:document.getElementById('mAntecedentes').value,objetivos:document.getElementById('mObjetivos').value,medicacion:document.getElementById('mMedicacion').value,contra:document.getElementById('mContra').value,dxDetalles:collectDxDetailsFromDOM(dxVal,'dxd')};
   if(editingPatientId){
     const idx=DB.patients.findIndex(p=>p.id===editingPatientId);
     if(idx!==-1){ Object.assign(DB.patients[idx],patData); Object.assign(getEpData(DB.patients[idx]),epData); }
   }
-  else{DB.patients.unshift({id:uid(),sesiones:[],evaluaciones:[],cuestionarios:[],notas:'',...patData,...epData});currentPatientId=DB.patients[0].id;}
+  else{DB.patients.unshift({id:uid(),sesiones:[],evaluaciones:[],cuestionarios:[],notas:'',lastOpened:Date.now(),...patData,...epData});currentPatientId=DB.patients[0].id;}
   saveDB();closeModal();renderPatientList();renderPatient();
 }
 function deletePatient(){
@@ -6491,7 +6626,7 @@ function renderHomeDashboard(){
   panel.style.padding='24px';
   panel.style.display='block';
 
-  const pts = DB.patients||[];
+  const pts = visiblePatients();
   if(!pts.length){
     panel.innerHTML=`<div class="empty-state"><svg width="56" height="56" viewBox="0 0 56 56" fill="none"><rect x="10" y="8" width="36" height="40" rx="4" stroke="#9AA0AD" stroke-width="2"/><path d="M20 20h16M20 27h16M20 34h10" stroke="#9AA0AD" stroke-width="2" stroke-linecap="round"/></svg><h3>Todavía no hay pacientes</h3><p>Creá el primero desde la barra lateral para empezar.</p></div>`;
     return;
@@ -6735,6 +6870,7 @@ function buildDonutSVG(data, centerLabel='activos'){
 }
 
 function goHome(){
+  if(CURRENT_ROLE==='secretaria'){ goToAgenda(); return; }
   currentView='home';
   currentPatientId=null;
   renderPatientList();
@@ -6753,38 +6889,160 @@ function resetMainPanel(title,sub){
 function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sidebarOverlay').classList.toggle('open');}
 function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sidebarOverlay').classList.remove('open');}
 
-// ── ACCESO CON CONTRASEÑA (una vez por dispositivo) ──────────────────────────
-// Para cambiar la contraseña: reemplazá el texto entre comillas de la línea siguiente.
-const APP_PASSWORD = 'Casartelli2026';
-const AUTH_KEY = 'consultorio_auth_ok_v1';
+// ── ACCESO POR CUENTA (Firebase Auth) + ROLES ────────────────────────────────
+// Roles: 'kinesiologo' (acceso completo) | 'secretaria' (agenda + datos de contacto, sin clínica).
+// Las cuentas se crean en Firebase Console (Authentication → Users) y el rol se asigna acá,
+// en el panel de Usuarios (👥 en el pie del menú), por email.
+// Excepción de arranque: si /usuarios está vacío, el primer login se da de alta solo como
+// kinesiólogo, para no quedar bloqueados el día que se activa este sistema.
+let CURRENT_ROLE=null, CURRENT_EMAIL=null, CURRENT_NOMBRE=null, USUARIOS={};
+
+function emailKey(email){ return (email||'').trim().toLowerCase().replace(/\./g,','); }
+
+// ── Aislamiento de pacientes por kinesiólogo dueño (p.kinesiologoKey) ───────
+// admin: ve todos. kinesiólogo: solo los suyos. secretaria: ve todos (solo contacto, ya limitado en la UI).
+function visiblePatients(){
+  const all = DB.patients||[];
+  if(CURRENT_ROLE==='kinesiologo') return all.filter(p=>p.kinesiologoKey===emailKey(CURRENT_EMAIL));
+  return all;
+}
+function puedeVerPaciente(p){
+  if(!p) return false;
+  if(CURRENT_ROLE==='kinesiologo') return p.kinesiologoKey===emailKey(CURRENT_EMAIL);
+  return true;
+}
+function nombreKinesiologo(key){
+  if(!key || key==='sin_asignar') return 'Sin asignar';
+  const u=USUARIOS[key];
+  return u?(u.nombre||key):key;
+}
+
+function showAuthError(msg){
+  const err=document.getElementById('authError');
+  err.textContent=msg;
+  err.style.display='block';
+}
+function hideAuthError(){ document.getElementById('authError').style.display='none'; }
 
 function tryAuthLogin(){
-  const input=document.getElementById('authPassInput');
-  const err=document.getElementById('authError');
-  if(input.value===APP_PASSWORD){
-    localStorage.setItem(AUTH_KEY,'1');
-    document.getElementById('authGate').style.display='none';
+  const email=document.getElementById('authEmailInput').value.trim();
+  const pass=document.getElementById('authPassInput').value;
+  const btn=document.getElementById('authSubmitBtn');
+  hideAuthError();
+  if(!email||!pass){ showAuthError('Completá email y contraseña.'); return; }
+  btn.disabled=true; btn.textContent='Entrando…';
+  auth.signInWithEmailAndPassword(email,pass).catch(err=>{
+    btn.disabled=false; btn.textContent='Entrar';
+    if(err.code==='auth/too-many-requests') showAuthError('Demasiados intentos. Probá de nuevo en unos minutos.');
+    else showAuthError('Email o contraseña incorrectos.');
+  });
+  // El caso de éxito lo maneja checkAuthAndStart() vía onAuthStateChanged.
+}
+
+function cerrarSesion(){ auth.signOut(); }
+
+async function resolveRoleAndStart(user){
+  document.getElementById('authGate').style.display='none';
+  try{
+    const snap=await usuariosRef.once('value');
+    USUARIOS=snap.val()||{};
+    const key=emailKey(user.email);
+    let entry=USUARIOS[key];
+    if(!entry){
+      if(Object.keys(USUARIOS).length===0){
+        entry={rol:'admin', nombre:(user.email||'').split('@')[0]};
+        await usuariosRef.child(key).set(entry);
+        USUARIOS[key]=entry;
+      } else {
+        await auth.signOut();
+        document.getElementById('authGate').style.display='flex';
+        showAuthError('Tu cuenta no tiene un rol asignado todavía. Pedile a un/a kinesiólogo/a que te dé de alta en Usuarios.');
+        return;
+      }
+    }
+    CURRENT_ROLE=entry.rol||'kinesiologo';
+    CURRENT_EMAIL=user.email;
+    CURRENT_NOMBRE=entry.nombre||user.email;
+    const btn=document.getElementById('authSubmitBtn'); if(btn){btn.disabled=false;btn.textContent='Entrar';}
     startApp();
-  } else {
-    err.style.display='block';
-    input.value='';
-    input.focus();
+  }catch(err){
+    console.error(err);
+    document.getElementById('authGate').style.display='flex';
+    showAuthError('Error de conexión. Probá de nuevo.');
   }
 }
 
 function checkAuthAndStart(){
-  if(localStorage.getItem(AUTH_KEY)==='1'){
-    document.getElementById('authGate').style.display='none';
-    startApp();
-  } else {
-    document.getElementById('authGate').style.display='flex';
-    setTimeout(()=>document.getElementById('authPassInput').focus(),100);
-  }
+  auth.onAuthStateChanged(user=>{
+    if(user){
+      resolveRoleAndStart(user);
+    } else {
+      CURRENT_ROLE=null;CURRENT_EMAIL=null;CURRENT_NOMBRE=null;
+      document.getElementById('authGate').style.display='flex';
+      setTimeout(()=>document.getElementById('authEmailInput').focus(),100);
+    }
+  });
+}
+
+// ── Gestión de usuarios y roles (solo visible para kinesiólogos) ────────────
+function applyRoleUI(){
+  const esSecretaria = CURRENT_ROLE==='secretaria';
+  const esAdmin = CURRENT_ROLE==='admin';
+  const info=document.getElementById('sesionInfo');
+  const etiqueta = esSecretaria?'Secretaria':esAdmin?'Admin':'Kinesiólogo/a';
+  if(info) info.textContent = CURRENT_NOMBRE + ' · ' + etiqueta;
+  const btnNP=document.querySelector('.btn-new-patient'); if(btnNP) btnNP.style.display = esSecretaria?'none':'flex';
+  const btnAM=document.getElementById('btnAyudaMemNav'); if(btnAM) btnAM.style.display = esSecretaria?'none':'flex';
+  // Exportar/Importar/Categorías/Usuarios tocan datos de TODOS los kinesiólogos: solo admin.
+  const footer=document.getElementById('sidebarFooter'); if(footer) footer.style.display = esAdmin?'flex':'none';
+  const btnUsu=document.getElementById('btnUsuarios'); if(btnUsu) btnUsu.style.display = esAdmin?'inline-block':'none';
+}
+function openUsuariosManager(){
+  if(CURRENT_ROLE!=='admin') return;
+  renderUsuariosList();
+  document.getElementById('modalUsuarios').classList.add('open');
+}
+function closeUsuariosManager(){ document.getElementById('modalUsuarios').classList.remove('open'); }
+function renderUsuariosList(){
+  const list=document.getElementById('usuariosList');
+  const entries=Object.entries(USUARIOS);
+  if(!entries.length){ list.innerHTML='<p style="font-size:12.5px;color:var(--text-3);">Todavía no hay usuarios dados de alta.</p>'; return; }
+  list.innerHTML=entries.map(([key,u])=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:600;">${esc(u.nombre||key)}</div>
+        <div style="font-size:11px;color:var(--text-3);">${u.rol==='secretaria'?'Secretaria':u.rol==='admin'?'Admin':'Kinesiólogo/a'}${u.email?' · '+esc(u.email):''}</div>
+      </div>
+      <button onclick="eliminarUsuario('${key}')" style="background:none;border:none;color:var(--red);font-size:12px;font-weight:600;cursor:pointer;padding:4px 8px;">Quitar</button>
+    </div>`).join('');
+}
+function guardarUsuario(){
+  const email=document.getElementById('uEmail').value.trim();
+  const nombre=document.getElementById('uNombre').value.trim();
+  const rol=document.getElementById('uRol').value;
+  if(!email){ alert('Falta el email.'); return; }
+  const key=emailKey(email);
+  const entry={rol, nombre: nombre||email.split('@')[0], email};
+  usuariosRef.child(key).set(entry).then(()=>{
+    USUARIOS[key]=entry;
+    document.getElementById('uEmail').value='';
+    document.getElementById('uNombre').value='';
+    renderUsuariosList();
+  });
+}
+function eliminarUsuario(key){
+  if(key===emailKey(CURRENT_EMAIL)){ alert('No podés quitarte a vos mismo/a desde acá.'); return; }
+  if(!confirm('¿Quitar el acceso de este usuario?')) return;
+  usuariosRef.child(key).remove().then(()=>{
+    delete USUARIOS[key];
+    renderUsuariosList();
+  });
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 function startApp(){
 document.getElementById('panel').innerHTML=`<div class="empty-state"><svg width="40" height="40" viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="16" stroke="#E2E5EA" stroke-width="4"/><path d="M20 4a16 16 0 0 1 16 16" stroke="#1E1B18" stroke-width="4" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 20 20" to="360 20 20" dur=".8s" repeatCount="indefinite"/></path></svg><p style="color:var(--text-3);font-size:14px;margin-top:12px;">Conectando...</p></div>`;
+applyRoleUI();
 
 turnosRef.on('value', snap=>{
   TURNOS=snap.val()||{};
@@ -6867,11 +7125,21 @@ dbRef.once('value').then(snapshot=>{
   });
   if(migradoClinico) saveDB();
 
+  // Migración: pacientes cargados antes del sistema de roles no tienen dueño/a asignado.
+  // La corre quien primero entre como admin después de este cambio, y los deja a su nombre
+  // (se pueden reasignar después desde "Editar paciente").
+  if(CURRENT_ROLE==='admin' && !DB.migracionKinesiologo){
+    let tocadoKine=false;
+    DB.patients.forEach(p=>{ if(!p.kinesiologoKey){ p.kinesiologoKey=emailKey(CURRENT_EMAIL); tocadoKine=true; } });
+    DB.migracionKinesiologo=true;
+    saveDB();
+  }
+
   dbPatientsLoaded=true;
   tryMigrarTurnos();
 
   renderCatFilters();renderEstadoFilters();renderPatientList();
-  renderHomeDashboard();
+  if(CURRENT_ROLE==='secretaria') goToAgenda(); else renderHomeDashboard();
 }).catch(err=>{
   console.error(err);
   document.getElementById('panel').innerHTML=`<div class="empty-state"><h3>Error de conexión</h3><p>Verificá tu conexión e intentá recargar.</p></div>`;
