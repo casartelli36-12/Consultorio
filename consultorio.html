@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Consultorio · Casartelli</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 36'%3E%3Crect width='36' height='36' rx='9' fill='%231B2A4A'/%3E%3Cpath d='M25 10.5C23.2 8.3 20.6 7 17.5 7 11.7 7 7 11.9 7 18s4.7 11 10.5 11c3.1 0 5.7-1.3 7.5-3.5' stroke='white' stroke-width='3' stroke-linecap='round' fill='none'/%3E%3Cpath d='M11 18h3.2l1.6-3.6 2.4 6.4 1.6-2.8h5.2' stroke='%236B8E5C' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E">
+<title>VORA · Tu recuperación, en movimiento</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 36'%3E%3Crect width='36' height='36' rx='9' fill='%231E1B18'/%3E%3Ccircle cx='18' cy='10' r='2.4' fill='%23FBFAF7'/%3E%3Cpath d='M10 14 L18 27 L26 14' stroke='%23FBFAF7' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <!-- Firebase -->
@@ -30,16 +30,16 @@ const pendRef = firebase.database().ref('consultorio_pendientes');
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
-  --navy:#1B2A4A;
-  --navy-light:#2E4170;
-  --orange:#6B8E5C;
-  --orange-light:#EEF0E9;
-  --bg:#FFFFFF;
-  --surface:#F7F8FA;
-  --border:#E2E5EA;
-  --text:#1A1A2E;
-  --text-2:#5A6373;
-  --text-3:#9AA0AD;
+  --navy:#1E1B18;
+  --navy-light:#34302B;
+  --orange:#A85D3B;
+  --orange-light:#F1E4DC;
+  --bg:#FBFAF7;
+  --surface:#F5F2EA;
+  --border:#E6E1D6;
+  --text:#1E1B18;
+  --text-2:#6B6459;
+  --text-3:#A39C8E;
   --green:#1B5E3B;
   --green-light:#EAF5EE;
   --red:#C0392B;
@@ -616,13 +616,13 @@ input,textarea,select{font-family:'Inter',sans-serif;}
   <form class="auth-gate-card" onsubmit="event.preventDefault();tryAuthLogin();">
     <div class="auth-gate-logo">
       <svg width="52" height="52" viewBox="0 0 36 36">
-        <rect width="36" height="36" rx="9" fill="#13203D"/>
-        <path d="M25 10.5C23.2 8.3 20.6 7 17.5 7 11.7 7 7 11.9 7 18s4.7 11 10.5 11c3.1 0 5.7-1.3 7.5-3.5" stroke="#fff" stroke-width="3" stroke-linecap="round" fill="none"/>
-        <path d="M11 18h3.2l1.6-3.6 2.4 6.4 1.6-2.8h5.2" stroke="#6B8E5C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <rect width="36" height="36" rx="9" fill="#1E1B18"/>
+        <circle cx="18" cy="10" r="2.4" fill="#FBFAF7"/>
+        <path d="M10 14 L18 27 L26 14" stroke="#FBFAF7" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
       </svg>
     </div>
-    <h2>Casartelli · MP 10722</h2>
-    <p>Ingresá la contraseña para acceder al consultorio.</p>
+    <h2>VORA</h2>
+    <p>Ingresá la contraseña para acceder.</p>
     <input type="password" id="authPassInput" placeholder="Contraseña" autocomplete="off">
     <div id="authError" class="auth-gate-error">Contraseña incorrecta. Probá de nuevo.</div>
     <button type="submit">Entrar</button>
@@ -1925,13 +1925,13 @@ function calcularScoresCuestionario(tipoId, respuestas) {
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-header" onclick="goHome()" style="cursor:pointer;display:flex;align-items:center;gap:10px;" title="Volver al inicio">
       <svg width="34" height="34" viewBox="0 0 36 36" style="flex-shrink:0;">
-        <rect width="36" height="36" rx="9" fill="#13203D"/>
-        <path d="M25 10.5C23.2 8.3 20.6 7 17.5 7 11.7 7 7 11.9 7 18s4.7 11 10.5 11c3.1 0 5.7-1.3 7.5-3.5" stroke="#fff" stroke-width="3" stroke-linecap="round" fill="none"/>
-        <path d="M11 18h3.2l1.6-3.6 2.4 6.4 1.6-2.8h5.2" stroke="#6B8E5C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <rect width="36" height="36" rx="9" fill="#1E1B18"/>
+        <circle cx="18" cy="10" r="2.4" fill="#FBFAF7"/>
+        <path d="M10 14 L18 27 L26 14" stroke="#FBFAF7" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
       </svg>
       <div>
-        <h1 style="letter-spacing:.06em;">Casartelli · MP 10722</h1>
-        <p>Consultorio kinesiológico</p>
+        <h1 style="letter-spacing:.06em;">VORA</h1>
+        <p>Tu recuperación, en movimiento</p>
       </div>
     </div>
     <button class="btn-new-patient" onclick="openNewPatient()">
@@ -5073,7 +5073,7 @@ function buildDxSuggestSearchHTML(f){
     html+=`<div class="ej-suggest-catlabel">${esc(region)}</div>`;
     items.forEach(d=>{ html+=`<div class="ej-suggest-item" data-name="${esc(d.n)}">${esc(d.n)} <span style="opacity:.55;font-size:11px;">· ${esc(d.t)}</span></div>`; any=true; });
   });
-  if(!any) html=`<div class="ej-suggest-empty">Sin coincidencias en la lista. Elegí el más parecido o "Otro (ver antecedentes)".</div>`;
+  if(!any) html=`<div class="ej-suggest-empty">Sin coincidencias en la lista — se guarda el texto que escribas.</div>`;
   return html;
 }
 function buildDxSuggestHTML(filterText){
@@ -5132,7 +5132,9 @@ function pickDxSuggest(name){
   dxSuggestInput.focus();
   onDxConfirmed(name);
 }
-// Si lo que quedó escrito no es un diagnóstico válido de la lista, lo revierte (o lo vacía).
+// La lista es solo sugerencia: si lo escrito coincide con un dx de la taxonomía se normaliza
+// a ese nombre canónico (para las estadísticas estandarizadas); si no coincide, se acepta el
+// texto libre tal cual (queda fuera del conteo por zona/tipo estandarizado, pero no se pierde).
 function enforceDxValue(input){
   const val=input.value.trim();
   if(!val){ dxLastValid=''; onDxConfirmed(''); return; }
@@ -5142,18 +5144,9 @@ function enforceDxValue(input){
     dxLastValid=meta.nombre;
     onDxConfirmed(meta.nombre);
   } else {
-    input.value=dxLastValid;
-    input.dispatchEvent(new Event('input',{bubbles:true}));
-    if(val) showDxWarning(input);
+    dxLastValid=val;
+    onDxConfirmed(val);
   }
-}
-function showDxWarning(input){
-  const r=input.getBoundingClientRect();
-  const div=document.createElement('div');
-  div.textContent='Elegí un diagnóstico de la lista (o "Otro (ver antecedentes)")';
-  div.style.cssText=`position:fixed;left:${r.left}px;top:${r.bottom+4}px;max-width:260px;background:var(--orange);color:#fff;font-size:11.5px;font-weight:600;padding:6px 10px;border-radius:6px;z-index:2100;box-shadow:0 4px 14px rgba(0,0,0,.2);font-family:Inter,sans-serif;`;
-  document.body.appendChild(div);
-  setTimeout(()=>div.remove(),2600);
 }
 document.addEventListener('focusin', e=>{ if(e.target.matches&&e.target.matches('.dx-input')) showDxSuggest(e.target); });
 document.addEventListener('input', e=>{ if(e.target.matches&&e.target.matches('.dx-input')) refreshDxSuggest(e.target); });
@@ -6024,34 +6017,34 @@ function exportPlanPDF(planId){
   *{box-sizing:border-box;}
   @page{ margin:8mm; }
   body{font-family:Arial,Helvetica,sans-serif;color:#1A1A2E;padding:14px;max-width:680px;margin:0 auto;line-height:1.25;}
-  .rt-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #1B2A4A;padding-bottom:8px;margin-bottom:10px;}
-  .rt-header h1{font-size:15px;color:#1B2A4A;margin:0 0 2px;}
+  .rt-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #1E1B18;padding-bottom:8px;margin-bottom:10px;}
+  .rt-header h1{font-size:15px;color:#1E1B18;margin:0 0 2px;}
   .rt-header p{font-size:10px;color:#5A6373;margin:0;}
   .rt-meta{font-size:10px;color:#5A6373;text-align:right;}
   .rt-patient{font-size:14px;font-weight:700;margin-bottom:1px;}
   .rt-sub{font-size:11px;color:#5A6373;margin-bottom:8px;}
   .rt-dia{margin-bottom:8px;}
   .rt-dia-tag{display:inline-block;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#1A4E8C;background:#EAF1FB;padding:1px 6px;border-radius:20px;margin-bottom:2px;}
-  .rt-dia-title{font-size:13px;margin:0 0 4px;color:#1B2A4A;}
+  .rt-dia-title{font-size:13px;margin:0 0 4px;color:#1E1B18;}
   .rt-cat-title{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#1A4E8C;margin:6px 0 3px;}
   .rt-cat-title:first-of-type{margin-top:0;}
   .rt-block{border:1px solid #E2E5EA;border-radius:6px;margin-bottom:5px;padding:5px 10px;background:#F7F8FA;}
-  .rt-block-tag{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#6B8E5C;margin-bottom:3px;}
+  .rt-block-tag{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#A85D3B;margin-bottom:3px;}
   .rt-ex{padding:4px 0;border-bottom:1px solid #E2E5EA;}
   .rt-block .rt-ex:last-child{border-bottom:none;}
   .rt-ex-name{font-size:12px;font-weight:600;}
-  .rt-ex-badge{display:inline-block;background:#6B8E5C;color:#fff;font-size:9px;font-weight:700;border-radius:4px;padding:0px 5px;margin-right:5px;}
+  .rt-ex-badge{display:inline-block;background:#A85D3B;color:#fff;font-size:9px;font-weight:700;border-radius:4px;padding:0px 5px;margin-right:5px;}
   .rt-ex-meta{font-size:10.5px;color:#5A6373;margin-top:1px;}
   .rt-ex-nota{font-size:10.5px;color:#1A4E8C;margin-top:2px;font-style:italic;}
   .rt-footer{margin-top:10px;font-size:10px;color:#5A6373;border-top:1px solid #E2E5EA;padding-top:6px;}
-  .rt-close-btn{position:fixed;top:10px;right:10px;width:36px;height:36px;border-radius:50%;background:#1B2A4A;color:#fff;border:none;font-size:17px;line-height:1;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,.25);z-index:999;cursor:pointer;}
+  .rt-close-btn{position:fixed;top:10px;right:10px;width:36px;height:36px;border-radius:50%;background:#1E1B18;color:#fff;border:none;font-size:17px;line-height:1;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,.25);z-index:999;cursor:pointer;}
   @media print{ body{padding:0;} .rt-dia{page-break-inside:avoid;} .rt-close-btn{display:none;} }
 </style></head><body>
   <button class="rt-close-btn" onclick="window.close()" title="Cerrar">✕</button>
   <div class="rt-header">
     <div style="display:flex;align-items:center;gap:8px;">
-      <svg width="26" height="26" viewBox="0 0 36 36"><rect width="36" height="36" rx="9" fill="#13203D"/><path d="M25 10.5C23.2 8.3 20.6 7 17.5 7 11.7 7 7 11.9 7 18s4.7 11 10.5 11c3.1 0 5.7-1.3 7.5-3.5" stroke="#fff" stroke-width="3" stroke-linecap="round" fill="none"/><path d="M11 18h3.2l1.6-3.6 2.4 6.4 1.6-2.8h5.2" stroke="#6B8E5C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
-      <div><h1>Casartelli · MP 10722</h1><p>Consultorio kinesiológico</p></div>
+      <svg width="26" height="26" viewBox="0 0 36 36"><rect width="36" height="36" rx="9" fill="#1E1B18"/><circle cx="18" cy="10" r="2.4" fill="#FBFAF7"/><path d="M10 14 L18 27 L26 14" stroke="#FBFAF7" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+      <div><h1>VORA</h1><p>Tu recuperación, en movimiento</p></div>
     </div>
     <div class="rt-meta">${pl.fechaInicio?formatFecha(pl.fechaInicio):''}${pl.semanas?`<br>${esc(pl.semanas)} semanas`:''}</div>
   </div>
@@ -6399,8 +6392,8 @@ function exportRutinaPDF(sesId){
   *{box-sizing:border-box;}
   @page{ margin:8mm; }
   body{font-family:Arial,Helvetica,sans-serif;color:#1A1A2E;padding:14px;max-width:680px;margin:0 auto;line-height:1.25;}
-  .rt-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #1B2A4A;padding-bottom:8px;margin-bottom:10px;}
-  .rt-header h1{font-size:15px;color:#1B2A4A;margin:0 0 2px;}
+  .rt-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #1E1B18;padding-bottom:8px;margin-bottom:10px;}
+  .rt-header h1{font-size:15px;color:#1E1B18;margin:0 0 2px;}
   .rt-header p{font-size:10px;color:#5A6373;margin:0;}
   .rt-meta{font-size:10px;color:#5A6373;text-align:right;}
   .rt-patient{font-size:14px;font-weight:700;margin-bottom:1px;}
@@ -6408,22 +6401,22 @@ function exportRutinaPDF(sesId){
   .rt-cat-title{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#1A4E8C;margin:6px 0 3px;}
   .rt-cat-title:first-of-type{margin-top:0;}
   .rt-block{border:1px solid #E2E5EA;border-radius:6px;margin-bottom:5px;padding:5px 10px;background:#F7F8FA;}
-  .rt-block-tag{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#6B8E5C;margin-bottom:3px;}
+  .rt-block-tag{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#A85D3B;margin-bottom:3px;}
   .rt-ex{padding:4px 0;border-bottom:1px solid #E2E5EA;}
   .rt-block .rt-ex:last-child{border-bottom:none;}
   .rt-ex-name{font-size:12px;font-weight:600;}
-  .rt-ex-badge{display:inline-block;background:#6B8E5C;color:#fff;font-size:9px;font-weight:700;border-radius:4px;padding:0px 5px;margin-right:5px;}
+  .rt-ex-badge{display:inline-block;background:#A85D3B;color:#fff;font-size:9px;font-weight:700;border-radius:4px;padding:0px 5px;margin-right:5px;}
   .rt-ex-meta{font-size:10.5px;color:#5A6373;margin-top:1px;}
   .rt-ex-nota{font-size:10.5px;color:#1A4E8C;margin-top:2px;font-style:italic;}
   .rt-footer{margin-top:10px;font-size:10px;color:#5A6373;border-top:1px solid #E2E5EA;padding-top:6px;}
-  .rt-close-btn{position:fixed;top:10px;right:10px;width:36px;height:36px;border-radius:50%;background:#1B2A4A;color:#fff;border:none;font-size:17px;line-height:1;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,.25);z-index:999;cursor:pointer;}
+  .rt-close-btn{position:fixed;top:10px;right:10px;width:36px;height:36px;border-radius:50%;background:#1E1B18;color:#fff;border:none;font-size:17px;line-height:1;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,.25);z-index:999;cursor:pointer;}
   @media print{ body{padding:0;} .rt-close-btn{display:none;} }
 </style></head><body>
   <button class="rt-close-btn" onclick="window.close()" title="Cerrar">✕</button>
   <div class="rt-header">
     <div style="display:flex;align-items:center;gap:8px;">
-      <svg width="26" height="26" viewBox="0 0 36 36"><rect width="36" height="36" rx="9" fill="#13203D"/><path d="M25 10.5C23.2 8.3 20.6 7 17.5 7 11.7 7 7 11.9 7 18s4.7 11 10.5 11c3.1 0 5.7-1.3 7.5-3.5" stroke="#fff" stroke-width="3" stroke-linecap="round" fill="none"/><path d="M11 18h3.2l1.6-3.6 2.4 6.4 1.6-2.8h5.2" stroke="#6B8E5C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
-      <div><h1>Casartelli · MP 10722</h1><p>Consultorio kinesiológico</p></div>
+      <svg width="26" height="26" viewBox="0 0 36 36"><rect width="36" height="36" rx="9" fill="#1E1B18"/><circle cx="18" cy="10" r="2.4" fill="#FBFAF7"/><path d="M10 14 L18 27 L26 14" stroke="#FBFAF7" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+      <div><h1>VORA</h1><p>Tu recuperación, en movimiento</p></div>
     </div>
     <div class="rt-meta">${formatFecha(s.fecha)}${s.fase?`<br>${esc(s.fase)}`:''}</div>
   </div>
@@ -6791,7 +6784,7 @@ function checkAuthAndStart(){
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 function startApp(){
-document.getElementById('panel').innerHTML=`<div class="empty-state"><svg width="40" height="40" viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="16" stroke="#E2E5EA" stroke-width="4"/><path d="M20 4a16 16 0 0 1 16 16" stroke="#1B2A4A" stroke-width="4" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 20 20" to="360 20 20" dur=".8s" repeatCount="indefinite"/></path></svg><p style="color:var(--text-3);font-size:14px;margin-top:12px;">Conectando...</p></div>`;
+document.getElementById('panel').innerHTML=`<div class="empty-state"><svg width="40" height="40" viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="16" stroke="#E2E5EA" stroke-width="4"/><path d="M20 4a16 16 0 0 1 16 16" stroke="#1E1B18" stroke-width="4" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 20 20" to="360 20 20" dur=".8s" repeatCount="indefinite"/></path></svg><p style="color:var(--text-3);font-size:14px;margin-top:12px;">Conectando...</p></div>`;
 
 turnosRef.on('value', snap=>{
   TURNOS=snap.val()||{};
