@@ -630,6 +630,7 @@ input,textarea,select{font-family:'Inter',sans-serif;}
     <input type="email" id="authEmailInput" placeholder="Email" autocomplete="username">
     <div id="authError" class="auth-gate-error">Ese email no está habilitado.</div>
     <button type="submit" id="authSubmitBtn">Entrar</button>
+    <p style="font-size:10px;color:var(--text-3);margin:14px 0 0;">v2026-09-11-1</p>
   </form>
 </div>
 
@@ -1950,6 +1951,10 @@ function calcularScoresCuestionario(tipoId, respuestas) {
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1.2c-2 0-3.4 1.4-3.4 3.2 0 1.1.5 1.8 1.2 2.5.4.4.6.8.6 1.3v.4h3.2v-.4c0-.5.2-.9.6-1.3.7-.7 1.2-1.4 1.2-2.5 0-1.8-1.4-3.2-3.4-3.2z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M5.2 10.4h3.6M5.6 12h2.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
       Ayuda Memoria
     </button>
+    <button class="btn-agenda-nav" id="btnPlanesNav" onclick="goToPlanes()">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1.5" y="1.5" width="11" height="11" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M4 5h6M4 7.3h6M4 9.6h3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      Planes
+    </button>
     <div class="pat-search-wrap"><input type="text" id="patSearch" placeholder="🔎 Buscar por nombre, dx o zona…" oninput="setPatSearch(this.value)"></div>
     <div class="cat-filters" id="catFilters"></div>
     <div class="estado-filters" id="estadoFilters"></div>
@@ -2106,6 +2111,28 @@ function calcularScoresCuestionario(tipoId, respuestas) {
     </div>
     <div class="modal-footer">
       <button class="btn-secondary" onclick="closeUsuariosManager()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal alta/edición de plan de servicio -->
+<div class="modal-overlay" id="modalPlan">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header">
+      <h2 id="planModalTitle">Nuevo plan</h2>
+      <button class="btn-close" onclick="closePlanModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-field" style="margin-bottom:10px;"><label>Nombre</label><input type="text" id="planNombre" placeholder="Ej: Rehab 10 sesiones" style="width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;font-size:13px;font-family:Inter,sans-serif;outline:none;"></div>
+      <div class="modal-2col" style="margin-bottom:10px;">
+        <div class="modal-field"><label>Sesiones</label><input type="text" id="planSesiones" placeholder="Ej: 10, 1 día, mensual" style="width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;font-size:13px;font-family:Inter,sans-serif;outline:none;"></div>
+        <div class="modal-field"><label>Precio</label><input type="text" id="planPrecio" placeholder="Ej: $30.000" style="width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;font-size:13px;font-family:Inter,sans-serif;outline:none;"></div>
+      </div>
+      <div class="modal-field"><label>Notas / qué incluye</label><textarea id="planNotas" rows="3" style="width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;font-size:13px;font-family:Inter,sans-serif;outline:none;resize:vertical;"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closePlanModal()">Cancelar</button>
+      <button class="btn-primary" onclick="guardarPlanServicio()">Guardar</button>
     </div>
   </div>
 </div>
@@ -2909,33 +2936,29 @@ function selectPatient(id){
   p.lastOpened=Date.now();
   clearTimeout(autoSaveTimer);autoSaveTimer=setTimeout(saveDB,600);
   renderPatientList();
-  if(CURRENT_ROLE==='secretaria') renderPatientContactoOnly(); else renderPatient();
+  if(CURRENT_ROLE==='secretaria') renderPatientSecretaria(); else renderPatient();
   closeSidebar();
   updateAgendaNavActive();
 }
-// Vista restringida para el rol secretaria: solo datos de contacto, sin nada clínico.
-function renderPatientContactoOnly(){
+// Vista de paciente para el rol secretaria: Resumen (solo lectura salvo datos de contacto)
+// y Cuestionarios (completo, puede enviarlos a distancia). El resto de las solapas queda oculto.
+function renderPatientSecretaria(){
   const p=getPatient(currentPatientId); if(!p) return;
   document.getElementById('topbarPatient').style.display='block';
   document.getElementById('topbarName').textContent=p.nombre||'Sin nombre';
-  document.getElementById('topbarSub').textContent='Datos de contacto';
+  document.getElementById('topbarSub').textContent='';
   document.getElementById('daysChip').style.display='none';
   document.getElementById('alertaChip').style.display='none';
-  document.getElementById('tabs').style.display='none';
   document.getElementById('epBar').style.display='none';
-  const panel=document.getElementById('panel');
-  panel.style.padding='20px';
-  panel.style.display='block';
-  panel.style.flexDirection='';
-  panel.innerHTML=`
-    <div style="max-width:420px;">
-      <div class="modal-field"><label>Nombre</label><div style="padding:8px 0;font-size:16px;font-weight:700;color:var(--text);">${esc(p.nombre||'—')}</div></div>
-      <div class="modal-2col">
-        <div class="modal-field"><label>Edad</label><div style="padding:8px 0;">${esc(p.edad||'—')}</div></div>
-        <div class="modal-field"><label>Contacto / WhatsApp</label><div style="padding:8px 0;">${esc(p.contacto||'—')}</div></div>
-      </div>
-      <div class="modal-field"><label>Institución / Club</label><div style="padding:8px 0;">${esc(p.institucion||'—')}</div></div>
-    </div>`;
+  document.getElementById('tabs').style.display='flex';
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    const nombre=TAB_ORDER[i];
+    const permitido = nombre==='resumen'||nombre==='cuestionarios';
+    t.style.display = permitido?'':'none';
+    t.classList.toggle('active', nombre==='resumen');
+  });
+  currentTab='resumen';
+  renderTab();
 }
 function getPatient(id){return DB.patients.find(p=>p.id===id);}
 
@@ -2974,6 +2997,7 @@ function renderPatient(){
 }
 
 function switchTab(tab){
+  if(CURRENT_ROLE==='secretaria' && tab!=='resumen' && tab!=='cuestionarios') return;
   currentTab=tab;
   const tabs=TAB_ORDER;
   document.querySelectorAll('.tab').forEach((t,i)=>{
@@ -2994,6 +3018,19 @@ function renderTab(){
   else if(currentTab==='cuestionarios')renderCuestionarios(panel);
   else if(currentTab==='evolucion')    renderEvolucion(panel);
   else if(currentTab==='protocolo')    renderProtocolo(panel);
+  if(CURRENT_ROLE==='secretaria' && currentTab==='resumen') aplicarSoloLecturaResumen(panel);
+}
+// La secretaria puede editar los datos personales/contacto del Resumen, pero nada clínico
+// (diagnóstico, antecedentes, medicación, estado, estudios) ni las acciones destructivas.
+function aplicarSoloLecturaResumen(panel){
+  const permitido=document.getElementById('rs_rsPersonal');
+  panel.querySelectorAll('input,select,textarea').forEach(el=>{
+    if(!permitido||!permitido.contains(el)) el.disabled=true;
+  });
+  panel.querySelectorAll('button').forEach(btn=>{
+    const oc=btn.getAttribute('onclick')||'';
+    if(oc.includes('openEditPatient')||oc.includes('deletePatient')||oc.includes('openExportPaciente')||oc.includes('addEstudio')) btn.style.display='none';
+  });
 }
 
 function switchEpisodio(idx){currentEpisodioIdx=idx;renderPatient();}
@@ -3341,6 +3378,90 @@ function updateAgendaNavActive(){
   if(btn) btn.classList.toggle('active', currentView==='agenda');
   const btn2=document.getElementById('btnAyudaMemNav');
   if(btn2) btn2.classList.toggle('active', currentView==='ayudamemoria');
+  const btn3=document.getElementById('btnPlanesNav');
+  if(btn3) btn3.classList.toggle('active', currentView==='planes');
+}
+
+// ── Planes de servicio del consultorio (Rehab 1 día, 10 sesiones, adultos mayores, etc.) ──
+// Catálogo simple, visible para todos, editable solo por admin.
+let editingPlanId=null;
+function getPlanesServicio(){ return DB.planesServicio||[]; }
+function goToPlanes(){
+  currentView='planes';
+  currentPatientId=null;
+  document.getElementById('topbarPatient').style.display='none';
+  document.getElementById('daysChip').style.display='none';
+  document.getElementById('alertaChip').style.display='none';
+  document.getElementById('tabs').style.display='none';
+  document.getElementById('epBar').style.display='none';
+  renderPatientList();
+  closeSidebar();
+  updateAgendaNavActive();
+  renderPlanesLista();
+}
+function renderPlanesLista(){
+  const panel=document.getElementById('panel');
+  panel.style.padding='16px';
+  panel.style.display='block';
+  panel.style.flexDirection='';
+  const planes=getPlanesServicio();
+  const esAdmin=CURRENT_ROLE==='admin';
+  panel.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <h2 style="font-size:17px;font-weight:700;">Planes del consultorio</h2>
+      ${esAdmin?`<button class="btn-add-cuest" onclick="openPlanModal()"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Nuevo plan</button>`:''}
+    </div>
+    ${!planes.length?'<div class="empty-list">Todavía no hay planes cargados.</div>':''}
+    <div style="display:grid;gap:10px;max-width:520px;">
+      ${planes.map(pl=>`
+        <div style="border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;background:var(--bg);">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+            <div>
+              <div style="font-size:14.5px;font-weight:700;color:var(--text);">${esc(pl.nombre)}</div>
+              <div style="font-size:12px;color:var(--text-2);margin-top:2px;">${pl.sesiones?esc(pl.sesiones)+' · ':''}${pl.precio?esc(pl.precio):''}</div>
+            </div>
+            ${esAdmin?`<div style="display:flex;gap:6px;flex-shrink:0;">
+              <button onclick="openPlanModal('${pl.id}')" style="background:none;border:none;color:var(--text-2);cursor:pointer;font-size:12px;">✏️</button>
+              <button onclick="eliminarPlanServicio('${pl.id}')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:12px;">🗑</button>
+            </div>`:''}
+          </div>
+          ${pl.notas?`<div style="font-size:12.5px;color:var(--text-2);margin-top:8px;white-space:pre-wrap;">${esc(pl.notas)}</div>`:''}
+        </div>`).join('')}
+    </div>`;
+}
+function openPlanModal(id){
+  if(CURRENT_ROLE!=='admin') return;
+  editingPlanId=id||null;
+  const pl=id?getPlanesServicio().find(p=>p.id===id):null;
+  document.getElementById('planModalTitle').textContent=pl?'Editar plan':'Nuevo plan';
+  document.getElementById('planNombre').value=pl?pl.nombre||'':'';
+  document.getElementById('planSesiones').value=pl?pl.sesiones||'':'';
+  document.getElementById('planPrecio').value=pl?pl.precio||'':'';
+  document.getElementById('planNotas').value=pl?pl.notas||'':'';
+  document.getElementById('modalPlan').classList.add('open');
+}
+function closePlanModal(){ document.getElementById('modalPlan').classList.remove('open'); }
+function guardarPlanServicio(){
+  const nombre=document.getElementById('planNombre').value.trim();
+  if(!nombre){ alert('Falta el nombre del plan.'); return; }
+  const datos={nombre, sesiones:document.getElementById('planSesiones').value.trim(), precio:document.getElementById('planPrecio').value.trim(), notas:document.getElementById('planNotas').value.trim()};
+  if(!DB.planesServicio) DB.planesServicio=[];
+  if(editingPlanId){
+    const pl=DB.planesServicio.find(p=>p.id===editingPlanId);
+    if(pl) Object.assign(pl,datos);
+  } else {
+    DB.planesServicio.push({id:uid(), ...datos});
+  }
+  saveDB();
+  closePlanModal();
+  renderPlanesLista();
+}
+function eliminarPlanServicio(id){
+  if(CURRENT_ROLE!=='admin') return;
+  if(!confirm('¿Eliminar este plan?')) return;
+  DB.planesServicio=(DB.planesServicio||[]).filter(p=>p.id!==id);
+  saveDB();
+  renderPlanesLista();
 }
 
 function renderTurnosShell() {
