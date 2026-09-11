@@ -2030,22 +2030,24 @@ function calcularScoresCuestionario(tipoId, respuestas) {
       </div>
       <div class="modal-2col">
         <div class="modal-field"><label>Deporte / Posición</label><input type="text" id="mDeporte" placeholder="Fútbol / Defensor"></div>
-        <div class="modal-field"><label>Cirujano / Médico</label><input type="text" id="mCirujano" placeholder="Dr. ..."></div>
+        <div class="modal-field" id="mCirujanoWrap"><label>Cirujano / Médico</label><input type="text" id="mCirujano" placeholder="Dr. ..."></div>
       </div>
-      <div class="modal-field"><label>Diagnóstico principal</label><input type="text" id="mDx" class="dx-input" placeholder="Escribí para buscar en la lista…" autocomplete="off"></div>
-      <div id="dxDetailFields" style="display:none;margin-bottom:14px;"></div>
-      <div class="modal-2col">
-        <div class="modal-field"><label>Estructura / Lado</label><input type="text" id="mEstructura" placeholder="LCA derecho"></div>
-        <div class="modal-field"><label>Fecha inicio / lesión</label><input type="date" id="mFechaInicio"></div>
+      <div id="mClinicoWrap">
+        <div class="modal-field"><label>Diagnóstico principal</label><input type="text" id="mDx" class="dx-input" placeholder="Escribí para buscar en la lista…" autocomplete="off"></div>
+        <div id="dxDetailFields" style="display:none;margin-bottom:14px;"></div>
+        <div class="modal-2col">
+          <div class="modal-field"><label>Estructura / Lado</label><input type="text" id="mEstructura" placeholder="LCA derecho"></div>
+          <div class="modal-field"><label>Fecha inicio / lesión</label><input type="date" id="mFechaInicio"></div>
+        </div>
+        <div class="modal-field"><label>Cirugía / Injerto / Técnica</label><input type="text" id="mCirugia" placeholder="Rec. LCA HTH ipsilateral · Nov 2023"></div>
+        <div class="modal-field"><label>Antecedentes relevantes</label><textarea id="mAntecedentes" placeholder="Lesiones previas, cirugías anteriores…"></textarea></div>
+        <div class="modal-field"><label>Objetivos del paciente</label><textarea id="mObjetivos" placeholder="Volver a competir…"></textarea></div>
+        <div class="modal-2col">
+          <div class="modal-field"><label>Medicación</label><input type="text" id="mMedicacion" placeholder="AINE, ninguna…"></div>
+          <div class="modal-field"><label>Contraindicaciones</label><input type="text" id="mContra" placeholder="Alergias, precauciones…"></div>
+        </div>
+        <div class="modal-field"><label>⚡ Alerta clave</label><input type="text" id="mAlerta" placeholder="Algo que no podés olvidar de este paciente"></div>
       </div>
-      <div class="modal-field"><label>Cirugía / Injerto / Técnica</label><input type="text" id="mCirugia" placeholder="Rec. LCA HTH ipsilateral · Nov 2023"></div>
-      <div class="modal-field"><label>Antecedentes relevantes</label><textarea id="mAntecedentes" placeholder="Lesiones previas, cirugías anteriores…"></textarea></div>
-      <div class="modal-field"><label>Objetivos del paciente</label><textarea id="mObjetivos" placeholder="Volver a competir…"></textarea></div>
-      <div class="modal-2col">
-        <div class="modal-field"><label>Medicación</label><input type="text" id="mMedicacion" placeholder="AINE, ninguna…"></div>
-        <div class="modal-field"><label>Contraindicaciones</label><input type="text" id="mContra" placeholder="Alergias, precauciones…"></div>
-      </div>
-      <div class="modal-field"><label>⚡ Alerta clave</label><input type="text" id="mAlerta" placeholder="Algo que no podés olvidar de este paciente"></div>
     </div>
     <div class="modal-footer">
       <button class="btn-secondary" onclick="closeModal()">Cancelar</button>
@@ -2373,6 +2375,7 @@ function calcularScoresCuestionario(tipoId, respuestas) {
       </div>
       <button id="btnMarcarAusente" style="display:none;background:var(--brown-light);border:1px solid rgba(142,90,46,.3);color:var(--brown);font-size:13px;font-weight:600;cursor:pointer;padding:9px;width:100%;text-align:center;border-radius:var(--radius-sm);" onclick="marcarAusente()">🚫 Marcar como ausente</button>
       <button id="btnVerFichaTurno" style="display:none;background:none;border:none;color:var(--navy);font-size:13px;font-weight:600;cursor:pointer;padding:4px;width:100%;text-align:center;">📋 Ver ficha del paciente</button>
+      <button id="btnEliminarSerie" style="display:none;background:none;border:none;color:var(--red);font-size:13px;cursor:pointer;padding:4px;width:100%;text-align:center;" onclick="eliminarSerieTurno()">🗑 Eliminar esta y las siguientes de la serie</button>
       <button style="background:none;border:none;color:var(--red);font-size:13px;cursor:pointer;padding:4px;width:100%;text-align:center;" onclick="deleteTurnoFromDetail()">🗑 Eliminar turno</button>
     </div>
   </div>
@@ -3405,7 +3408,7 @@ function renderPlanesLista(){
   panel.style.display='block';
   panel.style.flexDirection='';
   const planes=getPlanesServicio();
-  const esAdmin=CURRENT_ROLE==='admin';
+  const esAdmin=CURRENT_ROLE==='admin'||CURRENT_ROLE==='secretaria';
   panel.innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
       <h2 style="font-size:17px;font-weight:700;">Planes del consultorio</h2>
@@ -3430,7 +3433,7 @@ function renderPlanesLista(){
     </div>`;
 }
 function openPlanModal(id){
-  if(CURRENT_ROLE!=='admin') return;
+  if(CURRENT_ROLE!=='admin'&&CURRENT_ROLE!=='secretaria') return;
   editingPlanId=id||null;
   const pl=id?getPlanesServicio().find(p=>p.id===id):null;
   document.getElementById('planModalTitle').textContent=pl?'Editar plan':'Nuevo plan';
@@ -3457,7 +3460,7 @@ function guardarPlanServicio(){
   renderPlanesLista();
 }
 function eliminarPlanServicio(id){
-  if(CURRENT_ROLE!=='admin') return;
+  if(CURRENT_ROLE!=='admin'&&CURRENT_ROLE!=='secretaria') return;
   if(!confirm('¿Eliminar este plan?')) return;
   DB.planesServicio=(DB.planesServicio||[]).filter(p=>p.id!==id);
   saveDB();
@@ -3766,7 +3769,48 @@ function openTurDetail(id){
   } else {
     btnFicha.style.display='none';
   }
+  const serie=getSerieRelacionada(id);
+  const btnSerie=document.getElementById('btnEliminarSerie');
+  if(serie.length>1){
+    btnSerie.style.display='block';
+    btnSerie.textContent=`🗑 Eliminar esta y las siguientes de la serie (${serie.length})`;
+  } else {
+    btnSerie.style.display='none';
+  }
   document.getElementById('modalTurnoDetalle').classList.add('open');
+}
+// Turnos recurrentes se guardan como entradas sueltas (no comparten un id de serie), así que
+// para poder borrar "la serie" se agrupan por coincidencia: mismo paciente, mismo horario,
+// mismo día de la semana, desde esta fecha en adelante.
+function getSerieRelacionada(id){
+  const t=TURNOS[id]; if(!t) return [id];
+  const identidad = t.pacienteId || (t.paciente||'').trim().toLowerCase();
+  const [y,m,d]=t.fecha.split('-');
+  const dow=new Date(+y,+m-1,+d).getDay();
+  return Object.keys(TURNOS).filter(k=>{
+    const o=TURNOS[k];
+    if(!o||!o.fecha||!o.hora) return false;
+    const oIdentidad = o.pacienteId || (o.paciente||'').trim().toLowerCase();
+    if(oIdentidad!==identidad||o.hora!==t.hora||o.fecha<t.fecha) return false;
+    const [oy,om,od]=o.fecha.split('-');
+    return new Date(+oy,+om-1,+od).getDay()===dow;
+  });
+}
+function eliminarSerieTurno(){
+  if(!turDetailId) return;
+  const serie=getSerieRelacionada(turDetailId);
+  if(serie.length<2){ deleteTurnoFromDetail(); return; }
+  if(!confirm(`¿Eliminar estos ${serie.length} turnos (este y los siguientes con el mismo paciente, día y horario)?`)) return;
+  const updates={};
+  serie.forEach(sid=>{updates[sid]=null;});
+  turnosRef.update(updates).then(()=>{
+    document.getElementById('modalTurnoDetalle').classList.remove('open');
+    showToastTur(`${serie.length} turnos eliminados`);
+    turDetailId=null;
+  }).catch(err=>{
+    console.error('Error eliminando serie:',err);
+    showToastTur('No se pudo eliminar. Intentá de nuevo.',true);
+  });
 }
 function editTurnoFromDetail(){
   document.getElementById('modalTurnoDetalle').classList.remove('open');
@@ -6668,14 +6712,20 @@ function exportRutinaPDF(sesId){
 function populateCatSelect(sel=''){
   document.getElementById('mCategoria').innerHTML='<option value="">Sin categoría</option>'+getCats().map(c=>`<option value="${c.id}" ${c.id===sel?'selected':''}>${c.label}</option>`).join('');
 }
-// Selector de dueño/a del paciente: solo admin lo ve y lo puede cambiar.
+// Selector de dueño/a del paciente: admin y secretaria lo ven (necesitan elegir a quién asignarlo);
+// un/a kinesiólogo/a común siempre queda como propio, sin elegir.
 function populateKinesiologoSelect(selectedKey){
   const wrap=document.getElementById('mKinesiologoWrap');
-  if(CURRENT_ROLE!=='admin'){ wrap.style.display='none'; return; }
+  if(CURRENT_ROLE!=='admin'&&CURRENT_ROLE!=='secretaria'){ wrap.style.display='none'; return; }
   const sel=document.getElementById('mKinesiologo');
   const opciones=Object.entries(USUARIOS).filter(([,u])=>u.rol==='admin'||u.rol==='kinesiologo');
-  const key=selectedKey||emailKey(CURRENT_EMAIL);
-  sel.innerHTML=opciones.map(([k,u])=>`<option value="${k}" ${k===key?'selected':''}>${esc(u.nombre||k)}</option>`).join('');
+  if(CURRENT_ROLE==='secretaria'){
+    const key=selectedKey||'';
+    sel.innerHTML='<option value="">Elegir kinesiólogo/a…</option>'+opciones.map(([k,u])=>`<option value="${k}" ${k===key?'selected':''}>${esc(u.nombre||k)}</option>`).join('');
+  } else {
+    const key=selectedKey||emailKey(CURRENT_EMAIL);
+    sel.innerHTML=opciones.map(([k,u])=>`<option value="${k}" ${k===key?'selected':''}>${esc(u.nombre||k)}</option>`).join('');
+  }
   wrap.style.display='';
 }
 function openNewPatient(){
@@ -6684,6 +6734,9 @@ function openNewPatient(){
   populateKinesiologoSelect(emailKey(CURRENT_EMAIL));
   ['mNombre','mEdad','mContacto','mInstitucion','mDeporte','mCirujano','mDx','mEstructura','mFechaInicio','mCirugia','mAntecedentes','mObjetivos','mMedicacion','mContra','mAlerta'].forEach(id=>document.getElementById(id).value='');
   renderDxDetailFieldsModal('',{});
+  const esSecretaria=CURRENT_ROLE==='secretaria';
+  document.getElementById('mClinicoWrap').style.display=esSecretaria?'none':'';
+  document.getElementById('mCirujanoWrap').style.display=esSecretaria?'none':'';
   document.getElementById('modalOverlay').classList.add('open');
 }
 function openEditPatient(){
@@ -6700,16 +6753,21 @@ function openEditPatient(){
   document.getElementById('mMedicacion').value=ep.medicacion||'';document.getElementById('mContra').value=ep.contra||'';
   document.getElementById('mAlerta').value=p.alerta||'';
   renderDxDetailFieldsModal(ep.dx||'', ep.dxDetalles||{});
+  const esSecretaria=CURRENT_ROLE==='secretaria';
+  document.getElementById('mClinicoWrap').style.display=esSecretaria?'none':'';
+  document.getElementById('mCirujanoWrap').style.display=esSecretaria?'none':'';
   document.getElementById('modalOverlay').classList.add('open');
 }
 function closeModal(){document.getElementById('modalOverlay').classList.remove('open');editingPatientId=null;}
 function savePatient(){
   const nombre=document.getElementById('mNombre').value.trim();if(!nombre){alert('El nombre es obligatorio.');return;}
+  const esNuevo=!editingPatientId;
   const dxVal=document.getElementById('mDx').value;
-  // Dueño/a del paciente: admin puede elegirlo en el modal; kinesiólogo/a siempre queda como propio.
+  // Dueño/a del paciente: admin/secretaria lo eligen en el modal; kinesiólogo/a siempre queda como propio.
   let kinesiologoKey;
-  if(CURRENT_ROLE==='admin'){
-    kinesiologoKey=document.getElementById('mKinesiologo').value||emailKey(CURRENT_EMAIL);
+  if(CURRENT_ROLE==='admin'||CURRENT_ROLE==='secretaria'){
+    kinesiologoKey=document.getElementById('mKinesiologo').value;
+    if(!kinesiologoKey){ alert('Elegí a qué kinesiólogo/a asignar este paciente.'); return; }
   } else if(editingPatientId){
     const existente=DB.patients.find(p=>p.id===editingPatientId);
     kinesiologoKey=(existente&&existente.kinesiologoKey)||emailKey(CURRENT_EMAIL);
@@ -6725,7 +6783,23 @@ function savePatient(){
     if(idx!==-1){ Object.assign(DB.patients[idx],patData); Object.assign(getEpData(DB.patients[idx]),epData); }
   }
   else{DB.patients.unshift({id:uid(),sesiones:[],evaluaciones:[],cuestionarios:[],notas:'',lastOpened:Date.now(),...patData,...epData});currentPatientId=DB.patients[0].id;}
-  saveDB();closeModal();renderPatientList();renderPatient();
+  saveDB();closeModal();renderPatientList();
+  if(CURRENT_ROLE==='secretaria') renderPatientSecretaria(); else renderPatient();
+  if(esNuevo){
+    const pNuevo=getPatient(currentPatientId);
+    setTimeout(()=>{
+      if(pNuevo && confirm(`${pNuevo.nombre} fue creado/a. ¿Agendar su primer turno ahora?`)) abrirTurnoParaNuevoPaciente(pNuevo);
+    },250);
+  }
+}
+// Después de crear un paciente, ofrece agendar el turno de una vez con los datos ya vinculados.
+function abrirTurnoParaNuevoPaciente(p){
+  openNewTurno(ymd(new Date()), '');
+  document.getElementById('tPaciente').value=p.nombre;
+  document.getElementById('tPacienteId').value=p.id;
+  const hint=document.getElementById('tPacienteLinkHint');
+  hint.textContent=`✓ Vinculado a la ficha de ${p.nombre}`;
+  hint.classList.add('linked');
 }
 function deletePatient(){
   const p=getPatient(currentPatientId);if(!confirm(`¿Eliminar a ${p.nombre}?`))return;
@@ -7114,7 +7188,8 @@ function applyRoleUI(){
   const info=document.getElementById('sesionInfo');
   const etiqueta = esSecretaria?'Secretaria':esAdmin?'Admin':'Kinesiólogo/a';
   if(info) info.textContent = CURRENT_NOMBRE + ' · ' + etiqueta;
-  const btnNP=document.querySelector('.btn-new-patient'); if(btnNP) btnNP.style.display = esSecretaria?'none':'flex';
+  // "Nuevo paciente" ahora también lo puede usar la secretaria (ficha básica + elegir kinesiólogo/a).
+  const btnNP=document.querySelector('.btn-new-patient'); if(btnNP) btnNP.style.display='flex';
   const btnAM=document.getElementById('btnAyudaMemNav'); if(btnAM) btnAM.style.display = esSecretaria?'none':'flex';
   // Exportar/Importar/Categorías/Usuarios tocan datos de TODOS los kinesiólogos: solo admin.
   const footer=document.getElementById('sidebarFooter'); if(footer) footer.style.display = esAdmin?'flex':'none';
