@@ -12,7 +12,6 @@
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script>
 const firebaseConfig = {
   apiKey: "AIzaSyC-H1Q7ganQheCNS5E-GfW9D0V04s-mneA",
@@ -24,7 +23,6 @@ const firebaseConfig = {
   appId: "1:479178186370:web:e30e7089b64cd966239e9b"
 };
 firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
 const dbRef = firebase.database().ref('consultorio');
 const turnosRef = firebase.database().ref('turnos');
 const pendRef = firebase.database().ref('consultorio_pendientes');
@@ -628,10 +626,9 @@ input,textarea,select{font-family:'Inter',sans-serif;}
       </svg>
     </div>
     <h2>VORA</h2>
-    <p>Ingresá con tu cuenta para acceder.</p>
+    <p>Ingresá tu email para acceder.</p>
     <input type="email" id="authEmailInput" placeholder="Email" autocomplete="username">
-    <input type="password" id="authPassInput" placeholder="Contraseña" autocomplete="current-password">
-    <div id="authError" class="auth-gate-error">Email o contraseña incorrectos.</div>
+    <div id="authError" class="auth-gate-error">Ese email no está habilitado.</div>
     <button type="submit" id="authSubmitBtn">Entrar</button>
   </form>
 </div>
@@ -2091,7 +2088,7 @@ function calcularScoresCuestionario(tipoId, respuestas) {
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-bottom:16px;">
         <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);margin-bottom:8px;">Dar de alta un usuario</div>
         <p style="font-size:11.5px;color:var(--text-2);margin-bottom:10px;">
-          Primero hay que crear la cuenta en Firebase Console (Authentication → Users → Add user) con su email y una contraseña provisoria. Después asignale acá el rol con el mismo email.
+          Con cargar el email y el rol alcanza — no hace falta crear nada en Firebase. La persona entra a la app con ese mismo email, sin contraseña.
         </p>
         <div class="modal-field" style="margin-bottom:8px;"><input type="email" id="uEmail" placeholder="email@ejemplo.com" style="width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;font-size:13px;font-family:Inter,sans-serif;outline:none;"></div>
         <div class="modal-field" style="margin-bottom:8px;"><input type="text" id="uNombre" placeholder="Nombre para mostrar" style="width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;font-size:13px;font-family:Inter,sans-serif;outline:none;"></div>
@@ -6924,64 +6921,69 @@ function showAuthError(msg){
 }
 function hideAuthError(){ document.getElementById('authError').style.display='none'; }
 
+const SESION_KEY='vora_sesion_email';
+
 function tryAuthLogin(){
   const email=document.getElementById('authEmailInput').value.trim();
-  const pass=document.getElementById('authPassInput').value;
   const btn=document.getElementById('authSubmitBtn');
   hideAuthError();
-  if(!email||!pass){ showAuthError('Completá email y contraseña.'); return; }
+  if(!email){ showAuthError('Completá tu email.'); return; }
   btn.disabled=true; btn.textContent='Entrando…';
-  auth.signInWithEmailAndPassword(email,pass).catch(err=>{
+  resolveRoleAndStart(email).catch(()=>{
     btn.disabled=false; btn.textContent='Entrar';
-    if(err.code==='auth/too-many-requests') showAuthError('Demasiados intentos. Probá de nuevo en unos minutos.');
-    else showAuthError('Email o contraseña incorrectos.');
   });
-  // El caso de éxito lo maneja checkAuthAndStart() vía onAuthStateChanged.
 }
 
-function cerrarSesion(){ auth.signOut(); }
+function cerrarSesion(){
+  localStorage.removeItem(SESION_KEY);
+  CURRENT_ROLE=null;CURRENT_EMAIL=null;CURRENT_NOMBRE=null;
+  document.getElementById('authGate').style.display='flex';
+  setTimeout(()=>document.getElementById('authEmailInput').focus(),100);
+}
 
-async function resolveRoleAndStart(user){
-  document.getElementById('authGate').style.display='none';
+async function resolveRoleAndStart(email){
   try{
     const snap=await usuariosRef.once('value');
     USUARIOS=snap.val()||{};
-    const key=emailKey(user.email);
+    const key=emailKey(email);
     let entry=USUARIOS[key];
     if(!entry){
       if(Object.keys(USUARIOS).length===0){
-        entry={rol:'admin', nombre:(user.email||'').split('@')[0]};
+        entry={rol:'admin', nombre:email.split('@')[0], email};
         await usuariosRef.child(key).set(entry);
         USUARIOS[key]=entry;
       } else {
-        await auth.signOut();
-        document.getElementById('authGate').style.display='flex';
-        showAuthError('Tu cuenta no tiene un rol asignado todavía. Pedile a un/a kinesiólogo/a que te dé de alta en Usuarios.');
-        return;
+        showAuthError('Ese email no está habilitado todavía. Pedile a un/a admin que te dé de alta en Usuarios.');
+        throw new Error('email no habilitado');
       }
     }
     CURRENT_ROLE=entry.rol||'kinesiologo';
-    CURRENT_EMAIL=user.email;
-    CURRENT_NOMBRE=entry.nombre||user.email;
+    CURRENT_EMAIL=email;
+    CURRENT_NOMBRE=entry.nombre||email;
+    localStorage.setItem(SESION_KEY,email);
+    document.getElementById('authGate').style.display='none';
     const btn=document.getElementById('authSubmitBtn'); if(btn){btn.disabled=false;btn.textContent='Entrar';}
     startApp();
   }catch(err){
-    console.error(err);
-    document.getElementById('authGate').style.display='flex';
-    showAuthError('Error de conexión. Probá de nuevo.');
+    if(err.message!=='email no habilitado'){
+      console.error(err);
+      showAuthError('Error de conexión. Probá de nuevo.');
+    }
+    throw err;
   }
 }
 
 function checkAuthAndStart(){
-  auth.onAuthStateChanged(user=>{
-    if(user){
-      resolveRoleAndStart(user);
-    } else {
-      CURRENT_ROLE=null;CURRENT_EMAIL=null;CURRENT_NOMBRE=null;
+  const savedEmail=localStorage.getItem(SESION_KEY);
+  if(savedEmail){
+    resolveRoleAndStart(savedEmail).catch(()=>{
+      localStorage.removeItem(SESION_KEY);
       document.getElementById('authGate').style.display='flex';
-      setTimeout(()=>document.getElementById('authEmailInput').focus(),100);
-    }
-  });
+    });
+  } else {
+    document.getElementById('authGate').style.display='flex';
+    setTimeout(()=>document.getElementById('authEmailInput').focus(),100);
+  }
 }
 
 // ── Gestión de usuarios y roles (solo visible para kinesiólogos) ────────────
