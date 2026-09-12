@@ -2126,6 +2126,7 @@ function calcularScoresCuestionario(tipoId, respuestas) {
     </div>
     <div class="modal-body">
       <div class="modal-field" style="margin-bottom:10px;"><label>Nombre</label><input type="text" id="planNombre" placeholder="Ej: Rehab 10 sesiones" style="width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;font-size:13px;font-family:Inter,sans-serif;outline:none;"></div>
+      <div class="modal-field" style="margin-bottom:10px;"><label>Categoría</label><input type="text" id="planCategoria" list="categoriasSugeridas" placeholder="Ej: Rehabilitación" style="width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;font-size:13px;font-family:Inter,sans-serif;outline:none;"><datalist id="categoriasSugeridas"></datalist></div>
       <div class="modal-2col" style="margin-bottom:10px;">
         <div class="modal-field"><label>Sesiones</label><input type="text" id="planSesiones" placeholder="Ej: 10, 1 día, mensual" style="width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;font-size:13px;font-family:Inter,sans-serif;outline:none;"></div>
         <div class="modal-field"><label>Precio</label><input type="text" id="planPrecio" placeholder="Ej: $30.000" style="width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;font-size:13px;font-family:Inter,sans-serif;outline:none;"></div>
@@ -3409,35 +3410,68 @@ function renderPlanesLista(){
   panel.style.flexDirection='';
   const planes=getPlanesServicio();
   const esAdmin=CURRENT_ROLE==='admin'||CURRENT_ROLE==='secretaria';
+  const grupos=new Map();
+  planes.forEach(pl=>{
+    const cat=pl.categoria||'General';
+    if(!grupos.has(cat)) grupos.set(cat,[]);
+    grupos.get(cat).push(pl);
+  });
+  const linkPublico=`${location.origin}${location.pathname.replace(/[^/]*$/,'')}planes.html`;
   panel.innerHTML=`
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px;flex-wrap:wrap;">
       <h2 style="font-size:17px;font-weight:700;">Planes del consultorio</h2>
-      ${esAdmin?`<button class="btn-add-cuest" onclick="openPlanModal()"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Nuevo plan</button>`:''}
+      <div style="display:flex;gap:8px;">
+        ${esAdmin?`<button class="btn-secondary" onclick="compartirLinkPlanes()" style="font-size:12px;">🔗 Compartir link</button>`:''}
+        ${esAdmin?`<button class="btn-add-cuest" onclick="openPlanModal()"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Nuevo plan</button>`:''}
+      </div>
     </div>
     ${!planes.length?'<div class="empty-list">Todavía no hay planes cargados.</div>':''}
-    <div style="display:grid;gap:10px;max-width:520px;">
-      ${planes.map(pl=>`
-        <div style="border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;background:var(--bg);">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
-            <div>
-              <div style="font-size:14.5px;font-weight:700;color:var(--text);">${esc(pl.nombre)}</div>
-              <div style="font-size:12px;color:var(--text-2);margin-top:2px;">${pl.sesiones?esc(pl.sesiones)+' · ':''}${pl.precio?esc(pl.precio):''}</div>
-            </div>
-            ${esAdmin?`<div style="display:flex;gap:6px;flex-shrink:0;">
-              <button onclick="openPlanModal('${pl.id}')" style="background:none;border:none;color:var(--text-2);cursor:pointer;font-size:12px;">✏️</button>
-              <button onclick="eliminarPlanServicio('${pl.id}')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:12px;">🗑</button>
-            </div>`:''}
+    <div style="max-width:520px;">
+      ${[...grupos.entries()].map(([cat,items])=>`
+        <div style="margin-bottom:18px;">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-2);margin-bottom:8px;">${esc(cat)}</div>
+          <div style="display:grid;gap:10px;">
+            ${items.map(pl=>`
+              <div style="border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;background:var(--bg);">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+                  <div>
+                    <div style="font-size:14.5px;font-weight:700;color:var(--text);">${esc(pl.nombre)}</div>
+                    <div style="font-size:12px;color:var(--text-2);margin-top:2px;">${pl.sesiones?esc(pl.sesiones)+' · ':''}${pl.precio?esc(pl.precio):''}</div>
+                  </div>
+                  ${esAdmin?`<div style="display:flex;gap:6px;flex-shrink:0;">
+                    <button onclick="openPlanModal('${pl.id}')" style="background:none;border:none;color:var(--text-2);cursor:pointer;font-size:12px;">✏️</button>
+                    <button onclick="eliminarPlanServicio('${pl.id}')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:12px;">🗑</button>
+                  </div>`:''}
+                </div>
+                ${pl.notas?`<div style="font-size:12.5px;color:var(--text-2);margin-top:8px;white-space:pre-wrap;">${esc(pl.notas)}</div>`:''}
+              </div>`).join('')}
           </div>
-          ${pl.notas?`<div style="font-size:12.5px;color:var(--text-2);margin-top:8px;white-space:pre-wrap;">${esc(pl.notas)}</div>`:''}
         </div>`).join('')}
     </div>`;
+}
+function compartirLinkPlanes(){
+  const link=`${location.origin}${location.pathname.replace(/[^/]*$/,'')}planes.html`;
+  const texto=`Estos son los planes disponibles en VORA: ${link}`;
+  if(navigator.share){
+    navigator.share({title:'Planes VORA', text:texto, url:link}).catch(()=>{});
+  } else {
+    window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`,'_blank');
+  }
+}
+const CATEGORIAS_PLAN_SUGERIDAS=['Rehabilitación','Deportistas','Adultos mayores','Prevención','Evaluaciones'];
+function poblarCategoriasSugeridas(){
+  const existentes=getPlanesServicio().map(p=>p.categoria).filter(Boolean);
+  const todas=[...new Set([...CATEGORIAS_PLAN_SUGERIDAS,...existentes])];
+  document.getElementById('categoriasSugeridas').innerHTML=todas.map(c=>`<option value="${esc(c)}">`).join('');
 }
 function openPlanModal(id){
   if(CURRENT_ROLE!=='admin'&&CURRENT_ROLE!=='secretaria') return;
   editingPlanId=id||null;
   const pl=id?getPlanesServicio().find(p=>p.id===id):null;
+  poblarCategoriasSugeridas();
   document.getElementById('planModalTitle').textContent=pl?'Editar plan':'Nuevo plan';
   document.getElementById('planNombre').value=pl?pl.nombre||'':'';
+  document.getElementById('planCategoria').value=pl?pl.categoria||'':'';
   document.getElementById('planSesiones').value=pl?pl.sesiones||'':'';
   document.getElementById('planPrecio').value=pl?pl.precio||'':'';
   document.getElementById('planNotas').value=pl?pl.notas||'':'';
@@ -3447,7 +3481,7 @@ function closePlanModal(){ document.getElementById('modalPlan').classList.remove
 function guardarPlanServicio(){
   const nombre=document.getElementById('planNombre').value.trim();
   if(!nombre){ alert('Falta el nombre del plan.'); return; }
-  const datos={nombre, sesiones:document.getElementById('planSesiones').value.trim(), precio:document.getElementById('planPrecio').value.trim(), notas:document.getElementById('planNotas').value.trim()};
+  const datos={nombre, categoria:document.getElementById('planCategoria').value.trim()||'General', sesiones:document.getElementById('planSesiones').value.trim(), precio:document.getElementById('planPrecio').value.trim(), notas:document.getElementById('planNotas').value.trim()};
   if(!DB.planesServicio) DB.planesServicio=[];
   if(editingPlanId){
     const pl=DB.planesServicio.find(p=>p.id===editingPlanId);
