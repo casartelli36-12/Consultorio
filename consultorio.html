@@ -1115,6 +1115,106 @@ const QUESTIONNAIRES = {
     ],
   },
 
+  HAGOS: {
+    nombre: 'HAGOS',
+    nombreCompleto: 'Copenhagen Hip and Groin Outcome Score (Thorborg et al. 2011)',
+    region: 'Cadera / Ingle',
+    descripcion: 'Dolor inguinal y de cadera en deportistas activos: dolor, síntomas, función en la vida diaria, función deportiva, participación en actividad física y calidad de vida. Útil en pubalgia, lesión de aductores, pinzamiento femoroacetabular y patología de cadera en general.',
+    escala: [
+      {v:4, l:'Extremo'},
+      {v:3, l:'Severo'},
+      {v:2, l:'Moderado'},
+      {v:1, l:'Leve'},
+      {v:0, l:'Ninguno'},
+    ],
+    invertido: true, // 0 = mejor (sin síntoma ni dificultad)
+    escalas: {
+      frecuencia: [
+        {v:4, l:'Siempre / todo el tiempo'},
+        {v:3, l:'A menudo'},
+        {v:2, l:'A veces'},
+        {v:1, l:'Rara vez'},
+        {v:0, l:'Nunca'},
+      ],
+      participacion: [
+        {v:0, l:'Nunca'},
+        {v:1, l:'Rara vez'},
+        {v:2, l:'A veces'},
+        {v:3, l:'A menudo'},
+        {v:4, l:'Siempre'},
+      ],
+    },
+    subescalas: [
+      {
+        id:'Sintomas', label:'Síntomas',
+        items:[
+          {t:'¿Sentís molestias en la cadera y/o la ingle?', e:'frecuencia'},
+          {t:'¿Escuchás chasquidos u otro tipo de ruido en la cadera y/o la ingle?', e:'frecuencia'},
+          'Dificultad para abrir bien las piernas hacia los costados',
+          'Dificultad para dar zancadas completas al caminar',
+          {t:'¿Sentís pinchazos o punzadas repentinas en la cadera y/o la ingle?', e:'frecuencia'},
+          'Rigidez en la cadera y/o la ingle al levantarte por la mañana',
+          'Rigidez en la cadera y/o la ingle luego de estar sentado, acostado o en reposo más tarde en el día',
+        ],
+      },
+      {
+        id:'Dolor', label:'Dolor',
+        items:[
+          {t:'¿Con qué frecuencia te duele la cadera y/o la ingle?', e:'frecuencia'},
+          {t:'¿Con qué frecuencia sentís dolor en otras zonas que pensás que puede estar relacionado con tu problema de cadera/ingle?', e:'frecuencia'},
+          'Al extender completamente la cadera',
+          'Al flexionar completamente la cadera',
+          'Al subir o bajar escaleras',
+          'Por la noche, en la cama (dolor que interrumpe el sueño)',
+          'Al estar sentado o acostado',
+          'Al estar de pie',
+          'Al caminar en superficie dura (asfalto, cemento, etc.)',
+          'Al caminar en superficie irregular',
+        ],
+      },
+      {
+        id:'ADL', label:'Función en actividades de la vida diaria',
+        items:[
+          'Subir escaleras',
+          'Agacharte, por ejemplo para levantar algo del piso',
+          'Subir o bajar del auto',
+          'Estar acostado en la cama (darte vuelta o mantener la misma posición de cadera por un tiempo prolongado)',
+          'Tareas domésticas pesadas (mover cajas pesadas, fregar el piso, etc.)',
+        ],
+      },
+      {
+        id:'Deporte', label:'Función deportiva y recreativa',
+        items:[
+          'Hacer sentadillas',
+          'Correr',
+          'Girar/pivotear sobre la pierna lesionada',
+          'Caminar en superficie irregular',
+          'Correr a máxima velocidad',
+          'Llevar la pierna hacia adelante y/o hacia el costado con fuerza, como al patear o patinar',
+          'Movimientos explosivos repentinos con trabajo rápido de pies, como aceleraciones, desaceleraciones o cambios de dirección',
+          'Situaciones donde la pierna se estira hacia una posición extrema (lo más lejos posible del cuerpo)',
+        ],
+      },
+      {
+        id:'Participacion', label:'Participación en actividades físicas',
+        items:[
+          {t:'¿Podés participar en tus actividades físicas preferidas durante el tiempo que quisieras?', e:'participacion', inv:false},
+          {t:'¿Podés participar en tus actividades físicas preferidas a tu nivel de rendimiento habitual?', e:'participacion', inv:false},
+        ],
+      },
+      {
+        id:'CalidadVida', label:'Calidad de vida',
+        items:[
+          {t:'¿Con qué frecuencia sos consciente del problema en tu cadera y/o ingle?', e:'frecuencia'},
+          '¿Modificaste tu estilo de vida para evitar actividades que puedan dañar tu cadera y/o ingle?',
+          'En general, ¿cuánta dificultad tenés con tu cadera y/o ingle?',
+          {t:'¿Tu problema de cadera y/o ingle afecta tu estado de ánimo de forma negativa?', e:'frecuencia'},
+          {t:'¿Te sentís restringido/a por tu problema de cadera y/o ingle?', e:'frecuencia'},
+        ],
+      },
+    ],
+  },
+
   PRTEE: {
     nombre: 'PRTEE',
     nombreCompleto: 'Patient-Rated Tennis Elbow Evaluation (codo de tenista)',
@@ -2569,7 +2669,7 @@ function lsiClass(v) {
 //    moderada 29-35, alta ≥36 (sobre escala 11-44). Convertido proporcionalmente a la
 //    escala 0-33 que usa la app (ítems de 0 a 3 en vez de 1 a 4) e invertido a función.
 // Para el resto de los cuestionarios (FAAM, FAOS, KOOS, IKDC, DASH, SPADI, PRTEE,
-// LEFS, UEFI, Kujala) NO hay un corte único consensuado en la literatura — el PASS
+// LEFS, UEFI, Kujala, HAGOS) NO hay un corte único consensuado en la literatura — el PASS
 // publicado, por ejemplo, varía entre 56% y 93% según el estudio, la subescala y el
 // tiempo de seguimiento — así que se usa una banda genérica orientativa.
 const PROM_BANDAS = {
