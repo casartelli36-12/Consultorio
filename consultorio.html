@@ -722,8 +722,17 @@ const DX_TAXONOMY = {
     {n:'Tendinopatía del tibial posterior',t:'Tendinopatía'},
   ],
   'Cadera / Pelvis': [
-    {n:'Pubalgia / Osteopatía dinámica de pubis',t:'Funcional / Sobreuso'},
+    // Clasificación de dolor inguinal en deportistas según el consenso de Doha 2015
+    // (Weir et al., Br J Sports Med) — reemplaza términos en desuso como "osteítis
+    // del pubis" o "pubalgia" como diagnóstico único: hoy se describe por la entidad
+    // clínica predominante (una o varias pueden coexistir en el mismo paciente).
+    {n:'Dolor inguinal relacionado con los aductores (Doha)',t:'Funcional / Sobreuso'},
+    {n:'Dolor inguinal relacionado con el psoas-ilíaco (Doha)',t:'Funcional / Sobreuso'},
+    {n:'Dolor inguinal relacionado con el canal inguinal (Doha)',t:'Funcional / Sobreuso'},
+    {n:'Dolor inguinal relacionado con el pubis (Doha)',t:'Funcional / Sobreuso'},
+    {n:'Dolor inguinal relacionado con la cadera (Doha)',t:'Articular / Capsular'},
     {n:'Síndrome femoroacetabular (FAI)',t:'Articular / Capsular'},
+    {n:'Otras causas de dolor inguinal (hernia inguinal, fractura de estrés, atrapamiento nervioso)',t:'Otro'},
     {n:'Tendinopatía de glúteo medio',t:'Tendinopatía'},
     {n:'Tendinopatía isquiosural (proximal)',t:'Tendinopatía'},
     {n:'Tendinopatía de aductores',t:'Tendinopatía'},
@@ -1119,7 +1128,7 @@ const QUESTIONNAIRES = {
     nombre: 'HAGOS',
     nombreCompleto: 'Copenhagen Hip and Groin Outcome Score (Thorborg et al. 2011)',
     region: 'Cadera / Ingle',
-    descripcion: 'Dolor inguinal y de cadera en deportistas activos: dolor, síntomas, función en la vida diaria, función deportiva, participación en actividad física y calidad de vida. Útil en pubalgia, lesión de aductores, pinzamiento femoroacetabular y patología de cadera en general.',
+    descripcion: 'Dolor inguinal y de cadera en deportistas activos: dolor, síntomas, función en la vida diaria, función deportiva, participación en actividad física y calidad de vida. Útil en dolor inguinal relacionado con aductores/psoas-ilíaco/canal inguinal/pubis (clasificación de Doha), pinzamiento femoroacetabular y patología de cadera en general.',
     escala: [
       {v:4, l:'Extremo'},
       {v:3, l:'Severo'},
