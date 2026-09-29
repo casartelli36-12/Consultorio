@@ -632,7 +632,7 @@ input,textarea,select{font-family:'Inter',sans-serif;}
     <input type="email" id="authEmailInput" placeholder="Email" autocomplete="username">
     <div id="authError" class="auth-gate-error">Ese email no está habilitado.</div>
     <button type="submit" id="authSubmitBtn">Entrar</button>
-    <p style="font-size:10px;color:var(--text-3);margin:14px 0 0;">v2026-09-13-1</p>
+    <p style="font-size:10px;color:var(--text-3);margin:14px 0 0;">v2026-09-29-3</p>
   </form>
 </div>
 
@@ -924,7 +924,7 @@ function updateDxDetail(key,val){
   const ep=getEpData(p);
   if(!ep.dxDetalles)ep.dxDetalles={};
   ep.dxDetalles[key]=val;
-  clearTimeout(autoSaveTimer);autoSaveTimer=setTimeout(saveDB,600);
+  queueSaveTyping();
 }
 // Se llama cuando el diagnóstico cambia de verdad (al elegir de la lista o confirmar al salir del campo).
 // Si es el mismo dx de antes, no toca nada (para no perder lo ya tipeado al hacer foco/blur sin cambiar nada).
@@ -941,7 +941,7 @@ function onDxConfirmed(nombre){
     const p=getPatient(currentPatientId);
     if(p) getEpData(p).dxDetalles={};
     resWrap.innerHTML=buildDxDetailFieldsHTML(nombre,{},'rdxd',true);
-    clearTimeout(autoSaveTimer);autoSaveTimer=setTimeout(saveDB,600);
+    queueSaveTyping();
   }
 }
 function renderDxDetailFieldsModal(nombre,saved){
@@ -2590,12 +2590,52 @@ const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto'
 
 // ── Firebase ──────────────────────────────────────────────────────────────────
 function saveDB() {
+  clearTimeout(autoSaveTimer); pendingSavePid=null; pendingRefreshList=false;
   if(currentPatientId){
     const p=getPatient(currentPatientId);
     if(p) p.lastOpened=Date.now();
   }
   dbRef.set(DB); showSaveIndicator();
 }
+// ── Guardado liviano mientras se tipea ────────────────────────────────────────
+// Antes cada pausa al escribir mandaba TODA la base (dbRef.set(DB)), lo que en el celular
+// congelaba la pantalla y cortaba lo que se estaba tipeando. Ahora, al tipear, solo se
+// escribe el paciente que se está editando. Antes de escribir se chequea que en ese índice
+// siga estando el mismo paciente en Firebase; si no coincide, se hace el guardado completo.
+let pendingSavePid=null, pendingRefreshList=false, customExTimer=null;
+function queueSaveTyping(refreshList){
+  clearTimeout(autoSaveTimer);
+  const pid=currentPatientId||'__all__';
+  if(pendingSavePid && pendingSavePid!==pid) pendingSavePid='__all__';
+  else if(!pendingSavePid) pendingSavePid=pid;
+  if(refreshList===true) pendingRefreshList=true;
+  autoSaveTimer=setTimeout(flushTypingSave,1200);
+}
+function flushTypingSave(){
+  autoSaveTimer=null;
+  const pid=pendingSavePid, refresh=pendingRefreshList;
+  pendingSavePid=null; pendingRefreshList=false;
+  if(!pid) return;
+  const idx=(DB.patients||[]).findIndex(x=>x.id===pid);
+  if(pid==='__all__'||idx<0){ saveDB(); if(refresh) renderPatientList(); return; }
+  const p=DB.patients[idx];
+  p.lastOpened=Date.now();
+  const node=dbRef.child('patients/'+idx);
+  node.child('id').once('value').then(snap=>{
+    if(snap.val()!==p.id){ saveDB(); return; }
+    return node.set(p).then(showSaveIndicator);
+  }).then(()=>{ if(refresh) renderPatientList(); })
+    .catch(err=>{ console.error(err); saveDB(); });
+}
+function saveCustomExercises(){
+  clearTimeout(customExTimer);
+  customExTimer=setTimeout(()=>{ dbRef.child('customExercises').set(DB.customExercises||[]); },800);
+}
+// Si la app pasa a segundo plano o se cierra con algo sin guardar, se guarda completo.
+function flushPendienteAlSalir(){ if(pendingSavePid){ saveDB(); } }
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden') flushPendienteAlSalir(); });
+window.addEventListener('pagehide',flushPendienteAlSalir);
+
 function showSaveIndicator() {
   const el = document.getElementById('saveIndicator');
   el.classList.add('show');
@@ -2887,8 +2927,8 @@ function openExportPaciente() {
         });
       }
       const expDD=getDolorDiarioSesion(s), expDE=getDolorSesion(s), expRpe=getRpeSesion(s);
-      if(expDD!=null)   lines.push(`  EVA diaria: ${expDD}`);
-      if(expDE!=null)   lines.push(`  EVA entrenamiento: ${expDE}`);
+      if(expDD!=null)   lines.push(`  EVA pre-sesión: ${expDD}`);
+      if(expDE!=null)   lines.push(`  EVA post-sesión: ${expDE}`);
       if(expRpe!=null)  lines.push(`  RPE: ${expRpe}`);
       if(s.duracion)     lines.push(`  Duración: ${s.duracion} min`);
       if(s.eva)      lines.push(`  EVA/RPE (texto libre): ${s.eva}`);
@@ -3063,7 +3103,7 @@ function selectPatient(id){
   currentPatientId=id; currentTab='resumen'; currentEpisodioIdx=0;
   if(p&&p.episodios&&p.episodios.length) currentEpisodioIdx=p.episodios.length-1;
   p.lastOpened=Date.now();
-  clearTimeout(autoSaveTimer);autoSaveTimer=setTimeout(saveDB,600);
+  queueSaveTyping();
   renderPatientList();
   if(CURRENT_ROLE==='secretaria') renderPatientSecretaria(); else renderPatient();
   closeSidebar();
@@ -3372,7 +3412,7 @@ function saveCuestManager(){
 
 // ── Gestión de gráficos de Evolución (mostrar/ocultar) ──────────────────────
 const EVOLUCION_CHARTS = [
-  {id:'eva', label:'EVA — dolor diario vs. entrenamiento'},
+  {id:'eva', label:'EVA — pre vs. post sesión'},
   {id:'rpe', label:'RPE de sesión (esfuerzo)', nota:'Se superpone con Carga interna, que ya incluye el RPE.'},
   {id:'cargaInterna', label:'Carga interna (RPE × duración)'},
   {id:'cargaExterna', label:'Carga externa (volumen: series×reps×kg)'},
@@ -4554,7 +4594,7 @@ function renderEstudioRow(e,i){
 }
 function getEpData(p){if(p.episodios&&p.episodios[currentEpisodioIdx])return p.episodios[currentEpisodioIdx];return p;}
 function addEstudio(){const p=getPatient(currentPatientId);const ep=getEpData(p);if(!ep.estudios)ep.estudios=[];ep.estudios.push({tipo:'Ecografía',fecha:'',resultado:''});saveDB();renderTab();}
-function updateEstudio(i,key,val){const p=getPatient(currentPatientId);const ep=getEpData(p);if(!ep.estudios||!ep.estudios[i])return;ep.estudios[i][key]=val;clearTimeout(autoSaveTimer);autoSaveTimer=setTimeout(saveDB,600);}
+function updateEstudio(i,key,val){const p=getPatient(currentPatientId);const ep=getEpData(p);if(!ep.estudios||!ep.estudios[i])return;ep.estudios[i][key]=val;queueSaveTyping();}
 function deleteEstudio(i){const p=getPatient(currentPatientId);const ep=getEpData(p);ep.estudios.splice(i,1);saveDB();renderTab();}
 // ── Movilidad: cargás los grados medidos y el semáforo lo calcula la app sola,
 // comparando contra valores de referencia goniométricos estándar según la articulación.
@@ -4621,18 +4661,31 @@ function evalMov(grados, standard){
   if(pct==null) return {label:`${g}°`, clase:''};
   return {label:`${pct}%`, clase:lsiClass(pct)};
 }
-function updateMovilidad(movKey,field,val){
+// Actualiza solo el semáforo de la fila mientras se tipea (redibujar toda la tarjeta
+// destruía el input y cortaba la escritura después de cada dígito).
+function refreshMovBadge(movKey,inputEl){
+  if(!inputEl) return;
+  const p=getPatient(currentPatientId); if(!p) return;
+  const ep=getEpData(p);
+  const entry=getMovEntryHoy(ep);
+  const grados=(entry.valores||{})[movKey]??'';
+  const ev=evalMov(grados,getMovStandard(ep,movKey));
+  const badge=ev?(ev.clase?`<span class="lsi-badge ${ev.clase}">${ev.label}</span>`:`<span style="font-size:11px;color:var(--text-3);">${ev.label}</span>`):`<span style="font-size:11px;color:var(--text-3);">—</span>`;
+  while(inputEl.nextSibling) inputEl.parentNode.removeChild(inputEl.nextSibling);
+  inputEl.insertAdjacentHTML('afterend',badge);
+}
+function updateMovilidad(movKey,field,val,inputEl){
   const p=getPatient(currentPatientId);const ep=getEpData(p);
   const entry=getMovEntryHoy(ep);
   if(field==='grados'){
     if(!entry.valores)entry.valores={};
     entry.valores[movKey]=val;
-    clearTimeout(autoSaveTimer);autoSaveTimer=setTimeout(saveDB,600);
-    renderMovCard();
+    queueSaveTyping();
+    refreshMovBadge(movKey,inputEl);
   } else if(field==='nota'){
     if(!entry.notas)entry.notas={};
     entry.notas[movKey]=val;
-    clearTimeout(autoSaveTimer);autoSaveTimer=setTimeout(saveDB,600);
+    queueSaveTyping();
   }
 }
 function updateMovArticulacion(val){
@@ -4662,7 +4715,7 @@ function updateMovilidadSesion(sesId,movKey,val){
   const entry=getMovEntryForFecha(ep,ses.fecha);
   if(!entry.valores)entry.valores={};
   entry.valores[movKey]=val;
-  clearTimeout(autoSaveTimer);autoSaveTimer=setTimeout(saveDB,600);
+  queueSaveTyping();
 }
 let movSesOpenIds=new Set(); // fichas de sesión con la mini-grilla de movilidad expandida
 function toggleMovSes(sesId){
@@ -4726,7 +4779,7 @@ function buildMovRowHTML(ep,entry,hist,m,art){
   return `<div class="mov-row">
     <div class="mov-label"><span>${m.label}</span>${refTxt?`<span class="mov-label-ref">${refTxt}</span>`:''}</div>
     <div class="mov-picker">
-      <input class="mov-grados" type="number" value="${esc(grados)}" placeholder="°" title="Grados medidos" oninput="updateMovilidad('${m.key}','grados',this.value)">
+      <input class="mov-grados" type="number" value="${esc(grados)}" placeholder="°" title="Grados medidos" oninput="updateMovilidad('${m.key}','grados',this.value,this)">
       ${badge}
     </div>
     <input class="mov-nota" type="text" value="${esc(nota)}" placeholder="nota (opc.)" oninput="updateMovilidad('${m.key}','nota',this.value)">
@@ -4803,7 +4856,7 @@ function addFoto(){
   p.fotos.push({id:uid(),url:convertirUrlFoto(url.trim()),urlOriginal:url.trim(),descripcion:'',fecha:new Date().toISOString().slice(0,10)});
   saveDB();renderTab();
 }
-function updateFoto(i,key,val){const p=getPatient(currentPatientId);if(!p.fotos||!p.fotos[i])return;p.fotos[i][key]=val;clearTimeout(autoSaveTimer);autoSaveTimer=setTimeout(saveDB,600);}
+function updateFoto(i,key,val){const p=getPatient(currentPatientId);if(!p.fotos||!p.fotos[i])return;p.fotos[i][key]=val;queueSaveTyping();}
 function deleteFoto(i){if(!confirm('¿Eliminar esta foto?'))return;const p=getPatient(currentPatientId);p.fotos.splice(i,1);saveDB();renderTab();}
 
 function rField(label,id,val,key,type='text',full=false){
@@ -4838,16 +4891,14 @@ function updateDxBadge(val){
 }
 function updateField(key,val){
   const p=getPatient(currentPatientId);if(!p)return;
-  p[key]=val;clearTimeout(autoSaveTimer);
-  autoSaveTimer=setTimeout(()=>{saveDB();renderPatientList();},600);
+  p[key]=val;queueSaveTyping(true);
 }
 // Para campos clínicos que pertenecen al episodio (dx, estructura, cirugía, fechaInicio, etc.)
 // en vez de al paciente entero — así no se mezclan entre episodios distintos.
 function updateEpField(key,val){
   const p=getPatient(currentPatientId);if(!p)return;
   const ep=getEpData(p);
-  ep[key]=val;clearTimeout(autoSaveTimer);
-  autoSaveTimer=setTimeout(()=>{saveDB();renderPatientList();},600);
+  ep[key]=val;queueSaveTyping(true);
 }
 
 // ── SESIONES ──────────────────────────────────────────────────────────────────
@@ -4926,7 +4977,7 @@ function buildSesEjTable(sesId, ejercicios, sesEva){
         oninput="updateEjField('${sesId}',${i},'nombre',this.value)">
       ${camposMedidas}
       <div class="ej-eva-wrap">
-        <input class="ej-input eva" type="text" value="${esc(e.eva||'')}" placeholder="—" title="EVA durante este ejercicio (0-10). Si se deja vacío, se usa el EVA general de la sesión."
+        <input class="ej-input eva" type="text" value="${esc(e.eva||'')}" placeholder="—" title="EVA durante este ejercicio (0-10). Si se deja vacío, se usa el EVA post de la sesión."
           oninput="updateEjField('${sesId}',${i},'eva',this.value)">
       </div>
       <input class="ej-input nota" type="text" value="${esc(e.nota||'')}" placeholder="notas…"
@@ -5100,8 +5151,7 @@ function updateEjField(sesId, idx, field, val) {
   if(!synced && ['kg','reps','series','rir','distancia','pasadas','duracionCarrera','rpeCarrera'].indexOf(field)!==-1){
     snapshotEjHistorialLocal(ses.ejercicios[idx]);
   }
-  clearTimeout(autoSaveTimer);
-  autoSaveTimer = setTimeout(saveDB, 800);
+  queueSaveTyping();
 }
 
 function addEjToSes(sesId) {
@@ -5245,7 +5295,7 @@ function renderSesCard(s,num,fechaInicio){
   const dolorDiario=getDolorDiarioSesion(s), dolor=getDolorSesion(s), rpe=getRpeSesion(s);
   const evaSemaforo=v=>v==null?null:(v<=3?'verde':v<=6?'amarillo':'rojo');
   const evaBadge=(label,v)=>v==null?'':`<span class="semaforo-badge semaforo-${evaSemaforo(v)}">${label} ${v}</span>`;
-  const chip=[evaBadge('EVA-d',dolorDiario),evaBadge('EVA-e',dolor),rpe!=null?`<span>RPE ${rpe}</span>`:''].filter(Boolean).join('')||(s.eva?esc(s.eva):'');
+  const chip=[evaBadge('EVA pre',dolorDiario),evaBadge('EVA post',dolor),rpe!=null?`<span>RPE ${rpe}</span>`:''].filter(Boolean).join('')||(s.eva?esc(s.eva):'');
 
   return `
     <div class="ses-card" id="sc_${s.id}">
@@ -5266,7 +5316,7 @@ function renderSesCard(s,num,fechaInicio){
           <div class="ses-field"><label>Fecha</label><input type="date" value="${s.fecha||''}" onchange="updateSes('${s.id}','fecha',this.value)"></div>
           <div class="ses-field"><label>Estado / Fase RTP</label><input type="text" value="${esc(s.fase||'')}" placeholder="Fase 3" oninput="updateSes('${s.id}','fase',this.value)"></div>
           <div class="ses-field full"><label>Cómo llegó</label><textarea oninput="updateSes('${s.id}','subjetivo',this.value)">${esc(s.subjetivo||'')}</textarea></div>
-          <div class="ses-field"><label>EVA diaria (general)</label><input type="number" min="0" max="10" value="${esc(s.dolorDiario!=null?s.dolorDiario:'')}" oninput="updateSes('${s.id}','dolorDiario',this.value)"></div>
+          <div class="ses-field"><label>EVA pre (al llegar)</label><input type="number" min="0" max="10" value="${esc(getEvaPreSesion(s)!=null?getEvaPreSesion(s):'')}" oninput="updateSes('${s.id}','evaPre',this.value)"></div>
           <div class="ses-field"></div>
           <div class="ses-field full" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;margin:2px 0 4px;">
             <label style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;" onclick="toggleMovSes('${s.id}')">
@@ -5297,7 +5347,7 @@ function renderSesCard(s,num,fechaInicio){
             </div>
             ${buildSesEjTable(s.id, ejercicios, dolor)}
           </div>
-          <div class="ses-field"><label>EVA entrenamiento</label><input type="number" min="0" max="10" value="${esc(s.dolor!=null?s.dolor:'')}" oninput="updateSes('${s.id}','dolor',this.value)"></div>
+          <div class="ses-field"><label>EVA post (al terminar)</label><input type="number" min="0" max="10" value="${esc(getEvaPostSesion(s)!=null?getEvaPostSesion(s):'')}" oninput="updateSes('${s.id}','evaPost',this.value)"></div>
           <div class="ses-field"><label>RPE (esfuerzo 0-10)</label><input type="number" min="0" max="10" value="${esc(s.rpe!=null?s.rpe:'')}" oninput="updateSes('${s.id}','rpe',this.value)"></div>
           <div class="ses-field"><label>Duración (min)</label><input type="number" min="0" value="${esc(s.duracion!=null?s.duracion:'')}" oninput="updateSes('${s.id}','duracion',this.value)"></div>
           <div class="ses-field full"><label>Lo que observé</label><textarea oninput="updateSes('${s.id}','objetivo',this.value)">${esc(s.objetivo||'')}</textarea></div>
@@ -5317,7 +5367,7 @@ function toggleSes(id){
   const el=document.getElementById('sb_'+id);
   if(el) el.classList.toggle('open', openCardIds.has(id));
 }
-function updateSes(sesId,key,val){const p=getPatient(currentPatientId);const ep=getEpData(p);const ses=(ep.sesiones||[]).find(s=>s.id===sesId);if(!ses)return;ses[key]=val;clearTimeout(autoSaveTimer);autoSaveTimer=setTimeout(saveDB,800);}
+function updateSes(sesId,key,val){const p=getPatient(currentPatientId);const ep=getEpData(p);const ses=(ep.sesiones||[]).find(s=>s.id===sesId);if(!ses)return;ses[key]=val;queueSaveTyping();}
 function deleteSes(sesId){if(!confirm('¿Eliminar esta sesión?'))return;const p=getPatient(currentPatientId);const ep=getEpData(p);ep.sesiones=(ep.sesiones||[]).filter(s=>s.id!==sesId);saveDB();renderTab();}
 
 // Inicializa el array de series reales de un ejercicio (lazy) en base a la cantidad
@@ -5339,8 +5389,7 @@ function updateEjSetField(sesId, ejIdx, setIdx, field, val){
   ensureEjSets(ses.ejercicios[ejIdx]);
   if(!ses.ejercicios[ejIdx].sets[setIdx]) return;
   ses.ejercicios[ejIdx].sets[setIdx][field]=val;
-  clearTimeout(autoSaveTimer);
-  autoSaveTimer=setTimeout(saveDB,600);
+  queueSaveTyping();
 }
 
 
@@ -5368,8 +5417,7 @@ function learnExerciseName(name){
   if(isEjercicioConocido(trimmed)) return;
   if(!DB.customExercises) DB.customExercises=[];
   DB.customExercises.push(trimmed);
-  clearTimeout(autoSaveTimer);
-  autoSaveTimer=setTimeout(saveDB,800);
+  saveCustomExercises();
 }
 
 // Modo navegación (campo vacío): categorías colapsadas, se despliegan al tocarlas
@@ -5596,7 +5644,7 @@ document.addEventListener('focusout', e=>{
 function crearSesionRapida(){
   const p=getPatient(currentPatientId); if(!p) return;
   const ep=getEpData(p); if(!ep.sesiones) ep.sesiones=[];
-  const nueva={id:uid(),fecha:new Date().toISOString().slice(0,10),fase:'',subjetivo:'',ejercicios:[],dolorDiario:'',dolor:'',rpe:'',duracion:'',objetivo:'',plan:''};
+  const nueva={id:uid(),fecha:new Date().toISOString().slice(0,10),fase:'',subjetivo:'',ejercicios:[],evaPre:'',evaPost:'',rpe:'',duracion:'',objetivo:'',plan:''};
   ep.sesiones.push(nueva);
   openCardIds.add(nueva.id);
   saveDB(); renderTab();
@@ -6312,7 +6360,7 @@ function updatePlanEjField(planId,diaId,idx,field,val){
   if(!dia||!dia.ejercicios||!dia.ejercicios[idx]) return;
   dia.ejercicios[idx][field]=val;
   dia.actualizado=new Date().toISOString();
-  clearTimeout(autoSaveTimer); autoSaveTimer=setTimeout(saveDB,800);
+  queueSaveTyping();
 }
 function addEjToPlanDia(planId,diaId){
   const {dia}=findPlanDia(planId,diaId); if(!dia) return;
@@ -6344,7 +6392,7 @@ function updateDiaField(planId,diaId,key,val){
   dia[key]=val;
   dia.actualizado=new Date().toISOString();
   if(key==='lugar'){ saveDB(); renderTab(); }
-  else { clearTimeout(autoSaveTimer); autoSaveTimer=setTimeout(saveDB,800); }
+  else { queueSaveTyping(); }
 }
 function addDiaToPlan(planId){
   const pl=getPlan(planId); if(!pl) return;
@@ -6361,7 +6409,7 @@ function removeDiaFromPlan(planId,diaId){
 function updatePlanField(planId,key,val){
   const pl=getPlan(planId); if(!pl) return;
   pl[key]=val;
-  clearTimeout(autoSaveTimer); autoSaveTimer=setTimeout(saveDB,800);
+  queueSaveTyping();
 }
 function togglePlan(id){
   if(openCardIds.has(id)) openCardIds.delete(id); else openCardIds.add(id);
@@ -6501,16 +6549,23 @@ function exportPlanPDF(planId){
 function formatFechaCorta(s){ if(!s) return '—'; const [,m,d]=s.split('-'); return `${d}/${m}`; }
 
 // Dolor (EVA): usa el campo numérico nuevo; si no existe, intenta parsear el texto libre viejo (ej "EVA 4 · RPE 7")
-function getDolorSesion(s){
+// EVA post-sesión (al terminar). Campo nuevo: evaPost. Si no existe, cae al viejo 'dolor'
+// (EVA entrenamiento) y por último al texto libre viejo.
+function getEvaPostSesion(s){
+  if(s.evaPost!==undefined && s.evaPost!==null && s.evaPost!=='') { const n=parseFloat(s.evaPost); return isNaN(n)?null:n; }
   if(s.dolor!==undefined && s.dolor!==null && s.dolor!=='') { const n=parseFloat(s.dolor); return isNaN(n)?null:n; }
   if(s.eva){ const m=s.eva.match(/(\d+(\.\d+)?)/); if(m) return parseFloat(m[1]); }
   return null;
 }
+const getDolorSesion=getEvaPostSesion;
 // Dolor diario (EVA general del día, independiente del entrenamiento)
-function getDolorDiarioSesion(s){
+// EVA pre-sesión (al llegar). Campo nuevo: evaPre. Si no existe, cae al viejo 'dolorDiario'.
+function getEvaPreSesion(s){
+  if(s.evaPre!==undefined && s.evaPre!==null && s.evaPre!=='') { const n=parseFloat(s.evaPre); return isNaN(n)?null:n; }
   if(s.dolorDiario!==undefined && s.dolorDiario!==null && s.dolorDiario!=='') { const n=parseFloat(s.dolorDiario); return isNaN(n)?null:n; }
   return null;
 }
+const getDolorDiarioSesion=getEvaPreSesion;
 function getRpeSesion(s){
   if(s.rpe!==undefined && s.rpe!==null && s.rpe!=='') { const n=parseFloat(s.rpe); return isNaN(n)?null:n; }
   if(s.eva){ const m=s.eva.match(/RPE\s*(\d+(\.\d+)?)/i); if(m) return parseFloat(m[1]); }
@@ -6716,11 +6771,11 @@ function renderEvolucion(panel){
     <div class="home-grid">
       ${evoChartEnabled('eva')?`
       <div class="home-card">
-        <div class="home-card-title">🩹 EVA — dolor diario vs. entrenamiento</div>
-        ${hayDolor?buildChartLegend([{name:'EVA diaria',color:'var(--blue-chip)'},{name:'EVA entrenamiento',color:'var(--red)'}]):''}
+        <div class="home-card-title">🩹 EVA — pre vs. post sesión</div>
+        ${hayDolor?buildChartLegend([{name:'EVA pre',color:'var(--blue-chip)'},{name:'EVA post',color:'var(--red)'}]):''}
         ${buildBarChartSVG([
-          {name:'EVA diaria',color:'var(--blue-chip)',data:dolorDiariaData},
-          {name:'EVA entrenamiento',color:'var(--red)',data:dolorEntrenoData}
+          {name:'EVA pre',color:'var(--blue-chip)',data:dolorDiariaData},
+          {name:'EVA post',color:'var(--red)',data:dolorEntrenoData}
         ],{min:0,max:10,emptyMsg:'Todavía no hay sesiones registradas.'})}
       </div>`:''}
       ${evoChartEnabled('rpe')?`
@@ -7652,6 +7707,21 @@ dbRef.once('value').then(snapshot=>{
     });
   });
   if(migradoClinico) saveDB();
+
+  // Migración: EVA de sesión pasa de 'dolorDiario' (EVA diaria) / 'dolor' (EVA entrenamiento)
+  // a 'evaPre' (al llegar) / 'evaPost' (al terminar). Solo se backfillea si el campo nuevo no
+  // existe; los campos viejos NO se borran.
+  let migradoEva=false;
+  const migrarEvaSes=s=>{
+    if(!s) return;
+    if(s.evaPre===undefined && s.dolorDiario!==undefined && s.dolorDiario!==null && s.dolorDiario!==''){ s.evaPre=s.dolorDiario; migradoEva=true; }
+    if(s.evaPost===undefined && s.dolor!==undefined && s.dolor!==null && s.dolor!==''){ s.evaPost=s.dolor; migradoEva=true; }
+  };
+  DB.patients.forEach(p=>{
+    (p.sesiones||[]).forEach(migrarEvaSes);
+    (p.episodios||[]).forEach(ep=>(ep.sesiones||[]).forEach(migrarEvaSes));
+  });
+  if(migradoEva) saveDB();
 
   // Migración: pacientes cargados antes del sistema de roles no tienen dueño/a asignado.
   // La corre quien primero entre como admin después de este cambio, y los deja a su nombre
