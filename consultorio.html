@@ -87,6 +87,28 @@ input,textarea,select{font-family:'Inter',sans-serif;}
 .pat-group-count{background:rgba(255,255,255,.12);color:rgba(255,255,255,.7);font-size:10px;font-weight:700;border-radius:20px;padding:1px 7px;}
 .pi-days{font-size:10px;font-weight:700;color:var(--orange);background:rgba(107,142,92,.15);padding:2px 6px;border-radius:20px;flex-shrink:0;margin-left:6px;}
 .empty-list{padding:32px 16px;text-align:center;color:rgba(255,255,255,.3);font-size:13px;}
+.pi-chips{display:flex;gap:8px;margin-top:3px;font-size:10px;font-weight:700;white-space:nowrap;overflow:hidden;}
+.pi-chip{display:inline-flex;align-items:center;gap:3px;color:rgba(255,255,255,.55);}
+.pi-chip i{width:6px;height:6px;border-radius:50%;background:#9AA0AD;display:inline-block;flex-shrink:0;}
+.pi-chip.g i{background:#6FCF97;}
+.pi-chip.y i{background:#F2C94C;}
+.pi-chip.r i{background:#EB5757;}
+.rc-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:16px;}
+.rc-title{font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;}
+.rc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;}
+.rc-tile{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;min-width:0;}
+.rc-tile.full{grid-column:1/-1;}
+.rc-lbl{font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.04em;}
+.rc-val{font-size:17px;font-weight:700;color:var(--text);margin-top:2px;word-break:break-word;}
+.rc-sub{font-size:11.5px;color:var(--text-2);margin-top:2px;}
+.rc-pills{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;}
+.rc-pill{font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;background:var(--bg);color:var(--text-2);border:1px solid var(--border);white-space:nowrap;}
+.rc-pill.g{background:var(--green-light);color:var(--green);border-color:transparent;}
+.rc-pill.y{background:#FFF8E1;color:#856B00;border-color:transparent;}
+.rc-pill.r{background:var(--red-light);color:var(--red);border-color:transparent;}
+.rc-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px;}
+.rc-table th{text-align:left;font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.04em;padding:4px 0;}
+.rc-table td{padding:6px 0;border-top:1px solid var(--border);}
 
 /* Main */
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--bg);}
@@ -632,7 +654,7 @@ input,textarea,select{font-family:'Inter',sans-serif;}
     <input type="email" id="authEmailInput" placeholder="Email" autocomplete="username">
     <div id="authError" class="auth-gate-error">Ese email no está habilitado.</div>
     <button type="submit" id="authSubmitBtn">Entrar</button>
-    <p style="font-size:10px;color:var(--text-3);margin:14px 0 0;">v2026-10-18-2</p>
+    <p style="font-size:10px;color:var(--text-3);margin:14px 0 0;">v2026-10-23-1</p>
   </form>
 </div>
 
@@ -3086,11 +3108,13 @@ function renderPatientItem(p){
     <div class="pi-info">
       <div class="pi-name" style="display:flex;align-items:center;gap:5px">
         ${p.nombre||'Sin nombre'}
+        ${!esSecretaria&&p.alerta?`<span title="${esc(p.alerta)}" style="font-size:10px;flex-shrink:0">⚡</span>`:''}
         ${dotColor?`<span class="pi-cat-dot" style="background:${dotColor}"></span>`:''}
         ${!esSecretaria&&estado==='alta'?'<span style="font-size:10px;color:#1B5E3B;font-weight:700">✓</span>':''}
         ${!esSecretaria&&estado==='abandono'?'<span style="font-size:10px;color:#aaa">—</span>':''}
       </div>
       <div class="pi-sub">${esSecretaria?(p.institucion||'—'):(epUlt.dx||p.institucion||'—')}</div>
+      ${!esSecretaria&&estado==='tratamiento'?rcChipsHTML(p,epUlt):''}
     </div>
     ${!esSecretaria&&dias!==null&&estado==='tratamiento'?`<div class="pi-days">${tiempoEvolucion(dias).compacto}</div>`:''}
   </div>`;
@@ -4471,6 +4495,177 @@ function buildTurHistorialHTML(patientId){
     ${rows}
   </div>`;
 }
+// ── RESUMEN CLÍNICO: tarjeta en la lista + bloque en la ficha ────────────────
+// Reutiliza lo que VORA ya calcula (LSI de las evaluaciones, carga interna RPE × duración,
+// volumen, metros de carrera, fases del protocolo, turnos). No agrega campos nuevos.
+const RC_REEVAL_DIAS=28;
+function rcHoy(){ return ymd(new Date()); }
+function rcDif(a,b){ return Math.round((new Date(b+'T00:00:00')-new Date(a+'T00:00:00'))/86400000); }
+function rcSesOrd(ep){ return (ep.sesiones||[]).filter(s=>s.fecha).slice().sort((a,b)=>b.fecha.localeCompare(a.fecha)); }
+function rcLsiCls(v){ return ({'lsi-ok':'g','lsi-warn':'y','lsi-bad':'r'})[lsiClass(v)]||''; }
+function rcAcwrCls(r){ return r==null?'':r>1.3?'r':r<0.8?'y':'g'; }
+// Último LSI por test (mismo agrupamiento que la solapa Evolución) + el valor anterior del mismo test.
+function rcLsi(ep){
+  const evs=(ep.evaluaciones||[]).filter(e=>e.fecha).slice().sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  const g={};
+  evs.forEach(e=>{
+    const l=parseFloat(e.lsi); if(isNaN(l)) return;
+    const k=e.testId?(e.instrumento+'_'+e.testId):(e.test||'eval');
+    (g[k]=g[k]||{test:e.test||'Evaluación',v:[]}).v.push({fecha:e.fecha,lsi:l});
+  });
+  const items=Object.values(g).map(x=>{
+    const u=x.v[x.v.length-1], a=x.v.length>1?x.v[x.v.length-2]:null;
+    return {test:x.test,fecha:u.fecha,lsi:u.lsi,prev:a?a.lsi:null};
+  }).sort((a,b)=>a.lsi-b.lsi);
+  if(!items.length) return null;
+  return {items:items,min:items[0].lsi,prom:Math.round(items.reduce((s,x)=>s+x.lsi,0)/items.length),fecha:items.reduce((m,x)=>x.fecha>m?x.fecha:m,items[0].fecha)};
+}
+// ACWR de la semana de la última sesión con carga interna (misma lógica que computeACWRSemanal:
+// semana aguda vs. promedio de esa semana + las 3 anteriores, contando solo desde el inicio del episodio).
+function rcAcwr(ep,p){
+  const ses=(ep.sesiones||[]).filter(s=>s.fecha);
+  const conC=ses.filter(s=>getCargaInterna(s)!=null);
+  if(!conC.length) return null;
+  const last=conC.reduce((m,s)=>s.fecha>m?s.fecha:m,conC[0].fecha);
+  if(rcDif(last,rcHoy())>14) return {viejo:true};
+  const f0=ep.fechaInicio||(p&&p.fechaInicio)||ses.reduce((m,s)=>s.fecha<m?s.fecha:m,ses[0].fecha);
+  const w0=getWeekMon(new Date(f0+'T00:00:00'));
+  const wRef=getWeekMon(new Date(last+'T00:00:00'));
+  if(wRef<w0) return null;
+  const tot=w=>{ const a=ymd(w), b=ymd(addDays(w,6)); return ses.filter(s=>s.fecha>=a&&s.fecha<=b).reduce((t,s)=>t+(getCargaInterna(s)||0),0); };
+  const ws=[]; for(let i=3;i>=0;i--){ const w=addDays(wRef,-7*i); if(w>=w0) ws.push(w); }
+  const tots=ws.map(tot);
+  const cron=tots.reduce((a,b)=>a+b,0)/tots.length;
+  const aguda=tots[tots.length-1];
+  return {ratio:cron>0?Math.round(aguda/cron*100)/100:null,aguda:aguda,inicio:ymd(wRef)};
+}
+// Últimos 7 días corridos (hoy incluido): sesiones, carga interna, volumen y metros de carrera.
+function rcUlt7(ep){
+  const hoy=rcHoy(), ini=ymd(addDays(new Date(),-6));
+  const l=(ep.sesiones||[]).filter(s=>s.fecha&&s.fecha>=ini&&s.fecha<=hoy);
+  let ci=0,hayCi=false,vol=0,hayVol=false,met=0;
+  l.forEach(s=>{
+    const c=getCargaInterna(s); if(c!=null){ ci+=c; hayCi=true; }
+    const v=calcVolumenSesion(s.ejercicios); if(v!=null){ vol+=v; hayVol=true; }
+    met+=getMetrosCarreraSesion(s);
+  });
+  return {n:l.length,ci:ci,hayCi:hayCi,vol:vol,hayVol:hayVol,met:met};
+}
+// Fase actual del protocolo (misma lógica que buildProtocoloResumenMiniHTML, sin modificar el episodio).
+function rcProto(ep){
+  const pf=ep.protocoloFase||{};
+  const tipo=pf.tipo!==undefined?pf.tipo:detectProtocoloTipo(ep);
+  if(!tipo||tipo==='__none__') return null;
+  const pr=PROTOCOLOS_FASES[tipo]; if(!pr) return null;
+  const hitos=pf.hitos||{};
+  const f=getFaseActualProtocolo(pr,hitos);
+  const ult=pr.fases[pr.fases.length-1].numero;
+  const comp=f.criterios.filter((_,i)=>hitos[f.numero+'_'+i]).length;
+  return {fase:f.numero,ult:ult,comp:comp,tot:f.criterios.length,completo:f.numero===ult&&comp===f.criterios.length};
+}
+function rcTurnos(pid){
+  const hoy=rcHoy(), ini=ymd(addDays(new Date(),-29));
+  const ts=Object.values(TURNOS||{}).filter(t=>t.pacienteId===pid&&t.fecha);
+  const prox=ts.filter(t=>t.fecha>=hoy&&t.estado==='confirmado').sort((a,b)=>(a.fecha+(a.hora||'')).localeCompare(b.fecha+(b.hora||'')))[0]||null;
+  const h30=ts.filter(t=>t.fecha>=ini&&t.fecha<=hoy&&(t.estado==='realizado'||t.estado==='ausente'));
+  const ok=h30.filter(t=>t.estado==='realizado').length;
+  return {prox:prox,asis:h30.length?{ok:ok,n:h30.length,pct:Math.round(ok/h30.length*100)}:null};
+}
+function rcFlecha(a,b){
+  if(b==null) return '<span class="rc-sub">—</span>';
+  const d=Math.round(a)-Math.round(b);
+  return d>0?'<span style="color:var(--green);font-weight:700">↑ +'+d+'</span>':d<0?'<span style="color:var(--red);font-weight:700">↓ '+d+'</span>':'<span class="rc-sub">=</span>';
+}
+function rcFmtM(m){ return m>=1000?(Math.round(m/100)/10)+' km':Math.round(m)+' m'; }
+// Fichas chicas debajo del diagnóstico en la lista lateral: LSI mínimo, ACWR, última sesión, fase del protocolo.
+function rcChipsHTML(p,ep){
+  const o=[];
+  const l=rcLsi(ep);
+  if(l) o.push(['LSI '+Math.round(l.min)+'%',rcLsiCls(l.min)]);
+  const a=rcAcwr(ep,p);
+  if(a&&a.ratio!=null) o.push(['×'+a.ratio.toFixed(1),rcAcwrCls(a.ratio)]);
+  const u=rcSesOrd(ep)[0];
+  if(u){ const d=rcDif(u.fecha,rcHoy()); o.push(['últ. '+(d<=0?'hoy':d+'d'),d>14?'y':'']); }
+  const pr=rcProto(ep);
+  if(pr) o.push([pr.completo?'🏁':'F'+pr.fase+'/'+pr.ult,'']);
+  return o.length?'<div class="pi-chips">'+o.map(c=>'<span class="pi-chip '+c[1]+'"><i></i>'+esc(c[0])+'</span>').join('')+'</div>':'';
+}
+function buildResumenClinicoHTML(p,ep){
+  const hoy=rcHoy();
+  const estado=ep.estado||'tratamiento';
+  const fi=ep.fechaInicio||p.fechaInicio;
+  const lsi=rcLsi(ep), ac=rcAcwr(ep,p), u7=rcUlt7(ep), pr=rcProto(ep), tu=rcTurnos(p.id);
+  const u=rcSesOrd(ep)[0]||null;
+  const t=[];
+  /* diagnóstico */
+  const lado=({izq:'Lado izquierdo',der:'Lado derecho'})[ep.ladoAfectado]||'';
+  const subDx=[lado,ep.estructura,ep.cirugia].filter(Boolean).join(' · ');
+  t.push('<div class="rc-tile full"><div class="rc-lbl">Diagnóstico principal</div><div class="rc-val">'+esc(ep.dx||'Sin diagnóstico cargado')+'</div>'+(subDx?'<div class="rc-sub">'+esc(subDx)+'</div>':'')+'</div>');
+  /* tiempo lesionado */
+  let tv='—', ts='Sin fecha de inicio';
+  if(fi){
+    const fin=(estado!=='tratamiento'&&ep.fechaAlta)?ep.fechaAlta:null;
+    const d=fin?rcDif(fi,fin):diasDesde(fi);
+    if(d!==null&&d>=0){
+      tv=tiempoEvolucion(d).corto;
+      ts=fin?(formatFecha(fi)+' → '+formatFecha(fin)+(estado==='alta'?' · alta':' · abandono')):'desde '+formatFecha(fi);
+    }
+  }
+  t.push('<div class="rc-tile"><div class="rc-lbl">Tiempo lesionado</div><div class="rc-val">'+esc(tv)+'</div><div class="rc-sub">'+esc(ts)+'</div></div>');
+  /* fase + protocolo */
+  t.push('<div class="rc-tile"><div class="rc-lbl">Fase</div><div class="rc-val">'+esc(ep.fase||'—')+'</div>'+(pr?'<div class="rc-sub">'+(pr.completo?'🏁 Protocolo completo':'Protocolo: fase '+pr.fase+' de '+pr.ult+' · '+pr.comp+'/'+pr.tot+' criterios')+'</div>':'')+'</div>');
+  /* fuerza / LSI */
+  let f='<div class="rc-tile full"><div class="rc-lbl">Fuerza y tests · LSI'+(lsi?' · '+formatFecha(lsi.fecha):'')+'</div>';
+  if(lsi){
+    f+='<div class="rc-val"><span class="lsi-badge '+lsiClass(lsi.min)+'">mín '+Math.round(lsi.min)+'%</span> <span class="rc-sub" style="display:inline">prom '+lsi.prom+'%</span></div>';
+    f+='<table class="rc-table"><tr><th>Test</th><th>LSI</th><th>vs. anterior</th></tr>'+lsi.items.slice(0,6).map(x=>'<tr><td>'+esc(x.test)+'</td><td><span class="lsi-badge '+lsiClass(x.lsi)+'">'+Math.round(x.lsi)+'%</span></td><td>'+rcFlecha(x.lsi,x.prev)+'</td></tr>').join('')+'</table>';
+    if(lsi.items.length>6) f+='<div class="rc-sub">+ '+(lsi.items.length-6)+' tests más en Evaluaciones</div>';
+    f+='<div class="rc-sub">LSI = afectado / sano · 90% o más pasa · 75–89% amarillo · ordenado del más bajo al más alto</div>';
+  } else f+='<div class="rc-val">—</div><div class="rc-sub">Sin evaluaciones con LSI (en Evaluaciones cargá afectado y sano)</div>';
+  t.push(f+'</div>');
+  /* última sesión */
+  let us='<div class="rc-tile full"><div class="rc-lbl">Última sesión</div>';
+  if(u){
+    const d=rcDif(u.fecha,hoy);
+    const pre=getEvaPreSesion(u), post=getEvaPostSesion(u), rpe=getRpeSesion(u), dur=parseFloat(u.duracion), ci=getCargaInterna(u);
+    const pl=[];
+    if(pre!=null||post!=null) pl.push('EVA '+(pre!=null?pre:'?')+(post!=null?' → '+post:''));
+    if(rpe!=null) pl.push('RPE '+rpe);
+    if(!isNaN(dur)) pl.push(dur+' min');
+    if(ci!=null) pl.push(ci+' UA');
+    const txt=String(u.objetivo||u.subjetivo||'').trim();
+    us+='<div class="rc-val">'+formatFecha(u.fecha)+' <span class="rc-sub" style="display:inline;font-weight:500">('+(d<=0?'hoy':'hace '+d+' d')+')</span></div>';
+    if(pl.length) us+='<div class="rc-pills">'+pl.map(x=>'<span class="rc-pill">'+esc(x)+'</span>').join('')+'</div>';
+    if(txt) us+='<div class="rc-sub">'+esc(txt.length>110?txt.slice(0,110)+'…':txt)+'</div>';
+  } else us+='<div class="rc-val">—</div><div class="rc-sub">Todavía no hay sesiones</div>';
+  t.push(us+'</div>');
+  /* carga interna */
+  let ci='<div class="rc-tile"><div class="rc-lbl">Carga interna · 7 d</div><div class="rc-val">'+(u7.hayCi?u7.ci+' UA':'—')+'</div>';
+  if(ac&&ac.ratio!=null){
+    ci+='<div class="rc-pills"><span class="rc-pill '+rcAcwrCls(ac.ratio)+'">ACWR ×'+ac.ratio.toFixed(2)+' · '+(ac.ratio>1.3?'pico':ac.ratio<0.8?'baja':'en rango')+'</span></div><div class="rc-sub">semana del '+formatFechaCorta(ac.inicio)+' · '+u7.n+' ses. en 7 d</div>';
+  } else if(ac&&ac.viejo) ci+='<div class="rc-sub">Sin carga cargada en los últimos 14 d</div>';
+  else ci+='<div class="rc-sub">'+(u7.n?u7.n+' ses. en 7 d · ':'')+'Cargá RPE y duración para ver ACWR</div>';
+  t.push(ci+'</div>');
+  /* carga externa */
+  const ex=[];
+  if(u7.hayVol) ex.push(['Volumen gym',u7.vol.toLocaleString('es-AR')]);
+  if(u7.met>0) ex.push(['Carrera',rcFmtM(u7.met)]);
+  t.push('<div class="rc-tile"><div class="rc-lbl">Carga externa · 7 d</div>'+(ex.length?'<div class="rc-val">'+esc(ex[0][1])+'</div><div class="rc-sub">'+esc(ex[0][0])+'</div>'+ex.slice(1).map(i=>'<div class="rc-sub">'+esc(i[0])+' '+esc(i[1])+'</div>').join(''):'<div class="rc-val">—</div><div class="rc-sub">Sin volumen ni carrera en 7 d</div>')+'</div>');
+  /* extras */
+  t.push('<div class="rc-tile"><div class="rc-lbl">Próximo turno</div>'+(tu.prox?'<div class="rc-val">'+formatFecha(tu.prox.fecha)+'</div><div class="rc-sub">'+esc(tu.prox.hora||'')+'</div>':'<div class="rc-val">—</div><div class="rc-sub">Sin turno confirmado</div>')+'</div>');
+  const evs=(ep.evaluaciones||[]).filter(e=>e.fecha);
+  let rv='—', rs='Sin evaluaciones', rcol='';
+  if(evs.length){
+    const lastE=evs.reduce((m,e)=>e.fecha>m?e.fecha:m,evs[0].fecha);
+    const nx=ymd(addDays(new Date(lastE+'T00:00:00'),RC_REEVAL_DIAS)), dd=rcDif(hoy,nx);
+    rv=formatFecha(nx); rs=(dd>=0?'En '+dd+' d':'Vencida hace '+(-dd)+' d')+' · última '+formatFechaCorta(lastE);
+    if(dd<0) rcol=' style="color:var(--red)"';
+  }
+  t.push('<div class="rc-tile"><div class="rc-lbl">Próx. reevaluación</div><div class="rc-val"'+rcol+'>'+rv+'</div><div class="rc-sub">'+esc(rs)+'</div></div>');
+  t.push('<div class="rc-tile"><div class="rc-lbl">Asistencia · 30 d</div>'+(tu.asis?'<div class="rc-val">'+tu.asis.pct+'%</div><div class="rc-sub">'+tu.asis.ok+' de '+tu.asis.n+' turnos</div>':'<div class="rc-val">—</div><div class="rc-sub">Sin turnos cerrados</div>')+'</div>');
+  return '<div class="rc-card"><div class="rc-title">Resumen clínico'+(estado!=='tratamiento'?' · '+(estado==='alta'?'episodio con alta':'abandono'):'')+'</div><div class="rc-grid">'+t.join('')+'</div></div>';
+}
+
 function getPatientTurnoStats(patientId){
   const propios=Object.values(TURNOS).filter(t=>t.pacienteId===patientId);
   return {
@@ -4495,6 +4690,7 @@ function renderResumen(panel) {
       <span class="alerta-icon">⚡</span>
       <input type="text" id="rAlerta" value="${esc(p.alerta||'')}" placeholder="Alerta / nota clave" oninput="updateField('alerta',this.value)">
     </div>
+    ${CURRENT_ROLE==='secretaria'?'':buildResumenClinicoHTML(p,ep)}
     ${protoMiniHTML}
     <div class="rsum-tur-stats">
       <div class="rts-tile"><div class="rts-num">${turStats.total}</div><div class="rts-lbl">Turnos</div></div>
