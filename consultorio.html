@@ -240,9 +240,9 @@ input,textarea,select{font-family:'Inter',sans-serif;}
 
 /* Tabla ejercicios editable en sesiones */
 .ej-table-wrap{border:1px solid var(--border);border-radius:var(--radius-sm);overflow-x:auto;overflow-y:hidden;margin-bottom:8px;-webkit-overflow-scrolling:touch;}
-.ej-table-head{display:grid;grid-template-columns:36px 1.7fr 46px 46px 56px 46px 1.2fr 64px;gap:4px;background:var(--surface);padding:8px 10px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3);min-width:640px;}
-.ej-row{display:grid;grid-template-columns:36px 1.7fr 46px 46px 56px 46px 1.2fr 64px;gap:4px;padding:8px 8px;border-top:1px solid var(--border);align-items:center;min-width:640px;}
-.ej-table-head.ej-ses,.ej-row.ej-ses{grid-template-columns:36px 1.5fr 44px 44px 52px 44px 44px 1.1fr 64px;min-width:686px;}
+.ej-table-head{display:grid;grid-template-columns:36px 1.7fr 46px 46px 56px 46px 1.2fr 76px;gap:4px;background:var(--surface);padding:8px 10px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3);min-width:640px;}
+.ej-row{display:grid;grid-template-columns:36px 1.7fr 46px 46px 56px 46px 1.2fr 76px;gap:4px;padding:8px 8px;border-top:1px solid var(--border);align-items:center;min-width:640px;}
+.ej-table-head.ej-ses,.ej-row.ej-ses{grid-template-columns:36px 1.5fr 44px 44px 52px 44px 44px 1.1fr 76px;min-width:698px;}
 .ej-input.eva{text-align:center;font-weight:600;color:#c0625a;}
 .ej-eva-wrap{display:flex;align-items:center;gap:2px;min-width:0;}
 .ej-eva-wrap .ej-input.eva{flex:1;min-width:0;}
@@ -286,6 +286,16 @@ input,textarea,select{font-family:'Inter',sans-serif;}
 .ej-set-mini-del:hover{color:var(--red);}
 .btn-add-set-mini{background:none;border:1px dashed var(--border);border-radius:6px;color:var(--text-3);font-size:11.5px;font-weight:600;padding:5px 12px;cursor:pointer;font-family:Inter,sans-serif;margin-left:48px;}
 .btn-add-set-mini:hover{border-color:var(--navy);color:var(--navy);}
+.btn-ej-modo{background:none;border:none;cursor:pointer;font-size:13px;padding:0 2px;line-height:1;flex-shrink:0;opacity:.35;filter:grayscale(1);}
+.btn-ej-modo.active{opacity:1;filter:none;}
+.ej-carr-det{background:var(--blue-chip-light,#eaf1ff);border-top:1px dashed var(--border);padding:8px 10px 10px 44px;font-size:12px;color:var(--text-2);}
+.ej-carr-det .row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px;}
+.ej-carr-det label{font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.04em;}
+.ej-carr-det select,.ej-carr-det input{border:1px solid var(--border);border-radius:5px;padding:5px 6px;font-size:13px;font-family:Inter,sans-serif;background:#fff;color:var(--text);outline:none;}
+.ej-carr-det input{width:62px;text-align:center;}
+.ej-carr-det input:focus,.ej-carr-det select:focus{border-color:var(--navy);}
+.ej-carr-sum{font-weight:600;color:var(--text);}
+@media (max-width:600px){.ej-carr-det{padding-left:14px;}}
 @media (max-width:600px){
   .ej-sets-detalle{padding-left:14px;}
   .ej-set-mini-row{flex-wrap:wrap;}
@@ -654,7 +664,7 @@ input,textarea,select{font-family:'Inter',sans-serif;}
     <input type="email" id="authEmailInput" placeholder="Email" autocomplete="username">
     <div id="authError" class="auth-gate-error">Ese email no está habilitado.</div>
     <button type="submit" id="authSubmitBtn">Entrar</button>
-    <p style="font-size:10px;color:var(--text-3);margin:14px 0 0;">v2026-10-23-1</p>
+    <p style="font-size:10px;color:var(--text-3);margin:14px 0 0;">v2026-10-23-2</p>
   </form>
 </div>
 
@@ -2942,7 +2952,8 @@ function openExportPaciente() {
         lines.push('  Ejercicios:');
         ejercicios.forEach(e => {
           let ej = `    - ${e.nombre}`;
-          if(e.series || e.reps) ej += ` | ${e.series||'—'}×${e.reps||'—'}`;
+          if(e.tipo==='carrera'){ const rc=fmtCarreraResumen(e); if(rc) ej += ` | ${rc}`; }
+          else if(e.series || e.reps) ej += ` | ${e.series||'—'}×${e.reps||'—'}`;
           if(e.kg)   ej += ` | ${e.kg}`;
           if(e.nota) ej += ` | Nota: ${e.nota}`;
           lines.push(ej);
@@ -3441,6 +3452,7 @@ const EVOLUCION_CHARTS = [
   {id:'cargaInterna', label:'Carga interna (RPE × duración)'},
   {id:'cargaExterna', label:'Carga externa (volumen: series×reps×kg)'},
   {id:'distanciaCarrera', label:'Carga externa carrera (km por sesión)'},
+  {id:'tiempoTrote', label:'Tiempo de trote por sesión (min)'},
   {id:'metrosCarreraSemanal', label:'Metros de carrera por semana (lun-dom)'},
   {id:'acwrCarrera', label:'Carga aguda:crónica de carrera (ACWR sobre metros)'},
   {id:'acwr', label:'Carga aguda:crónica (ACWR)'},
@@ -4543,13 +4555,16 @@ function rcAcwr(ep,p){
 function rcUlt7(ep){
   const hoy=rcHoy(), ini=ymd(addDays(new Date(),-6));
   const l=(ep.sesiones||[]).filter(s=>s.fecha&&s.fecha>=ini&&s.fecha<=hoy);
-  let ci=0,hayCi=false,vol=0,hayVol=false,met=0;
+  let ci=0,hayCi=false,vol=0,hayVol=false,met=0,tr=0,hayTr=false,est=false,uaC=0;
   l.forEach(s=>{
     const c=getCargaInterna(s); if(c!=null){ ci+=c; hayCi=true; }
     const v=calcVolumenSesion(s.ejercicios); if(v!=null){ vol+=v; hayVol=true; }
     met+=getMetrosCarreraSesion(s);
+    const t=calcTroteMinSesion(s.ejercicios); if(t!=null){ tr+=t; hayTr=true; }
+    if((s.ejercicios||[]).some(esEstimadoEj)) est=true;
+    const uc=calcCargaInternaCarreraSesion(s.ejercicios); if(uc!=null) uaC+=uc;
   });
-  return {n:l.length,ci:ci,hayCi:hayCi,vol:vol,hayVol:hayVol,met:met};
+  return {n:l.length,ci:ci,hayCi:hayCi,vol:vol,hayVol:hayVol,met:met,tr:tr,hayTr:hayTr,est:est,uaC:uaC};
 }
 // Fase actual del protocolo (misma lógica que buildProtocoloResumenMiniHTML, sin modificar el episodio).
 function rcProto(ep){
@@ -4645,11 +4660,13 @@ function buildResumenClinicoHTML(p,ep){
     ci+='<div class="rc-pills"><span class="rc-pill '+rcAcwrCls(ac.ratio)+'">ACWR ×'+ac.ratio.toFixed(2)+' · '+(ac.ratio>1.3?'pico':ac.ratio<0.8?'baja':'en rango')+'</span></div><div class="rc-sub">semana del '+formatFechaCorta(ac.inicio)+' · '+u7.n+' ses. en 7 d</div>';
   } else if(ac&&ac.viejo) ci+='<div class="rc-sub">Sin carga cargada en los últimos 14 d</div>';
   else ci+='<div class="rc-sub">'+(u7.n?u7.n+' ses. en 7 d · ':'')+'Cargá RPE y duración para ver ACWR</div>';
+  if(u7.uaC>0) ci+='<div class="rc-sub">Bloques de carrera: '+Math.round(u7.uaC)+' UA</div>';
   t.push(ci+'</div>');
   /* carga externa */
   const ex=[];
   if(u7.hayVol) ex.push(['Volumen gym',u7.vol.toLocaleString('es-AR')]);
-  if(u7.met>0) ex.push(['Carrera',rcFmtM(u7.met)]);
+  if(u7.met>0) ex.push(['Carrera'+(u7.est?' (estimada)':''),(u7.est?'~':'')+rcFmtM(u7.met)]);
+  if(u7.hayTr) ex.push(['Tiempo de trote',(Math.round(u7.tr*10)/10)+' min']);
   t.push('<div class="rc-tile"><div class="rc-lbl">Carga externa · 7 d</div>'+(ex.length?'<div class="rc-val">'+esc(ex[0][1])+'</div><div class="rc-sub">'+esc(ex[0][0])+'</div>'+ex.slice(1).map(i=>'<div class="rc-sub">'+esc(i[0])+' '+esc(i[1])+'</div>').join(''):'<div class="rc-val">—</div><div class="rc-sub">Sin volumen ni carrera en 7 d</div>')+'</div>');
   /* extras */
   t.push('<div class="rc-tile"><div class="rc-lbl">Próximo turno</div>'+(tu.prox?'<div class="rc-val">'+formatFecha(tu.prox.fecha)+'</div><div class="rc-sub">'+esc(tu.prox.hora||'')+'</div>':'<div class="rc-val">—</div><div class="rc-sub">Sin turno confirmado</div>')+'</div>');
@@ -5144,9 +5161,17 @@ function buildSesEjTable(sesId, ejercicios, sesEva){
   const rows=ejercicios.map((e,i)=>{
     const esCarrera = e.tipo==='carrera';
     const pasHayValor = !isNaN(parseFloat(e.pasadas)) && parseFloat(e.pasadas)>0;
-    const camposMedidas = esCarrera ? `
+    const camposMedidas = esCarreraTiempo(e) ? `
+      <input class="ej-input center" type="text" inputmode="numeric" value="${esc(e.pasadas||'')}" placeholder="pas." title="Pasadas (repeticiones)"
+        oninput="updateEjCarrSes('${sesId}',${i},'pasadas',this.value)">
+      <input class="ej-input center" type="text" inputmode="numeric" value="${esc(e.trabajoSeg||'')}" placeholder="trote s" title="Segundos de trote por pasada"
+        oninput="updateEjCarrSes('${sesId}',${i},'trabajoSeg',this.value)">
+      <input class="ej-input center" type="text" inputmode="numeric" value="${esc(e.pausaSeg||'')}" placeholder="pausa s" title="Segundos de pausa entre pasadas"
+        oninput="updateEjCarrSes('${sesId}',${i},'pausaSeg',this.value)">
+      <input class="ej-input rir" type="text" value="${esc(e.rpeCarrera||'')}" placeholder="RPE" title="RPE de este bloque de carrera (0-10)"
+        oninput="updateEjCarrSes('${sesId}',${i},'rpeCarrera',this.value)">` : esCarrera ? `
       <input class="ej-input center" type="text" value="${esc(e.pasadas||'')}" placeholder="Pasadas"
-        title="Cantidad de pasadas/repeticiones (dejar vacío si es carrera continua)"
+        title="Cantidad de pasadas/repeticiones (dejar vacío si es carrera continua)\"
         oninput="updateEjField('${sesId}',${i},'pasadas',this.value)">
       <input class="ej-input center" type="text" value="${esc(e.distancia||'')}" placeholder="${pasHayValor?'m/pasada':'km'}"
         title="${pasHayValor?'Metros por pasada':'Kilómetros totales corridos'}"
@@ -5182,10 +5207,12 @@ function buildSesEjTable(sesId, ejercicios, sesEva){
         <button class="btn-ej-star ${e.track?'active':''}" onclick="toggleEjTrackSes('${sesId}',${i})" title="${e.track?'Dejar de trackear la progresión de este ejercicio':'Trackear la progresión de este ejercicio'}">${e.track?'⭐':'☆'}</button>
         <button class="btn-ej-tipo ${esCarrera?'active':''}" onclick="toggleEjTipoSes('${sesId}',${i})" title="${esCarrera?'Volver a ejercicio de fuerza':'Convertir en ejercicio de carrera/cardio'}">🏃</button>
         ${!esCarrera?`<button class="btn-ej-sets ${openCardIds.has('ejsets_'+sesId+'_'+i)?'active':''}" id="btnsets_${sesId}_${i}" onclick="toggleEjSetsDetalle('${sesId}',${i})" title="Detalle serie por serie (kg/reps/RPE)">▾</button>`:''}
+        ${esCarrera?`<button class="btn-ej-modo ${esCarreraTiempo(e)?'active':''}" onclick="toggleEjModoSes('${sesId}',${i})" title="${esCarreraTiempo(e)?'Volver a pasadas por distancia':'Pasar a intervalos por tiempo (ej. 1 min trote + 30 s caminata)'}">⏱</button>`:''}
         <span class="ej-drag-handle" data-kind="ses" data-ses="${sesId}" title="Mantené y arrastrá para reordenar">⠿</span>
         <button class="btn-ej-del" onclick="removeEjFromSes('${sesId}',${i})" title="Eliminar">×</button>
       </div>
     </div>
+    ${esCarreraTiempo(e)?buildCarreraDetHTML(e,'ejsum_'+sesId+'_'+i,f=>"updateEjCarrSes('"+sesId+"',"+i+",'"+f+"',this.value)"):''}
     ${!esCarrera?`<div class="ej-sets-detalle${openCardIds.has('ejsets_'+sesId+'_'+i)?' open':''}" id="ejsets_${sesId}_${i}">${buildEjSetsDetalleHTML(sesId,i,e)}</div>`:''}`;
   }).join('');
   return `<div class="ej-table-wrap" id="sejtable_${sesId}">
@@ -5276,7 +5303,7 @@ function syncEjSesionAPlan(ses, idx, field, val){
   if(!dia || !dia.ejercicios) return false;
   const planEj = dia.ejercicios.find(e=>e.id===ej.id);
   if(!planEj) return false;
-  const esPrescripcion = ['kg','reps','series','rir','distancia','pasadas','duracionCarrera','rpeCarrera'].indexOf(field)!==-1;
+  const esPrescripcion = EJ_PRESCRIPCION.indexOf(field)!==-1;
   if(!esPrescripcion){
     planEj[field] = val;
     dia.actualizado = new Date().toISOString();
@@ -5343,8 +5370,9 @@ function updateEjField(sesId, idx, field, val) {
   const ses = (ep.sesiones||[]).find(s=>s.id===sesId);
   if(!ses || !ses.ejercicios || !ses.ejercicios[idx]) return;
   ses.ejercicios[idx][field] = val;
+  carrAfterEdit(ses.ejercicios[idx]);
   const synced = syncEjSesionAPlan(ses, idx, field, val);
-  if(!synced && ['kg','reps','series','rir','distancia','pasadas','duracionCarrera','rpeCarrera'].indexOf(field)!==-1){
+  if(!synced && EJ_PRESCRIPCION.indexOf(field)!==-1){
     snapshotEjHistorialLocal(ses.ejercicios[idx]);
   }
   queueSaveTyping();
@@ -5487,7 +5515,7 @@ function renderSesCard(s,num,fechaInicio){
   const dias=(s.fecha&&fechaInicio)?Math.floor((new Date(s.fecha)-new Date(fechaInicio))/86400000):null;
   const ejercicios=s.ejercicios||[];
   const labels=computeBloqueLabels(ejercicios);
-  const preview=ejercicios.length?ejercicios.map((e,i)=>(labels[i]?`[${labels[i]}] `:'')+e.nombre+(e.series?` ${e.series}×${e.reps}`:'')).join('  ·  '):(s.intervencion||'—');
+  const preview=ejercicios.length?ejercicios.map((e,i)=>(labels[i]?`[${labels[i]}] `:'')+e.nombre+(e.tipo==='carrera'?(fmtCarreraCorto(e)?' '+fmtCarreraCorto(e):''):(e.series?` ${e.series}×${e.reps}`:''))).join('  ·  '):(s.intervencion||'—');
   const dolorDiario=getDolorDiarioSesion(s), dolor=getDolorSesion(s), rpe=getRpeSesion(s);
   const evaSemaforo=v=>v==null?null:(v<=3?'verde':v<=6?'amarillo':'rojo');
   const evaBadge=(label,v)=>v==null?'':`<span class="semaforo-badge semaforo-${evaSemaforo(v)}">${label} ${v}</span>`;
@@ -6012,6 +6040,7 @@ function sanitizeEjercicio(e){
     rir:e.rir||'', nota:e.nota||'', bloque:e.bloque||'', categoria:e.categoria||'',
     track:!!e.track, tipo:e.tipo||'fuerza',
     distancia:e.distancia||'', pasadas:e.pasadas||'', duracionCarrera:e.duracionCarrera||'', rpeCarrera:e.rpeCarrera||'',
+    modo:e.modo||'', trabajoSeg:e.trabajoSeg||'', pausaSeg:e.pausaSeg||'', pausaTipo:e.pausaTipo||'', velKmh:e.velKmh||'', distReal:e.distReal||'',
   };
   if(e.historial && e.historial.length) out.historial=e.historial;
   return out;
@@ -6019,8 +6048,136 @@ function sanitizeEjercicio(e){
 // Ejercicio tipo 'carrera': si tiene pasadas cargadas, e.distancia se interpreta como metros
 // POR pasada (series de sprints/repeticiones); si no hay pasadas, e.distancia son km totales
 // corridos de forma continua. Devuelve la distancia total en km (o 0 si no hay datos/no es carrera).
+// ── Carrera por INTERVALOS DE TIEMPO ─────────────────────────────────────────────
+// Un ejercicio de carrera puede estar en modo 'distancia' (pasadas × metros, o km continuos; el modo de
+// siempre) o en modo 'tiempo' (modo==='tiempo'): N pasadas de X seg de trote + Y seg de pausa, con la pausa
+// caminando, parado o trotando suave. En modo tiempo siempre se guarda el tiempo de trote; los metros se
+// ESTIMAN con la velocidad cargada (VEL_TROTE_DEFAULT km/h si se deja vacía) o se usan los metros reales
+// (GPS) si se cargan. Una pausa de "trote suave" cuenta como trote; caminata y parado no suman metros.
+const VEL_TROTE_DEFAULT=8;
+const EJ_PRESCRIPCION=['kg','reps','series','rir','distancia','pasadas','duracionCarrera','rpeCarrera','modo','trabajoSeg','pausaSeg','pausaTipo','velKmh','distReal'];
+function numPos(v){ const n=parseFloat(String(v==null?'':v).replace(',','.')); return (!isNaN(n)&&n>0)?n:null; }
+function esCarreraTiempo(e){ return !!e && e.tipo==='carrera' && e.modo==='tiempo'; }
+function esEstimadoEj(e){ return esCarreraTiempo(e) && numPos(e.distReal)===null; }
+function fmtSeg(seg){
+  seg=Math.round(seg);
+  if(seg<60) return seg+' s';
+  const m=Math.floor(seg/60), s=seg%60;
+  return m+' min'+(s?' '+s+' s':'');
+}
+// Segundos de trote efectivo de un bloque (null si no hay datos).
+function calcTroteSegEj(e){
+  if(!e || e.tipo!=='carrera') return null;
+  if(esCarreraTiempo(e)){
+    const pas=numPos(e.pasadas)||1, tr=numPos(e.trabajoSeg);
+    if(tr===null) return null;
+    const pa=numPos(e.pausaSeg)||0;
+    return pas*tr+((e.pausaTipo==='trote')?pas*pa:0);
+  }
+  if(!numPos(e.pasadas)){ const d=numPos(e.duracionCarrera); return d!==null?d*60:null; }
+  return null;
+}
+// Minutos totales del bloque (trabajo + pausas).
+function calcDuracionBloqueMin(e){
+  if(!e || e.tipo!=='carrera') return null;
+  if(esCarreraTiempo(e)){
+    const pas=numPos(e.pasadas)||1, tr=numPos(e.trabajoSeg);
+    if(tr===null) return null;
+    const pa=numPos(e.pausaSeg)||0;
+    return pas*(tr+pa)/60;
+  }
+  return numPos(e.duracionCarrera);
+}
+// Carga interna del bloque de carrera: RPE del bloque × minutos del bloque (UA).
+function calcCargaInternaCarreraEj(e){
+  const r=numPos(e&&e.rpeCarrera), d=calcDuracionBloqueMin(e);
+  return (r!==null&&d!==null)?Math.round(r*d):null;
+}
+function calcCargaInternaCarreraSesion(ejercicios){
+  let t=0, c=false;
+  (ejercicios||[]).forEach(e=>{ const v=calcCargaInternaCarreraEj(e); if(v!==null){ t+=v; c=true; } });
+  return c?t:null;
+}
+function calcTroteMinSesion(ejercicios){
+  let s=0, c=false;
+  (ejercicios||[]).forEach(e=>{ const t=calcTroteSegEj(e); if(t){ s+=t; c=true; } });
+  return c?Math.round(s/60*10)/10:null;
+}
+// En modo tiempo la duración del bloque se calcula sola (para que historial y resúmenes la muestren).
+function carrAfterEdit(ej){
+  if(esCarreraTiempo(ej)){
+    const m=calcDuracionBloqueMin(ej);
+    ej.duracionCarrera=m!==null?String(Math.round(m*10)/10):'';
+  }
+}
+function fmtCarreraCorto(e){
+  if(esCarreraTiempo(e)){
+    const pas=numPos(e.pasadas)||1, tr=numPos(e.trabajoSeg), pa=numPos(e.pausaSeg);
+    if(tr===null) return '';
+    return pas+'×'+tr+'s'+(pa?'/'+pa+'s':'');
+  }
+  const pas=numPos(e.pasadas), dist=numPos(e.distancia);
+  if(dist===null) return '';
+  return pas?pas+'×'+dist+'m':dist+'km';
+}
+// Panel debajo de la fila (modo tiempo): tipo de pausa, velocidad, metros reales y resumen en vivo.
+// 'call(campo)' devuelve el texto del handler (ej. "updateEjCarrSes('id',2,'velKmh',this.value)").
+function buildCarreraDetHTML(e,sumId,call){
+  const pt=e.pausaTipo||'caminata';
+  const opt=(v,l)=>'<option value="'+v+'"'+(pt===v?' selected':'')+'>'+l+'</option>';
+  return '<div class="ej-carr-det">'+
+    '<div class="row"><label>Pausa</label><select onchange="'+call('pausaTipo')+'">'+opt('caminata','Caminata')+opt('parado','Parado')+opt('trote','Trote suave')+'</select>'+
+    '<label>Vel. trote (km/h)</label><input type="text" inputmode="decimal" value="'+esc(e.velKmh||'')+'" placeholder="'+VEL_TROTE_DEFAULT+'" title="Opcional. Vacío = se estima con '+VEL_TROTE_DEFAULT+' km/h" oninput="'+call('velKmh')+'">'+
+    '<label>Metros reales</label><input type="text" inputmode="decimal" value="'+esc(e.distReal||'')+'" placeholder="GPS" title="Opcional. Si lo cargás reemplaza la estimación" oninput="'+call('distReal')+'"></div>'+
+    '<div class="ej-carr-sum" id="'+sumId+'">'+esc(fmtCarreraResumen(e))+'</div></div>';
+}
+function updateEjCarrSes(sesId,idx,field,val){
+  updateEjField(sesId,idx,field,val);
+  const ep=getEpData(getPatient(currentPatientId));
+  const ses=(ep.sesiones||[]).find(s=>s.id===sesId);
+  const ej=ses&&ses.ejercicios&&ses.ejercicios[idx];
+  const el=document.getElementById('ejsum_'+sesId+'_'+idx);
+  if(ej&&el) el.textContent=fmtCarreraResumen(ej);
+}
+function updateEjCarrPlan(planId,diaId,idx,field,val){
+  updatePlanEjField(planId,diaId,idx,field,val);
+  const {dia}=findPlanDia(planId,diaId);
+  const ej=dia&&dia.ejercicios&&dia.ejercicios[idx];
+  const el=document.getElementById('pejsum_'+planId+'_'+diaId+'_'+idx);
+  if(ej&&el) el.textContent=fmtCarreraResumen(ej);
+}
+function toggleEjModoSes(sesId,idx){
+  const ep=getEpData(getPatient(currentPatientId));
+  const ses=(ep.sesiones||[]).find(s=>s.id===sesId);
+  if(!ses||!ses.ejercicios||!ses.ejercicios[idx]) return;
+  const ej=ses.ejercicios[idx];
+  ej.modo=esCarreraTiempo(ej)?'':'tiempo';
+  if(ej.modo==='tiempo'&&!ej.pausaTipo) ej.pausaTipo='caminata';
+  carrAfterEdit(ej);
+  saveDB();
+  const tableEl=document.getElementById('sejtable_'+sesId);
+  if(tableEl) tableEl.outerHTML=buildSesEjTable(sesId, ses.ejercicios, getDolorSesion(ses));
+  else renderTab();
+}
+function toggleEjModoPlan(planId,diaId,idx){
+  const {dia}=findPlanDia(planId,diaId); if(!dia||!dia.ejercicios||!dia.ejercicios[idx]) return;
+  const ej=dia.ejercicios[idx];
+  ej.modo=esCarreraTiempo(ej)?'':'tiempo';
+  if(ej.modo==='tiempo'&&!ej.pausaTipo) ej.pausaTipo='caminata';
+  carrAfterEdit(ej);
+  dia.actualizado=new Date().toISOString();
+  saveDB();
+  const tableEl=document.getElementById('pejtable_'+planId+'_'+diaId);
+  if(tableEl) tableEl.outerHTML=buildPlanEjTable(planId,diaId,dia.ejercicios);
+  else renderTab();
+}
 function calcDistanciaEjKm(e){
   if(!e || e.tipo!=='carrera') return 0;
+  if(esCarreraTiempo(e)){
+    const real=numPos(e.distReal); if(real!==null) return real/1000;
+    const ts=calcTroteSegEj(e); if(ts===null) return 0;
+    return (ts/3600)*(numPos(e.velKmh)||VEL_TROTE_DEFAULT);
+  }
   const pas=parseFloat(e.pasadas), dist=parseFloat(e.distancia);
   if(isNaN(dist)) return 0;
   if(!isNaN(pas) && pas>0) return (pas*dist)/1000;
@@ -6040,6 +6197,18 @@ function getMetrosCarreraSesion(s){
 function fmtCarreraResumen(e){
   const pas=parseFloat(e.pasadas), dist=parseFloat(e.distancia), dur=parseFloat(e.duracionCarrera), rpe=parseFloat(e.rpeCarrera);
   const parts=[];
+  if(esCarreraTiempo(e)){
+    const np=numPos(e.pasadas)||1, tr=numPos(e.trabajoSeg), pa=numPos(e.pausaSeg);
+    if(tr===null) return 'Cargá los segundos de trote por pasada';
+    const pausaTxt=({caminata:'caminata',parado:'parado',trote:'trote suave'})[e.pausaTipo||'caminata']||'pausa';
+    parts.push(np+' × ('+fmtSeg(tr)+' trote'+(pa?' + '+fmtSeg(pa)+' '+pausaTxt:'')+')');
+    const ts=calcTroteSegEj(e); if(ts) parts.push(fmtSeg(ts)+' de trote');
+    const dm=calcDuracionBloqueMin(e); if(dm!==null && ts && Math.abs(dm*60-ts)>1) parts.push(fmtSeg(dm*60)+' en total');
+    const km=calcDistanciaEjKm(e); if(km>0) parts.push(esEstimadoEj(e)?'~'+Math.round(km*1000)+' m (est.)':Math.round(km*1000)+' m');
+    if(!isNaN(rpe)) parts.push('RPE '+rpe);
+    const ua=calcCargaInternaCarreraEj(e); if(ua!==null) parts.push(ua+' UA');
+    return parts.join(' · ');
+  }
   if(!isNaN(pas) && pas>0 && !isNaN(dist)) parts.push(`${pas} pasadas × ${dist}m (${Math.round(pas*dist)}m)`);
   else if(!isNaN(dist)) parts.push(`${dist} km`);
   if(!isNaN(dur)) parts.push(`${dur} min`);
@@ -6048,15 +6217,17 @@ function fmtCarreraResumen(e){
 }
 // Snapshot de historial: distinto shape según tipo de ejercicio (carrera vs fuerza).
 function buildEjSnapshot(ej){
-  if(ej.tipo==='carrera') return {fecha:todayISO(), distancia:ej.distancia||'', pasadas:ej.pasadas||'', duracionCarrera:ej.duracionCarrera||'', rpeCarrera:ej.rpeCarrera||''};
+  if(ej.tipo==='carrera') return {fecha:todayISO(), distancia:ej.distancia||'', pasadas:ej.pasadas||'', duracionCarrera:ej.duracionCarrera||'', rpeCarrera:ej.rpeCarrera||'', modo:ej.modo||'', trabajoSeg:ej.trabajoSeg||'', pausaSeg:ej.pausaSeg||'', pausaTipo:ej.pausaTipo||'', velKmh:ej.velKmh||'', distReal:ej.distReal||''};
   return {fecha:todayISO(), kg:ej.kg||'', reps:ej.reps||'', series:ej.series||'', rir:ej.rir||''};
 }
 function snapEquals(a,b){
   if(!a) return false;
   return a.fecha===b.fecha && a.kg===b.kg && a.reps===b.reps && a.series===b.series && a.rir===b.rir
-    && a.distancia===b.distancia && a.pasadas===b.pasadas && a.duracionCarrera===b.duracionCarrera && a.rpeCarrera===b.rpeCarrera;
+    && a.distancia===b.distancia && a.pasadas===b.pasadas && a.duracionCarrera===b.duracionCarrera && a.rpeCarrera===b.rpeCarrera
+    && (a.modo||'')===(b.modo||'') && (a.trabajoSeg||'')===(b.trabajoSeg||'') && (a.pausaSeg||'')===(b.pausaSeg||'') && (a.pausaTipo||'')===(b.pausaTipo||'') && (a.velKmh||'')===(b.velKmh||'') && (a.distReal||'')===(b.distReal||'');
 }
 function fmtHistLinea(h){
+  if(h.modo==='tiempo') return fmtCarreraResumen(Object.assign({tipo:'carrera'},h));
   if(h.distancia!=null && h.distancia!==''){
     const pas=parseFloat(h.pasadas), dist=parseFloat(h.distancia);
     const distTxt=(!isNaN(pas)&&pas>0)?`${pas}×${dist}m`:`${dist}km`;
@@ -6489,9 +6660,17 @@ function buildPlanEjTable(planId,diaId,ejercicios){
     const vinculadoCon = e.track && (e.nombre||'').trim() ? otrosDiasConMismoNombre(e.nombre) : [];
     const esCarrera = e.tipo==='carrera';
     const pasHayValor = !isNaN(parseFloat(e.pasadas)) && parseFloat(e.pasadas)>0;
-    const camposMedidas = esCarrera ? `
+    const camposMedidas = esCarreraTiempo(e) ? `
+      <input class="ej-input center" type="text" inputmode="numeric" value="${esc(e.pasadas||'')}" placeholder="pas." title="Pasadas objetivo (repeticiones)"
+        oninput="updateEjCarrPlan('${planId}','${diaId}',${i},'pasadas',this.value)">
+      <input class="ej-input center" type="text" inputmode="numeric" value="${esc(e.trabajoSeg||'')}" placeholder="trote s" title="Segundos de trote por pasada"
+        oninput="updateEjCarrPlan('${planId}','${diaId}',${i},'trabajoSeg',this.value)">
+      <input class="ej-input center" type="text" inputmode="numeric" value="${esc(e.pausaSeg||'')}" placeholder="pausa s" title="Segundos de pausa entre pasadas"
+        oninput="updateEjCarrPlan('${planId}','${diaId}',${i},'pausaSeg',this.value)">
+      <input class="ej-input rir" type="text" value="${esc(e.rpeCarrera||'')}" placeholder="RPE" title="RPE objetivo del bloque de carrera"
+        oninput="updateEjCarrPlan('${planId}','${diaId}',${i},'rpeCarrera',this.value)">` : esCarrera ? `
       <input class="ej-input center" type="text" value="${esc(e.pasadas||'')}" placeholder="Pasadas"
-        title="Cantidad de pasadas/repeticiones objetivo (vacío si es carrera continua)"
+        title="Cantidad de pasadas/repeticiones objetivo (vacío si es carrera continua)\"
         oninput="updatePlanEjField('${planId}','${diaId}',${i},'pasadas',this.value)">
       <input class="ej-input center" type="text" value="${esc(e.distancia||'')}" placeholder="${pasHayValor?'m/pasada':'km'}"
         title="${pasHayValor?'Metros por pasada':'Kilómetros objetivo'}"
@@ -6522,10 +6701,11 @@ function buildPlanEjTable(planId,diaId,ejercicios){
       <div class="ej-row-actions">
         <button class="btn-ej-star ${e.track?'active':''}" onclick="toggleEjTrack('${planId}','${diaId}',${i})" title="${e.track?'Dejar de trackear la progresión de este ejercicio':'Trackear la progresión de este ejercicio'}">${e.track?'⭐':'☆'}</button>
         <button class="btn-ej-tipo ${esCarrera?'active':''}" onclick="toggleEjTipoPlan('${planId}','${diaId}',${i})" title="${esCarrera?'Volver a ejercicio de fuerza':'Convertir en ejercicio de carrera/cardio'}">🏃</button>
+        ${esCarrera?`<button class="btn-ej-modo ${esCarreraTiempo(e)?'active':''}" onclick="toggleEjModoPlan('${planId}','${diaId}',${i})" title="${esCarreraTiempo(e)?'Volver a pasadas por distancia':'Pasar a intervalos por tiempo (ej. 1 min trote + 30 s caminata)'}">⏱</button>`:''}
         <span class="ej-drag-handle" data-kind="plan" data-plan="${planId}" data-dia="${diaId}" title="Mantené y arrastrá para reordenar">⠿</span>
         <button class="btn-ej-del" onclick="removeEjFromPlanDia('${planId}','${diaId}',${i})" title="Eliminar">×</button>
       </div>
-    </div>${vinculadoCon.length?`<div class="ej-hist-line" style="color:var(--accent,#4a7dfc);">🔗 Vinculado con ${esc(vinculadoCon.join(', '))} — progresión combinada en "Progresión de ejercicios clave"</div>`:''}${e.track&&e.historial&&e.historial.length?`<div class="ej-hist-line">📈 ${e.historial.slice(-4).map(h=>`${formatFechaCorta(h.fecha)}: ${fmtHistLinea(h)}`).join(' · ')}</div>`:''}`;
+    </div>${esCarreraTiempo(e)?buildCarreraDetHTML(e,'pejsum_'+planId+'_'+diaId+'_'+i,f=>"updateEjCarrPlan('"+planId+"','"+diaId+"',"+i+",'"+f+"',this.value)"):''}${vinculadoCon.length?`<div class="ej-hist-line" style="color:var(--accent,#4a7dfc);">🔗 Vinculado con ${esc(vinculadoCon.join(', '))} — progresión combinada en "Progresión de ejercicios clave"</div>`:''}${e.track&&e.historial&&e.historial.length?`<div class="ej-hist-line">📈 ${e.historial.slice(-4).map(h=>`${formatFechaCorta(h.fecha)}: ${fmtHistLinea(h)}`).join(' · ')}</div>`:''}`;
   }).join('');
   return `<div class="ej-table-wrap" id="pejtable_${planId}_${diaId}">
     <div class="ej-table-head">
@@ -6555,6 +6735,7 @@ function updatePlanEjField(planId,diaId,idx,field,val){
   const {dia}=findPlanDia(planId,diaId);
   if(!dia||!dia.ejercicios||!dia.ejercicios[idx]) return;
   dia.ejercicios[idx][field]=val;
+  carrAfterEdit(dia.ejercicios[idx]);
   dia.actualizado=new Date().toISOString();
   queueSaveTyping();
 }
@@ -6915,6 +7096,7 @@ function renderEvolucion(panel){
   const ciData    = sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:getCargaInterna(s)}));
   const ceData    = sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:calcVolumenSesion(s.ejercicios)}));
   const distCarreraData = sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:calcDistanciaSesionKm(s.ejercicios)}));
+  const troteData = sesiones.map(s=>({label:formatFechaCorta(s.fecha), value:calcTroteMinSesion(s.ejercicios)}));
   const metrosSemanalData = computeMetrosCarreraSemanal(sesiones, ep.fechaInicio||p.fechaInicio);
   const acwrCarreraData = computeACWRSemanal(sesiones, ep.fechaInicio||p.fechaInicio, getMetrosCarreraSesion);
 
@@ -6994,8 +7176,14 @@ function renderEvolucion(panel){
       ${evoChartEnabled('distanciaCarrera')?`
       <div class="home-card">
         <div class="home-card-title">🏃 Carga externa carrera (km por sesión)</div>
-        <div style="font-size:11px;color:var(--text-3);margin-bottom:8px;">Suma de kilómetros corridos por sesión (continuos o pasadas×metros). Útil para progresión de RTP — ver que el aumento semanal sea gradual.</div>
+        <div style="font-size:11px;color:var(--text-3);margin-bottom:8px;">Suma de kilómetros corridos por sesión (continuos, pasadas×metros o intervalos por tiempo). En los intervalos por tiempo los metros se estiman con la velocidad cargada (8 km/h si la dejás vacía), salvo que cargues los metros reales. Útil para progresión de RTP — ver que el aumento semanal sea gradual.</div>
         ${buildBarChartSVG([{name:'Distancia',color:'var(--green,#2ea043)',data:distCarreraData}],{emptyMsg:'Cargá ejercicios tipo carrera (🏃) en las sesiones para ver este gráfico.',showValues:true,valueFormat:v=>v+'km'})}
+      </div>`:''}
+      ${evoChartEnabled('tiempoTrote')?`
+      <div class="home-card">
+        <div class="home-card-title">⏱ Tiempo de trote por sesión (min)</div>
+        <div style="font-size:11px;color:var(--text-3);margin-bottom:8px;">Minutos de trote efectivo, sin contar caminata ni pausas paradas. Es la medida más directa de la carga de carrera en intervalos por tiempo (ej. 6 × 1 min de trote = 6 min) y no depende de ninguna velocidad estimada.</div>
+        ${buildBarChartSVG([{name:'Trote',color:'var(--green,#2ea043)',data:troteData}],{emptyMsg:'Cargá ejercicios de carrera (🏃) con intervalos por tiempo (⏱) para ver este gráfico.',showValues:true,valueFormat:v=>v+' min'})}
       </div>`:''}
       ${evoChartEnabled('metrosCarreraSemanal')?`
       <div class="home-card">
