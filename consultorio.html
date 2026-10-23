@@ -664,7 +664,7 @@ input,textarea,select{font-family:'Inter',sans-serif;}
     <input type="email" id="authEmailInput" placeholder="Email" autocomplete="username">
     <div id="authError" class="auth-gate-error">Ese email no está habilitado.</div>
     <button type="submit" id="authSubmitBtn">Entrar</button>
-    <p style="font-size:10px;color:var(--text-3);margin:14px 0 0;">v2026-10-23-2</p>
+    <p style="font-size:10px;color:var(--text-3);margin:14px 0 0;">v2026-10-23-3</p>
   </form>
 </div>
 
@@ -6040,7 +6040,7 @@ function sanitizeEjercicio(e){
     rir:e.rir||'', nota:e.nota||'', bloque:e.bloque||'', categoria:e.categoria||'',
     track:!!e.track, tipo:e.tipo||'fuerza',
     distancia:e.distancia||'', pasadas:e.pasadas||'', duracionCarrera:e.duracionCarrera||'', rpeCarrera:e.rpeCarrera||'',
-    modo:e.modo||'', trabajoSeg:e.trabajoSeg||'', pausaSeg:e.pausaSeg||'', pausaTipo:e.pausaTipo||'', velKmh:e.velKmh||'', distReal:e.distReal||'',
+    modo:e.modo||'', trabajoSeg:e.trabajoSeg||'', pausaSeg:e.pausaSeg||'', pausaTipo:e.pausaTipo||'', velKmh:e.velKmh||'', distReal:e.distReal||'', metrosPasada:e.metrosPasada||'',
   };
   if(e.historial && e.historial.length) out.historial=e.historial;
   return out;
@@ -6055,10 +6055,10 @@ function sanitizeEjercicio(e){
 // ESTIMAN con la velocidad cargada (VEL_TROTE_DEFAULT km/h si se deja vacía) o se usan los metros reales
 // (GPS) si se cargan. Una pausa de "trote suave" cuenta como trote; caminata y parado no suman metros.
 const VEL_TROTE_DEFAULT=8;
-const EJ_PRESCRIPCION=['kg','reps','series','rir','distancia','pasadas','duracionCarrera','rpeCarrera','modo','trabajoSeg','pausaSeg','pausaTipo','velKmh','distReal'];
+const EJ_PRESCRIPCION=['kg','reps','series','rir','distancia','pasadas','duracionCarrera','rpeCarrera','modo','trabajoSeg','pausaSeg','pausaTipo','velKmh','distReal','metrosPasada'];
 function numPos(v){ const n=parseFloat(String(v==null?'':v).replace(',','.')); return (!isNaN(n)&&n>0)?n:null; }
 function esCarreraTiempo(e){ return !!e && e.tipo==='carrera' && e.modo==='tiempo'; }
-function esEstimadoEj(e){ return esCarreraTiempo(e) && numPos(e.distReal)===null; }
+function esEstimadoEj(e){ return esCarreraTiempo(e) && numPos(e.distReal)===null && numPos(e.metrosPasada)===null; }
 function fmtSeg(seg){
   seg=Math.round(seg);
   if(seg<60) return seg+' s';
@@ -6127,8 +6127,9 @@ function buildCarreraDetHTML(e,sumId,call){
   const opt=(v,l)=>'<option value="'+v+'"'+(pt===v?' selected':'')+'>'+l+'</option>';
   return '<div class="ej-carr-det">'+
     '<div class="row"><label>Pausa</label><select onchange="'+call('pausaTipo')+'">'+opt('caminata','Caminata')+opt('parado','Parado')+opt('trote','Trote suave')+'</select>'+
-    '<label>Vel. trote (km/h)</label><input type="text" inputmode="decimal" value="'+esc(e.velKmh||'')+'" placeholder="'+VEL_TROTE_DEFAULT+'" title="Opcional. Vacío = se estima con '+VEL_TROTE_DEFAULT+' km/h" oninput="'+call('velKmh')+'">'+
-    '<label>Metros reales</label><input type="text" inputmode="decimal" value="'+esc(e.distReal||'')+'" placeholder="GPS" title="Opcional. Si lo cargás reemplaza la estimación" oninput="'+call('distReal')+'"></div>'+
+    '<label>Metros por pasada</label><input type="text" inputmode="decimal" value="'+esc(e.metrosPasada||'')+'" placeholder="ej. 100" title="Opcional. Metros que corren en cada pasada; el total es pasadas × metros" oninput="'+call('metrosPasada')+'">'+
+    '<label>Vel. trote (km/h)</label><input type="text" inputmode="decimal" value="'+esc(e.velKmh||'')+'" placeholder="'+VEL_TROTE_DEFAULT+'" title="Opcional. Solo se usa si no cargás metros. Vacío = se estima con '+VEL_TROTE_DEFAULT+' km/h" oninput="'+call('velKmh')+'">'+
+    '<label>Metros reales</label><input type="text" inputmode="decimal" value="'+esc(e.distReal||'')+'" placeholder="GPS" title="Opcional. Total del bloque; reemplaza cualquier otra cuenta" oninput="'+call('distReal')+'"></div>'+
     '<div class="ej-carr-sum" id="'+sumId+'">'+esc(fmtCarreraResumen(e))+'</div></div>';
 }
 function updateEjCarrSes(sesId,idx,field,val){
@@ -6175,6 +6176,7 @@ function calcDistanciaEjKm(e){
   if(!e || e.tipo!=='carrera') return 0;
   if(esCarreraTiempo(e)){
     const real=numPos(e.distReal); if(real!==null) return real/1000;
+    const mp=numPos(e.metrosPasada); if(mp!==null) return mp*(numPos(e.pasadas)||1)/1000;
     const ts=calcTroteSegEj(e); if(ts===null) return 0;
     return (ts/3600)*(numPos(e.velKmh)||VEL_TROTE_DEFAULT);
   }
@@ -6217,14 +6219,14 @@ function fmtCarreraResumen(e){
 }
 // Snapshot de historial: distinto shape según tipo de ejercicio (carrera vs fuerza).
 function buildEjSnapshot(ej){
-  if(ej.tipo==='carrera') return {fecha:todayISO(), distancia:ej.distancia||'', pasadas:ej.pasadas||'', duracionCarrera:ej.duracionCarrera||'', rpeCarrera:ej.rpeCarrera||'', modo:ej.modo||'', trabajoSeg:ej.trabajoSeg||'', pausaSeg:ej.pausaSeg||'', pausaTipo:ej.pausaTipo||'', velKmh:ej.velKmh||'', distReal:ej.distReal||''};
+  if(ej.tipo==='carrera') return {fecha:todayISO(), distancia:ej.distancia||'', pasadas:ej.pasadas||'', duracionCarrera:ej.duracionCarrera||'', rpeCarrera:ej.rpeCarrera||'', modo:ej.modo||'', trabajoSeg:ej.trabajoSeg||'', pausaSeg:ej.pausaSeg||'', pausaTipo:ej.pausaTipo||'', velKmh:ej.velKmh||'', distReal:ej.distReal||'', metrosPasada:ej.metrosPasada||''};
   return {fecha:todayISO(), kg:ej.kg||'', reps:ej.reps||'', series:ej.series||'', rir:ej.rir||''};
 }
 function snapEquals(a,b){
   if(!a) return false;
   return a.fecha===b.fecha && a.kg===b.kg && a.reps===b.reps && a.series===b.series && a.rir===b.rir
     && a.distancia===b.distancia && a.pasadas===b.pasadas && a.duracionCarrera===b.duracionCarrera && a.rpeCarrera===b.rpeCarrera
-    && (a.modo||'')===(b.modo||'') && (a.trabajoSeg||'')===(b.trabajoSeg||'') && (a.pausaSeg||'')===(b.pausaSeg||'') && (a.pausaTipo||'')===(b.pausaTipo||'') && (a.velKmh||'')===(b.velKmh||'') && (a.distReal||'')===(b.distReal||'');
+    && (a.modo||'')===(b.modo||'') && (a.trabajoSeg||'')===(b.trabajoSeg||'') && (a.pausaSeg||'')===(b.pausaSeg||'') && (a.pausaTipo||'')===(b.pausaTipo||'') && (a.velKmh||'')===(b.velKmh||'') && (a.distReal||'')===(b.distReal||'') && (a.metrosPasada||'')===(b.metrosPasada||'');
 }
 function fmtHistLinea(h){
   if(h.modo==='tiempo') return fmtCarreraResumen(Object.assign({tipo:'carrera'},h));
