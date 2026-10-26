@@ -6919,11 +6919,7 @@ function exportPlanPDF(planId){
   ${pl.notas?`<div class="rt-footer"><strong>Notas:</strong> ${esc(pl.notas)}</div>`:''}
 </body></html>`;
 
-  const win=window.open('','_blank');
-  if(!win){ alert('El navegador bloqueó la ventana. Habilitá pop-ups para exportar el plan.'); return; }
-  win.document.write(html);
-  win.document.close();
-  setTimeout(()=>{ try{ win.focus(); win.print(); }catch(e){} }, 350);
+  rtMostrarVistaPrevia(html,'Plan_'+(p.nombre||'paciente'));
 }
 
 // ══════════════════ EVOLUCIÓN (gráficos: dolor, carga, PROM) ════════════════
@@ -7247,6 +7243,85 @@ function renderEvolucion(panel){
     </div>`;
 }
 
+// ══════════════════ VISTA PREVIA + PDF COMPARTIBLE (sin pop-ups) ════════════
+function rtCargarScript(src){
+  return new Promise((res,rej)=>{
+    const s=document.createElement('script'); s.src=src;
+    s.onload=()=>res(); s.onerror=()=>rej(new Error('No se pudo cargar '+src));
+    document.head.appendChild(s);
+  });
+}
+async function rtGenerarPDF(htmlLimpio){
+  if(!window.html2canvas) await rtCargarScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+  if(!(window.jspdf&&window.jspdf.jsPDF)) await rtCargarScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+  // iframe oculto de ancho A4 (794px) para que el PDF salga con tamaño de letra normal
+  const fr=document.createElement('iframe');
+  fr.style.cssText='position:fixed;left:-10000px;top:0;width:794px;height:1123px;border:0;visibility:hidden;';
+  document.body.appendChild(fr);
+  try{
+    await new Promise((res)=>{ fr.onload=()=>res(); fr.srcdoc=htmlLimpio; });
+    await new Promise(r=>setTimeout(r,250));
+    const doc=fr.contentDocument, body=doc.body;
+    fr.style.height=Math.max(1123,body.scrollHeight+40)+'px';
+    const canvas=await window.html2canvas(body,{scale:2,backgroundColor:'#ffffff',useCORS:true,logging:false,windowWidth:794});
+    const pdf=new window.jspdf.jsPDF('p','mm','a4');
+    const pw=210, ph=297;
+    const pagePx=Math.floor(canvas.width*ph/pw);
+    for(let y=0, i=0; y<canvas.height; y+=pagePx, i++){
+      const h=Math.min(pagePx, canvas.height-y);
+      const c=document.createElement('canvas'); c.width=canvas.width; c.height=h;
+      const ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height);
+      ctx.drawImage(canvas,0,y,canvas.width,h,0,0,canvas.width,h);
+      if(i>0) pdf.addPage();
+      pdf.addImage(c.toDataURL('image/jpeg',0.92),'JPEG',0,0,pw,h*pw/canvas.width);
+    }
+    return pdf.output('blob');
+  } finally { fr.remove(); }
+}
+function rtMostrarVistaPrevia(html, nombreBase){
+  const limpio=html.replace(/<button class="rt-(close|print)-btn"[^>]*>.*?<\/button>/g,'');
+  const nombre=String(nombreBase||'VORA').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z0-9_-]+/g,'_');
+  const prev=document.getElementById('rtPreview'); if(prev) prev.remove();
+  const ov=document.createElement('div');
+  ov.id='rtPreview';
+  ov.style.cssText='position:fixed;left:0;top:0;right:0;bottom:0;z-index:99999;background:#fff;display:flex;flex-direction:column;';
+  const bs='border:none;border-radius:18px;height:38px;padding:0 14px;font-size:14px;font-weight:700;font-family:Arial,Helvetica,sans-serif;cursor:pointer;';
+  ov.innerHTML='<div style="display:flex;gap:8px;align-items:center;padding:10px 12px;padding-top:calc(10px + env(safe-area-inset-top));background:#1E1B18;">'
+    +'<button id="rtBtnCerrar" style="'+bs+'background:#fff;color:#1E1B18;">✕ Cerrar</button>'
+    +'<span style="flex:1"></span>'
+    +'<button id="rtBtnImp" style="'+bs+'background:#3a3632;color:#fff;">🖨 Imprimir</button>'
+    +'<button id="rtBtnShare" disabled style="'+bs+'background:#A85D3B;color:#fff;opacity:.7;">⏳ Preparando PDF…</button>'
+    +'</div><iframe id="rtFrame" style="flex:1;border:0;width:100%;background:#fff;"></iframe>';
+  document.body.appendChild(ov);
+  const frame=document.getElementById('rtFrame');
+  frame.srcdoc=limpio;
+  document.getElementById('rtBtnCerrar').onclick=()=>ov.remove();
+  document.getElementById('rtBtnImp').onclick=()=>{ try{ frame.contentWindow.focus(); frame.contentWindow.print(); }catch(e){ alert('No se pudo abrir la impresión.'); } };
+  const shareBtn=document.getElementById('rtBtnShare');
+  let blob=null;
+  shareBtn.onclick=async()=>{
+    if(!blob) return;
+    const file=new File([blob], nombre+'.pdf', {type:'application/pdf'});
+    try{
+      if(navigator.canShare && navigator.canShare({files:[file]})){
+        await navigator.share({files:[file], title:nombre});
+        return;
+      }
+    }catch(e){ if(e && e.name==='AbortError') return; }
+    // Fallback: descarga / abrir el PDF
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download=nombre+'.pdf';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),60000);
+  };
+  rtGenerarPDF(limpio).then(b=>{
+    blob=b; shareBtn.disabled=false; shareBtn.style.opacity='1'; shareBtn.textContent='📤 Compartir PDF';
+  }).catch(err=>{
+    console.error(err);
+    shareBtn.textContent='⚠ PDF no disponible'; shareBtn.title=String(err&&err.message||err);
+  });
+}
+
 // ══════════════════ EXPORTAR RUTINA A PDF (vía diálogo de impresión) ════════
 function rtExRow(e,label){
   const meta = e.tipo==='carrera' ? esc(fmtCarreraResumen(e))
@@ -7307,11 +7382,7 @@ function exportRutinaPDF(sesId){
   ${s.plan?`<div class="rt-footer"><strong>Próxima sesión:</strong> ${esc(s.plan)}</div>`:''}
 </body></html>`;
 
-  const win=window.open('','_blank');
-  if(!win){ alert('El navegador bloqueó la ventana. Habilitá pop-ups para exportar la rutina.'); return; }
-  win.document.write(html);
-  win.document.close();
-  setTimeout(()=>{ try{ win.focus(); win.print(); }catch(e){} }, 350);
+  rtMostrarVistaPrevia(html,'Rutina_'+(p.nombre||'paciente'));
 }
 
 // ── CRUD PACIENTES ────────────────────────────────────────────────────────────
