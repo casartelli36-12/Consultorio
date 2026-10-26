@@ -7285,40 +7285,50 @@ function rtMostrarVistaPrevia(html, nombreBase){
   const ov=document.createElement('div');
   ov.id='rtPreview';
   ov.style.cssText='position:fixed;left:0;top:0;right:0;bottom:0;z-index:99999;background:#fff;display:flex;flex-direction:column;';
-  const bs='border:none;border-radius:18px;height:38px;padding:0 14px;font-size:14px;font-weight:700;font-family:Arial,Helvetica,sans-serif;cursor:pointer;';
-  ov.innerHTML='<div style="display:flex;gap:8px;align-items:center;padding:10px 12px;padding-top:calc(10px + env(safe-area-inset-top));background:#1E1B18;">'
+  const bs='border:none;border-radius:18px;height:36px;padding:0 12px;font-size:13px;font-weight:700;font-family:Arial,Helvetica,sans-serif;cursor:pointer;display:inline-flex;align-items:center;text-decoration:none;';
+  ov.innerHTML='<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 12px;padding-top:calc(10px + env(safe-area-inset-top));background:#1E1B18;">'
     +'<button id="rtBtnCerrar" style="'+bs+'background:#fff;color:#1E1B18;">✕ Cerrar</button>'
     +'<span style="flex:1"></span>'
-    +'<button id="rtBtnImp" style="'+bs+'background:#3a3632;color:#fff;">🖨 Imprimir</button>'
-    +'<button id="rtBtnShare" disabled style="'+bs+'background:#A85D3B;color:#fff;opacity:.7;">⏳ Preparando PDF…</button>'
+    +'<button id="rtBtnImp" style="'+bs+'background:#3a3632;color:#fff;">🖨</button>'
+    +'<a id="rtBtnAbrir" href="#" target="_blank" rel="noopener" style="'+bs+'background:#3a3632;color:#fff;display:none;">📄 Abrir PDF</a>'
+    +'<button id="rtBtnShare" style="'+bs+'background:#A85D3B;color:#fff;opacity:.7;">⏳ Preparando PDF…</button>'
     +'</div><iframe id="rtFrame" style="flex:1;border:0;width:100%;background:#fff;"></iframe>';
   document.body.appendChild(ov);
   const frame=document.getElementById('rtFrame');
   frame.srcdoc=limpio;
   document.getElementById('rtBtnCerrar').onclick=()=>ov.remove();
-  document.getElementById('rtBtnImp').onclick=()=>{ try{ frame.contentWindow.focus(); frame.contentWindow.print(); }catch(e){ alert('No se pudo abrir la impresión.'); } };
+  document.getElementById('rtBtnImp').onclick=()=>{ try{ frame.contentWindow.focus(); frame.contentWindow.print(); }catch(e){ alert('No se pudo abrir la impresión: '+(e&&e.message||e)); } };
   const shareBtn=document.getElementById('rtBtnShare');
-  let blob=null;
+  const abrirBtn=document.getElementById('rtBtnAbrir');
+  let blob=null, blobUrl=null, errMsg='';
   shareBtn.onclick=async()=>{
-    if(!blob) return;
+    if(!blob){ alert(errMsg ? ('No se pudo generar el PDF: '+errMsg) : 'El PDF todavía se está preparando. Esperá unos segundos y tocá de nuevo.'); return; }
     const file=new File([blob], nombre+'.pdf', {type:'application/pdf'});
+    if(!(navigator.share && navigator.canShare && navigator.canShare({files:[file]}))){
+      alert('Este navegador no permite compartir el archivo directamente. Tocá "📄 Abrir PDF" y compartilo desde ahí.');
+      return;
+    }
     try{
-      if(navigator.canShare && navigator.canShare({files:[file]})){
-        await navigator.share({files:[file], title:nombre});
-        return;
-      }
-    }catch(e){ if(e && e.name==='AbortError') return; }
-    // Fallback: descarga / abrir el PDF
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a'); a.href=url; a.download=nombre+'.pdf';
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(()=>URL.revokeObjectURL(url),60000);
+      await navigator.share({files:[file], title:nombre});
+    }catch(e){
+      if(e && e.name==='AbortError') return;
+      alert('No se pudo abrir el menú de compartir ('+(e&&e.name||'error')+': '+(e&&e.message||'')+'). Probá con "📄 Abrir PDF".');
+    }
   };
+  const timer=setTimeout(()=>{
+    if(!blob && !errMsg){ errMsg='tardó demasiado (revisá la conexión)'; shareBtn.textContent='⚠ Tarda demasiado'; }
+  },30000);
   rtGenerarPDF(limpio).then(b=>{
-    blob=b; shareBtn.disabled=false; shareBtn.style.opacity='1'; shareBtn.textContent='📤 Compartir PDF';
+    clearTimeout(timer);
+    blob=b; errMsg='';
+    blobUrl=URL.createObjectURL(b);
+    abrirBtn.href=blobUrl; abrirBtn.style.display='inline-flex';
+    shareBtn.style.opacity='1'; shareBtn.textContent='📤 Compartir PDF';
   }).catch(err=>{
+    clearTimeout(timer);
     console.error(err);
-    shareBtn.textContent='⚠ PDF no disponible'; shareBtn.title=String(err&&err.message||err);
+    errMsg=String(err&&err.message||err);
+    shareBtn.textContent='⚠ PDF no disponible';
   });
 }
 
