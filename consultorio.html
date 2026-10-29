@@ -8233,6 +8233,121 @@ dbRef.once('value').then(snapshot=>{
     }catch(err){ console.error('Carga de rutinas:', err); }
   }
 
+  // Carga única (02/11/2026): rutina de 2 semanas (semanas 3 y 4) de Santiago Collares.
+  // Se agrega como un plan nuevo en el episodio activo, una sola vez. El plan anterior (19/10 al 31/10) queda intacto.
+  if(CURRENT_ROLE==='admin'){
+    try{
+      const ex=(nombre,series,reps,rir,nota,bloque,categoria,kg)=>({nombre:nombre,series:String(series),reps:String(reps),rir:String(rir),nota:nota||'',bloque:bloque||'',categoria:categoria,kg:kg||''});
+      const act=(n,s,r,nota)=>ex(n,s,r,'',nota,'','activacion');
+      const core=(n,s,r,nota)=>ex(n,s,r,'3-4',nota,'','core');
+      const fza=(n,s,r,rir,nota,bloque,kg)=>ex(n,s,r,rir,nota,bloque,'fuerza',kg);
+      const plio=()=>ex('Pliometría (a definir)','','','','a definir','','potencia');
+      const trote=()=>ex('Trote en cinta',8,`(2' trote a 10 km/h / 30" caminata a 5 km/h)`,'',`Semana 3 (02/11 al 07/11): 8×(2' / 30"), RPE 4, ~2.670 m de trote. Semana 4 (09/11 al 14/11): 2 series de 5×(2' / 30"), 3' de caminata entre series, RPE 4-5, ~3.330 m de trote. Inclinación 0-1%. Si el esfuerzo pasa de 5/10, bajar a 9 km/h.`,'','cardio');
+      const mov=()=>act('Movilidad libre',2,10,'tobillo, cadera, columna');
+      const RUTINA_20261102 = {app:'Santiago Collares', plan:{
+        nombre:'Rutina 02/11 al 14/11 (2 semanas)', frecuencia:'6 días por semana',
+        notas:`Diagnóstico: Reconstrucción de LCA izquierdo, técnica STRI (semitendinoso + recto interno). Inicio 17/06/2026.
+Objetivo: ganar fuerza en la pierna operada, consolidar el trote y empezar a trabajar la desaceleración.
+Esquema: lunes, miércoles y viernes = carga (consultorio). Martes y jueves = descarga autónoma más trote en cinta. Sábado = trote en cinta.
+Criterio de trote: se corre solo si no hay derrame ni dolor mayor a 2/10. Si los hay, se cambia por bici y se avisa. Si el esfuerzo pasa de 5/10, bajar a 9 km/h.
+Trote en cinta: 10 km/h al trotar y 5 km/h al caminar, inclinación 0-1%.
+En los saltos, aterrizar suave y con la rodilla alineada. Si no sale limpio, bajar la altura.
+
+Vigencia: semana 1 (semana 3 de Santiago) = 02/11 al 07/11/2026 · semana 2 (semana 4) = 09/11 al 14/11/2026.
+Intensidad: carga a RIR 2, descarga a RIR 3, zona media a RIR 3-4, salvo que la nota diga otra cosa.
+En ejercicios unilaterales las series y repeticiones son POR LADO. Superserie = ejercicios alternados (A1/A2); los bloques sin letra van solos.
+En repeticiones: " = segundos, ' = minutos, m = metros.
+
+Cambios de la semana 2 (semana 4 de Santiago):
+- Trote (martes, jueves y sábado): 2 series de 5×(2' trote / 30" caminata), 3' de caminata entre series, RPE 4-5.
+- Pliometría de lunes y viernes: a definir.`},
+        dias:[
+          {nombre:'Lunes · Carga A · 23 series', lugar:'consultorio', ejercicios:[
+            act('Bici',1,"5'",'suave'),
+            core('Pallof press',3,10,'por lado'),
+            core('Bicho muerto',3,8,'por lado, con 5-10 kg'),
+            core('Chop en estocada',3,10,'por lado'),
+            plio(),
+            fza('Sentadilla al cajón con barra',4,'4-6',2),
+            fza('Estocada bulgara',3,'10-12',2,'','B','40-45'),
+            fza('Gemelos con rodilla recta',3,10,2,'','B','55'),
+            fza('Hip thrust unipodal',3,'8-10',2,'','C','40'),
+            fza('Plancha copenaghe palanca corta',3,10,2,'','C'),
+            fza('Excéntrico de isquios con slider a 1 pie',3,6,2,'bajada 4"'),
+            fza('Camilla de cuádriceps',4,'8-10',2,'sola','','55')]},
+          {nombre:'Martes · Descarga A + trote en cinta', lugar:'domicilio', ejercicios:[
+            act('Bici o caminata',1,"5'"),
+            mov(),
+            trote(),
+            fza('Sentadilla goblet con pausa',3,8,3,'pausa 2"','A'),
+            fza('Clamshell',3,12,3,'','A'),
+            fza('Puente glúteo con slider bilateral',3,8,3,'','B'),
+            fza('Aductores con pelota',3,'30"',3,'','B'),
+            fza('Multicadera',3,10,3,'','C'),
+            fza('Y balance',3,3,3,'','C')]},
+          {nombre:'Miércoles · Carga B · 24 series', lugar:'consultorio', ejercicios:[
+            act('Bici',1,"5'",'suave'),
+            core('Tiki tiki',3,8),
+            core('Chop',3,10,'por lado'),
+            core('Plancha lateral',3,'30"'),
+            fza('Peso muerto con barra',4,'5-3',2,'','','95'),
+            fza('Hip thrust con barra',4,8,2,'','','85'),
+            fza('Estocada lateral con slider',3,8,2,'por lado, bajada 3"','C'),
+            fza('Gemelo isométrico unipodal',3,'30"',2,'','C'),
+            fza('Step down con mancuerna',3,8,2,'bajada 3"','','10'),
+            fza('Camilla de cuádriceps',3,'8-10',2,'sola','','50'),
+            fza('Camilla de isquiotibiales unipodal',4,'6-8',2,'sola','','40')]},
+          {nombre:'Jueves · Descarga B + trote en cinta', lugar:'domicilio', ejercicios:[
+            act('Bici o caminata',1,"5'"),
+            mov(),
+            trote(),
+            fza('Sentadilla monopodal al cajón liviana',3,6,3,'','A'),
+            fza('Chop con disco desde estocada',3,10,3,'por lado','A'),
+            fza('Subidas laterales al cajón',3,10,3,'','B'),
+            fza('Plancha lateral',3,'30"',3,'','B'),
+            fza('Estocada frontal con banda frontal',3,8,3,'frenar la bajada en 3"')]},
+          {nombre:'Viernes · Carga C · 22 series', lugar:'consultorio', ejercicios:[
+            act('Bici',1,"5'",'suave'),
+            core('Pallof press',3,10,'por lado'),
+            core('Chop',3,10,'por lado'),
+            core('Tiki tiki con círculos',3,8),
+            plio(),
+            fza('Sentadilla frontal con talones elevados',4,5,2,'','','45-50'),
+            fza('Estocada lateral con mancuerna',3,8,2,'','B','18'),
+            fza('Sóleo con rodilla flexionada',3,12,2,'','B'),
+            fza('Puente glúteo unipodal sobre cajón',3,'8-10',2,'pausa 2"','','12'),
+            fza('Caminata de isquios',3,5,'','corta y larga'),
+            fza('Camilla de cuádriceps excéntrica unilateral',3,6,2,'sola'),
+            fza('Puente de isquios con rolo o fitball',3,8,'','solo, pausa 5"')]},
+          {nombre:'Sábado · Trote en cinta', lugar:'domicilio', ejercicios:[
+            act('Caminata',1,"5'"),
+            mov(),
+            act('TKE con banda',2,10),
+            trote()]}
+        ]};
+      if(!DB.rutinasCargadas) DB.rutinasCargadas={};
+      const kn2=s=>norm(s).replace(/[^a-z0-9 ]/g,' ').split(/\s+/).filter(Boolean).sort().join(' ');
+      const flag2='rutinas_20261102_'+kn2(RUTINA_20261102.app).replace(/ /g,'_');
+      if(!DB.rutinasCargadas[flag2]){
+        const p2=DB.patients.find(x=>kn2(x.nombre)===kn2(RUTINA_20261102.app));
+        if(p2){
+          const ep2=(p2.episodios&&p2.episodios.length)?p2.episodios[p2.episodios.length-1]:p2;
+          if(!ep2.planes) ep2.planes=[];
+          ep2.planes.push({
+            id:uid(), nombre:RUTINA_20261102.plan.nombre, fechaInicio:'2026-11-02', semanas:'2',
+            frecuencia:RUTINA_20261102.plan.frecuencia, notas:RUTINA_20261102.plan.notas,
+            dias:RUTINA_20261102.dias.map(d=>({id:uid(), nombre:d.nombre, lugar:d.lugar, ejercicios:d.ejercicios.map(e=>({
+              id:uid(), nombre:e.nombre, series:e.series, reps:e.reps, kg:e.kg, rir:e.rir, nota:e.nota,
+              bloque:e.bloque, categoria:e.categoria, track:false, tipo:'fuerza'
+            }))}))
+          });
+          DB.rutinasCargadas[flag2]=true;
+          saveDB(); setTimeout(()=>showToast('Rutina cargada: '+p2.nombre),900);
+        }
+      }
+    }catch(err){ console.error('Carga de rutina 02/11:', err); }
+  }
+
   dbPatientsLoaded=true;
   tryMigrarTurnos();
   intentarMostrarAvisosAuto();
